@@ -14,18 +14,18 @@ from samba import credentials
 from samba.dcerpc import winreg, security
 from samba.dcerpc import misc
 
-from sambagtk.objects import (
+from sambagtk.registry import (
     RegistryKey,
     RegistryValue,
-    )
-
-from sambagtk.dialogs import (
-    WinRegConnectDialog,
     RegValueEditDialog,
     RegKeyEditDialog,
     RegRenameDialog,
     RegSearchDialog,
     RegPermissionsDialog,
+    WinRegConnectDialog,
+    )
+
+from sambagtk.dialogs import (
     AboutDialog,
     )
 
