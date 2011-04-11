@@ -42,59 +42,6 @@ class Group(object):
         return [self.name, self.description, self.rid]
 
 
-class Service:
-
-    def __init__(self):
-        self.name = ""
-        self.display_name = ""
-        self.description = ""
-
-        self.state = svcctl.SVCCTL_STOPPED
-        self.check_point = 0
-        self.wait_hint = 0
-
-        self.accepts_pause = False
-        self.accepts_stop = False
-
-        self.start_type = svcctl.SVCCTL_AUTO_START
-        self.path_to_exe = ""
-        self.account = None # local system account
-        self.account_password = None # don't change
-        self.allow_desktop_interaction = False
-
-        self.start_params = ""
-        #self.hw_profile_list = [["Profile 1", True], ["Profile 2", False]] TODO: implement hw_profiles functionality
-
-        self.handle = -1
-
-    @staticmethod
-    def get_state_string(state):
-        return {
-            svcctl.SVCCTL_CONTINUE_PENDING: "Continue pending",
-            svcctl.SVCCTL_PAUSE_PENDING: "Pause pending"
-            svcctl.SVCCTL_PAUSED: "Paused",
-            svcctl.SVCCTL_RUNNING: "Running",
-            svcctl.SVCCTL_START_PENDING: "Start pending",
-            svcctl.SVCCTL_STOP_PENDING: "Stop pending",
-            svcctl.SVCCTL_STOPPED: "Stopped"
-            }[state]
-
-    @staticmethod
-    def get_start_type_string(start_type):
-        return {
-            svcctl.SVCCTL_BOOT_START: "Start at boot",
-            svcctl.SVCCTL_SYSTEM_START: "Start at system startup",
-            svcctl.SVCCTL_AUTO_START: "Start automatically",
-            svcctl.SVCCTL_DEMAND_START: "Start manually",
-            svcctl.SVCCTL_DISABLED: "Disabled",
-            }.get(start_type, "")
-
-    def list_view_representation(self):
-        return [self.name, self.display_name, self.description,
-                Service.get_state_string(self.state),
-                Service.get_start_type_string(self.start_type)]
-
-
 class Task(object):
 
     def __init__(self, command, id):
