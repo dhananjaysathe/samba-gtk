@@ -20,6 +20,7 @@
 """Registry-related dialogs."""
 
 import gtk
+import gobject
 import pango
 
 import os

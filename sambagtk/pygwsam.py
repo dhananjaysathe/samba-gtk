@@ -12,15 +12,15 @@ from samba.dcerpc import samr
 from samba.dcerpc import security
 from samba.dcerpc import lsa
 
-from sambagtk.objects import (
+from sambagtk.sam import (
     User,
     Group,
+    UserEditDialog,
+    GroupEditDialog,
+    SAMConnectDialog,
     )
 
 from sambagtk.dialogs import (
-    SAMConnectDialog,
-    UserEditDialog,
-    GroupEditDialog,
     AboutDialog,
     )
 
@@ -51,7 +51,6 @@ class SAMPipeManager(object):
                                                  0x00000030, #SAMR_SERVER_ACCESS_ENUM_DOMAINS | SAMR_SERVER_ACCESS_OPEN_DOMAIN. Copied from a Windows Vista machine. I couldn't find the correct constants in samr or security
                                                  1,
                                                  connection_info)[2] #Note the [2]!!
-        pass
 
     def close(self):
         if (self.pipe is not None):

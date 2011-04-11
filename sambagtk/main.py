@@ -16,7 +16,8 @@ import pygwregedit
 import pygwcrontab
 import pygwsvcctl
 
-from sambagtk.dialogs import AboutDialog, SAMConnectDialog
+from sambagtk.dialogs import AboutDialog
+from sambagtk.sam import SAMConnectDialog
 
 
 class SambaUtilities(object):
