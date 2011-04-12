@@ -11,4 +11,10 @@ setup(
     scripts=['bin/gtkldb', 'bin/gepdump'],
     maintainer='Jelmer Vernooij',
     maintainer_email='jelmer@samba.org',
-)
+    data_files=[ ('share/applications', ['meta/gepdump.desktop',
+                                         'meta/gregedit.desktop',
+                                         'meta/gtkldb.desktop',
+                                         'meta/gwcrontab.desktop',
+                                         'meta/gwsam.desktop',
+                                         'meta/gwsvcctl.desktop']) ]
+    )
