@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=LDB Browser
+Comment=Lightweight Database browser and editor
+Exec=gtkldb
+#Icon=media-player-48.png
+Type=Application
+Terminal=false
+Categories=GNOME;GTK;RemoteAccess;System;Utility;Network;
+StartupNotify=true
