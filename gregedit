@@ -152,8 +152,8 @@ class SetValueDialog(gtk.Dialog):
         gtk_widget_show_all(self.vbox)
 
 
-
 class NewKeyDialog(gtk.Dialog):
+
     def __init__(self):
         super(NewKeyDialog, self).__init__()
         self.set_title("New Registry Key")
@@ -271,7 +271,7 @@ def expand_key(treeview, parent, arg2):
     def on_open_remote_activate(self, menuitem):
         rpcwin = RpcConnectDialog()
         result = rpcwin.run()
-        
+
         if result != GTK_RESPONSE_ACCEPT:
             rpcwin.destroy()
             return
