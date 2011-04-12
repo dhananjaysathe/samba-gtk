@@ -11,11 +11,13 @@ import gtk
 from samba import credentials
 from samba.dcerpc import atsvc
 
-from sambagtk.objects import Task
-
 from sambagtk.dialogs import (
     AboutDialog,
+    )
+
+from sambagtk.atsvc import (
     ATSvcConnectDialog,
+    Task,
     TaskEditDialog,
     )
 

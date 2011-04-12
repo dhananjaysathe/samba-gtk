@@ -16,11 +16,14 @@ from samba.dcerpc import svcctl
 
 from sambagtk.dialogs import (
     AboutDialog,
+    )
+
+from sambagtk.svcctl import (
     SvcCtlConnectDialog,
+    Service,
     ServiceEditDialog,
     ServiceControlDialog,
     )
-from sambagtk.objects import Service
 
 
 class SvcCtlPipeManager(object):
@@ -167,7 +170,7 @@ class SvcCtlPipeManager(object):
         enum_service_status_list = []
         offset = 0
 
-        while (count > 0):
+        while count > 0:
             enum_service_status = svcctl.ENUM_SERVICE_STATUSW()
 
             addr = SvcCtlPipeManager.get_nbo_long(buffer, offset)
@@ -399,7 +402,8 @@ class SvcCtlWindow(gtk.Window):
 
     def __init__(self, info_callback = None, server = "", username = "", password = "", transport_type = 0, connect_now = False):
         super(SvcCtlWindow, self).__init__()
-        #Note: Any change to these arguments should probably also be changed in on_connect_item_activate()
+        # Note: Any change to these arguments should probably also be changed
+        # in on_connect_item_activate()
 
         self.create()
         self.pipe_manager = None
@@ -407,15 +411,16 @@ class SvcCtlWindow(gtk.Window):
         self.update_captions()
         self.set_status("Disconnected.")
 
-        #It's nice to have this info saved when a user wants to reconnect
+        # It's nice to have this info saved when a user wants to reconnect
         self.server_address = server
         self.username = username
         self.transport_type = transport_type
 
         self.on_connect_item_activate(None, server, transport_type, username, password, connect_now)
 
-        #This is used so the parent program can grab the server info after we've connected.
-        if info_callback != None:
+        # This is used so the parent program can grab the server info after
+        # we've connected.
+        if info_callback is not None:
             info_callback(server = self.server_address, username = self.username, transport_type = self.transport_type)
 
     def create(self):
@@ -430,15 +435,12 @@ class SvcCtlWindow(gtk.Window):
         self.icon_pixbuf = gtk.gdk.pixbuf_new_from_file(self.icon_filename)
         self.set_icon(self.icon_pixbuf)
 
-    	vbox = gtk.VBox(False, 0)
-    	self.add(vbox)
-
+        vbox = gtk.VBox(False, 0)
+        self.add(vbox)
 
         # menu
-
         self.menubar = gtk.MenuBar()
         vbox.pack_start(self.menubar, False, False, 0)
-
 
         self.file_item = gtk.MenuItem("_File")
         self.menubar.add(self.file_item)
@@ -467,7 +469,6 @@ class SvcCtlWindow(gtk.Window):
 
         self.refresh_item = gtk.ImageMenuItem(gtk.STOCK_REFRESH, accel_group)
         view_menu.add(self.refresh_item)
-
 
         self.service_item = gtk.MenuItem("_Service")
         self.menubar.add(self.service_item)
@@ -501,9 +502,7 @@ class SvcCtlWindow(gtk.Window):
         self.about_item = gtk.ImageMenuItem(gtk.STOCK_ABOUT, accel_group)
         help_menu.add(self.about_item)
 
-
         # toolbar
-
         self.toolbar = gtk.Toolbar()
         vbox.pack_start(self.toolbar, False, False, 0)
 
@@ -535,9 +534,7 @@ class SvcCtlWindow(gtk.Window):
         self.pause_resume_button.set_is_important(True)
         self.toolbar.insert(self.pause_resume_button, 5)
 
-
-        # sevices list
-
+        # services list
         self.scrolledwindow = gtk.ScrolledWindow(None, None)
         self.scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
@@ -601,7 +598,6 @@ class SvcCtlWindow(gtk.Window):
         self.services_store.set_sort_column_id(1, gtk.SORT_ASCENDING)
         self.services_tree_view.set_model(self.services_store)
 
-
         # status bar & progress bar
 
         self.statusbar = gtk.Statusbar()
@@ -616,7 +612,6 @@ class SvcCtlWindow(gtk.Window):
         hbox.pack_start(self.statusbar, True, True, 0)
 
         vbox.pack_start(hbox, False, False, 0)
-
 
         # signals/events
 
@@ -686,10 +681,10 @@ class SvcCtlWindow(gtk.Window):
         self.statusbar.push(0, message)
 
     def update_sensitivity(self):
-        connected = (self.pipe_manager != None)
+        connected = (self.pipe_manager is not None)
 
         service = self.get_selected_service()
-        if (service != None):
+        if (service is not None):
             selected = True
             pausable = service.accepts_pause
             stoppable = service.accepts_stop
@@ -726,17 +721,18 @@ class SvcCtlWindow(gtk.Window):
         self.pause_resume_button.set_tooltip_text(["Pause the service", "Resume the service"][paused])
         self.pause_resume_button.set_label(["Pause", "Resume"][paused])
 
-    def run_message_dialog(self, type, buttons, message, parent = None):
-        if (parent is None):
+    def run_message_dialog(self, type, buttons, message, parent=None):
+        if parent is None:
             parent = self
 
-        message_box = gtk.MessageDialog(parent, gtk.DIALOG_MODAL, type, buttons, message)
+        message_box = gtk.MessageDialog(parent, gtk.DIALOG_MODAL, type,
+                buttons, message)
         response = message_box.run()
         message_box.hide()
 
         return response
 
-    def run_service_edit_dialog(self, service = None, apply_callback = None):
+    def run_service_edit_dialog(self, service=None, apply_callback=None):
         dialog = ServiceEditDialog(service)
         dialog.show_all()
 
@@ -747,11 +743,11 @@ class SvcCtlWindow(gtk.Window):
             if (response_id in [gtk.RESPONSE_OK, gtk.RESPONSE_APPLY]):
                 problem_msg = dialog.check_for_problems()
 
-                if (problem_msg != None):
+                if (problem_msg is not None):
                     self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, problem_msg, dialog)
                 else:
                     dialog.values_to_service()
-                    if (apply_callback != None):
+                    if (apply_callback is not None):
                         apply_callback(dialog.service)
                     if (response_id == gtk.RESPONSE_OK):
                         dialog.hide()
@@ -773,8 +769,10 @@ class SvcCtlWindow(gtk.Window):
 
         return dialog.service
 
-    def run_connect_dialog(self, pipe_manager, server_address, transport_type, username, password = "", connect_now = False):
-        dialog = SvcCtlConnectDialog(server_address, transport_type, username, password)
+    def run_connect_dialog(self, pipe_manager, server_address, transport_type,
+            username, password="", connect_now=False):
+        dialog = SvcCtlConnectDialog(server_address, transport_type, username,
+            password)
         dialog.show_all()
 
         # loop to handle the failures
@@ -835,7 +833,7 @@ class SvcCtlWindow(gtk.Window):
         return pipe_manager
 
     def connected(self):
-        return self.pipe_manager != None
+        return self.pipe_manager is not None
 
     def update_service_callback(self, service):
         try:
@@ -872,19 +870,21 @@ class SvcCtlWindow(gtk.Window):
             self.on_services_tree_view_button_press(None, myev)
 
     def on_self_delete(self, widget, event):
-        if (self.pipe_manager != None):
+        if (self.pipe_manager is not None):
             self.on_disconnect_item_activate(self.disconnect_item)
 
         gtk.main_quit()
         return False
 
-    def on_connect_item_activate(self, widget, server = "", transport_type = 0, username = "", password = "", connect_now = False):
+    def on_connect_item_activate(self, widget, server="", transport_type=0,
+            username="", password="", connect_now=False):
         server = server or self.server_address
         transport_type = transport_type or self.transport_type
         username = username or self.username
 
-        self.pipe_manager = self.run_connect_dialog(None, server, transport_type, username, password, connect_now)
-        if (self.pipe_manager != None):
+        self.pipe_manager = self.run_connect_dialog(None, server,
+                transport_type, username, password, connect_now)
+        if (self.pipe_manager is not None):
             self.set_status("Fetching services from %s..." % (server))
 
             FetchServicesThread(self.pipe_manager, self).start()
@@ -895,7 +895,7 @@ class SvcCtlWindow(gtk.Window):
         self.update_captions()
 
     def on_disconnect_item_activate(self, widget):
-        if (self.pipe_manager != None):
+        if (self.pipe_manager is not None):
             self.pipe_manager.close()
             self.pipe_manager = None
 
@@ -952,10 +952,12 @@ class SvcCtlWindow(gtk.Window):
         finally:
             self.pipe_manager.lock.release()
 
-        if (pause_resume_service.state == svcctl.SVCCTL_PAUSED):
-            self.run_service_control_dialog(pause_resume_service, svcctl.SVCCTL_CONTROL_CONTINUE)
-        elif (pause_resume_service.state == svcctl.SVCCTL_RUNNING):
-            self.run_service_control_dialog(pause_resume_service, svcctl.SVCCTL_CONTROL_PAUSE)
+        if pause_resume_service.state == svcctl.SVCCTL_PAUSED:
+            self.run_service_control_dialog(pause_resume_service,
+                    svcctl.SVCCTL_CONTROL_CONTINUE)
+        elif pause_resume_service.state == svcctl.SVCCTL_RUNNING:
+            self.run_service_control_dialog(pause_resume_service,
+                    svcctl.SVCCTL_CONTROL_PAUSE)
 
     def on_properties_item_activate(self, widget):
         edit_service = self.get_selected_service()
