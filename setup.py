@@ -8,7 +8,7 @@ setup(
     packages=[
         'sambagtk',
     ],
-    scripts=['bin/gtkldb', 'bin/gepdump'],
+    scripts=['bin/gtkldb', 'bin/gepdump', 'bin/gregedit'],
     maintainer='Jelmer Vernooij',
     maintainer_email='jelmer@samba.org',
     data_files=[ ('share/applications', ['meta/gepdump.desktop',
