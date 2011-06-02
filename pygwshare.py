@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+#commented out relevant decessions , will be removed later 
+
+
 from samba import credentials
 from samba.dcerpc import (
     srvsvc,
@@ -20,7 +23,7 @@ from coherence.extern.log.log import level
 class svcsrvPipeManager(object)
 	
 	def __init__(self, server_address, transport_type, username, password):
-		
+		""" Initialize the pipe hndling the srvsvc calls """
 			creds = credentials.Credentials()
 			if (username.count("\\") > 0):
 				creds.set_domain(username.split("\\")[0])
@@ -34,8 +37,11 @@ class svcsrvPipeManager(object)
 			creds.set_workstation("")
 			creds.set_password(password)
 
-			binding = "ncacn_np:%s" # srvsvc allows only named pipes tcp/upd not allowed
+			#binding = "ncacn_np:%s" # srvsvc allows only named pipes tcp/upd not allowed
+			binding = ["ncacn_np:%s", "ncacn_ip_tcp:%s", "ncalrpc:%s"][transport_type]# apparently it is allowed 
+			# worked in python console on localhost need to test on more ip addresses			
 			self.pipe = srvsvc.srvsvc(binding % (server_address), credentials = creds)
+			
 			# set up some basic parameters unique to the connection
 			self.server_unc='\\'+server_address
 			self.server_info_basic=self.pipe.NetSrvGetInfo(self.server_unc,102) # basic user info object of type 102
@@ -54,7 +60,7 @@ class svcsrvPipeManager(object)
 			pass # apparently there's no .Close() method for this pipe
     
 #conn enum is not supported 	
-	"""def get_connections(self,level=1,max_buffer=-1,path=self.server_info_basic.path)# max allowed mem buffer at '-1' 
+	"""def get_connections(self,level=1,self.max_buffer,path=self.server_info_basic.path)# max allowed mem buffer at '-1' 
 			conn_list=[]
 			info_ctr=srvsvc.NetConnInfoCtr()
 			info_ctr.level=level   #   
@@ -110,17 +116,20 @@ class svcsrvPipeManager(object)
 			parm_error=0x00000000
 			parm_error=self.pipe.NetShareSetInfo(self.server_unc,name, 502, share, parm_error)
 			
-	def   get_share_list(self)
+	def   get_share_enum_cache(self)
 			""" Gets a list of all active shares and update the share and share_name list. """
 			self.share_list=[]
 			self.share_names_list=[]
+			self.share_types_list=[]
 			info_ctr=srvsvc.NetShareInfoCtr()
 			info_ctr.level=502
-			(info_ctr, totalentries, resume_handle)=self.pipe.NetShareEnum(self.server_unc, info_ctr, self.max_buffer,self.resume_handle_share)
+			(info_ctr, totalentries, resume_handle)=self.pipe.NetShareEnumAll(self.server_unc, info_ctr, self.max_buffer,self.resume_handle_share)
 			self.share_list=info_ctr.ctr.array
 			for i in self.share_list :
-				self.share_names_list.append(i) 
-        
+				self.share_names_list.append(i.name) 
+				self.share_types_list.append(i.type) 
+				
+				
 	def  add_share(self,name=""):
 		#assume 502 share info
 			""" Add a share with a given name of type share info 502"""
@@ -131,10 +140,15 @@ class svcsrvPipeManager(object)
 			parm_error=self.pipe.NetShareAdd(self.server_unc, 502, share, parm_error)
 			
 	def  get_share_info(self,name=""):
-		""" gets share info for a share with a particular name """
+		""" Gets share info for a share with a particular name """
 			name=unicode(name)
-			share=self.pipe.NetShareGetInfo(self.server_unc, name, 502)
-			return share
+			# Proposing to use locally available share list 
+			# This should improve reduce the queries and improve performance
+			# The share list will be locally maintained any via the share enum
+			#share=self.pipe.NetShareGetInfo(self.server_unc, name, 502)
+			for i in self.share_names_list
+				if name==i
+					return share_list[i.index()]
 			
 	def delete_share (self,name=""):
 		""" Delete a share with the given name. """
@@ -150,8 +164,14 @@ class svcsrvPipeManager(object)
 			self.pipe.NetShareDelSticky(self.server_unc, name, reserved)
 		
 	def get_share_type (self,name=""):
-		""" returns type of share """
+		""" Returns type of share code """
 			name=unicode(name)
-			stype=self.pipe.NetShareCheck(self.server_unc,name)
-				
-	
+			
+			# stype=self.pipe.NetShareCheck(self.server_unc,name)
+			# not supported in samba 4 yet 
+			# again new scheme where in local cache of share enum is used rather than a new rpc call
+			
+			for i in self.share_names_list
+				if name==i
+					return stype=share_types_list[i.index()]
+			
