@@ -96,7 +96,9 @@ class svcsrvPipeManager(object)
 				return comm
 			else :
 				return xlat_type
-	def get_path_format (path="",islocal=0):
+	
+	
+	def get_path_format(path="",islocal=0):
 		""" Convert the unix path to relavant Info Struct path for samba share object 
 		It also checks for validity of path if it is local."""
 			if islocal == 1:
@@ -111,6 +113,7 @@ class svcsrvPipeManager(object)
 										
 			return path	
 				
+	
 	def  alter_share(self,comment="",max_users=0xFFFFFFFF,name="",password="",path="",permissions=None,sd_buf,stype='STYPE_DISKTREE',flags="",islocal=0):
 			""" alters share 502 object. """
 			#chose default 502 type TODO inquire tru val defult type is mem share
@@ -122,9 +125,9 @@ class svcsrvPipeManager(object)
 			share.current_users=0
 			share.name=name
 			share.password=password
-			share.path=et_path_format(path,islocal)## see if canonical required
+			share.path=get_path_format(path,islocal)
 			share.permissions=None
-			share.sd_buf=security #### ASKKKKKKKKK
+			share.sd_buf=security 							#### ASKKKKKKKKK
 			share.type=translate_type_comment(stype,0)
 			if flags='STYPE_TEMPORARY':
 				share.type |= 0x40000000
@@ -133,6 +136,7 @@ class svcsrvPipeManager(object)
 			parm_error=0x00000000
 			parm_error=self.pipe.NetShareSetInfo(self.server_unc,name, 502, share, parm_error)
 			
+	
 	def   get_share_enum_cache(self)
 			""" Gets a list of all active shares and update the share and share_name list. """
 			self.share_list=[]
@@ -156,6 +160,7 @@ class svcsrvPipeManager(object)
 			parm_error=0x00000000
 			parm_error=self.pipe.NetShareAdd(self.server_unc, 502, share, parm_error)
 			
+	
 	def  get_share_info(self,name=""):
 		""" Gets share info for a share with a particular name """
 			name=unicode(name)
@@ -167,6 +172,7 @@ class svcsrvPipeManager(object)
 				if name==i
 					return share_list[i.index()]
 			
+	
 	def delete_share (self,name=""):
 		""" Delete a share with the given name. """
 			reserved=0
@@ -180,6 +186,7 @@ class svcsrvPipeManager(object)
 			name=unicode(name)
 			self.pipe.NetShareDelSticky(self.server_unc, name, reserved)
 		
+	
 	def get_share_type (self,name=""):
 		""" Returns type of share code """
 			name=unicode(name)
