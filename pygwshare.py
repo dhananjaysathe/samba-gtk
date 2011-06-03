@@ -18,6 +18,9 @@ from sambagtk.sam import (
 from sambagtk.dialogs import (
     AboutDialog,
     )
+    
+import os.path
+    
 from coherence.extern.log.log import level
     
 class svcsrvPipeManager(object)
@@ -93,8 +96,22 @@ class svcsrvPipeManager(object)
 				return comm
 			else :
 				return xlat_type
-	
-	def  alter_share(self,comment="",max_users=0xFFFFFFFF,name="",password="",path="",permissions=None,sd_buf,stype='STYPE_DISKTREE',flags=""):
+	def get_path_format (path="",islocal=0):
+		""" Convert the unix path to relavant Info Struct path for samba share object 
+		It also checks for validity of path if it is local."""
+			if islocal == 1:
+				if os.path.exists(path):
+					path=os.path.realpath(path) # gets canonical path
+				else :
+					raise OSError
+			if path.startswith('/'):
+				path=path.replace('/','\\')
+				path="C:"+path
+				path=unicode(path)
+										
+			return path	
+				
+	def  alter_share(self,comment="",max_users=0xFFFFFFFF,name="",password="",path="",permissions=None,sd_buf,stype='STYPE_DISKTREE',flags="",islocal=0):
 			""" alters share 502 object. """
 			#chose default 502 type TODO inquire tru val defult type is mem share
 			share=srvsvc.NetShareInfo502()
@@ -105,7 +122,7 @@ class svcsrvPipeManager(object)
 			share.current_users=0
 			share.name=name
 			share.password=password
-			share.path=path ## see if canonical required
+			share.path=et_path_format(path,islocal)## see if canonical required
 			share.permissions=None
 			share.sd_buf=security #### ASKKKKKKKKK
 			share.type=translate_type_comment(stype,0)
@@ -174,4 +191,5 @@ class svcsrvPipeManager(object)
 			for i in self.share_names_list
 				if name==i
 					return stype=share_types_list[i.index()]
-			
+	
+	
