@@ -60,8 +60,8 @@ class srvsvcPipeManager(object) :
 			self.max_buffer = -1
 			
 			# Initialise various cache lists :
-			# The idea is to use locally available share list and related conveiniece 
-			# This should improve reduce the queries and improve performance
+			# The idea is to use locally available share list and related conveiniece lists
+			# This should reduce the queries and improve performance
 			# The share list will be locally maintained any via the get_share_local_cache
 			
 			self.conn_list = []
