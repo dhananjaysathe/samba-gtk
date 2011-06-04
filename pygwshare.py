@@ -50,11 +50,10 @@ class srvsvcPipeManager(object) :
 			
 			self.server_unc = '\\'+server_address
 			self.server_info_basic = self.pipe.NetSrvGetInfo(self.server_unc,102) # basic user info object of type 102
-
+			self.tod = self.pipe.NetRemoteTOD(self.server_unc)
 			# both the above types are standard types as define in the SRVS specification
 			### Now init various default values
 			
-			self.tod = self.pipe.NetRemoteTOD(self.server_unc)
 			self.resume_handle_conn = 0x00000000
 			self.resume_handle_share = 0x00000000
 			self.max_buffer = -1
@@ -68,6 +67,8 @@ class srvsvcPipeManager(object) :
 			self.share_list = []
 			self.share_names_list = []
 			self.share_types_list = []
+						
+
 			
 		
 		 
@@ -86,41 +87,73 @@ class srvsvcPipeManager(object) :
 			 
 			
    
-	
-	def  translate_type_comment(stype,required= 0):
-			""" Utility function translates share type from number to string and vice versa.
-				It returns the following : 
-				0: Int type
-				1: String type
-				2: Comment
+	@staticmethod
+	def  translate_types(stype,typeflags=""):
+			""" Utility function translates share type from number to string and vice versa.It also accounts for typeflags
+				returns the translated type , typeflags, and comment as list in that order
+				
+				If the int value of typeflag is given and the typeflags are specified they are used to generate 
+				compatible int format output .
+				Usage :
+				translate_types(stype, typeflags="")-> (stype_converted,typeflags,stype_comments)
+				
 			"""
 			typelist = (
-			('STYPE_DISKTREE','Disk drive',0x00000000),
-			('STYPE_PRINTQ','Print queue',0x00000001),
-			('STYPE_DEVICE','Communication device',0x00000002),
-			('STYPE_IPC','Interprocess communication (IPC)',0x00000003)
+			('STYPE_DISKTREE',0x00000000,' Disk drive'),
+			('STYPE_PRINTQ',0x00000001,' Print queue'),
+			('STYPE_DEVICE',0x00000002,' Communication device'),
+			('STYPE_IPC',0x00000003,' Interprocess communication (IPC)')
+			)
+			advanced_types = (
+			('STYPE_TEMPORARY',0x40000000,' Temporary resource'),
+			('STYPE_SPECIAL',0x80000000,' Special Resource'),
+			('STYPE_BOTH',0x40000000 | 0x80000000, ' Temporary and Special')
 			)
 			if isinstance(stype,str) :
-				stype_str = stype
 				for i in typelist :
 					if i[0] == stype:
-						stype_int = i[2]
-						stype_comm = i[1]
-			if isinstance(stype,int) :
-				stype_int = stype
+						stype_int = i[1]
+						stype_comm = i[2]
+				if typeflags != "" :
+					for i in advanced_types :
+						if i[0] == typeflags:
+							stype_int |= -i[1]
+							stype_comm += i[2]
+			
+				return stype_int,typeflags,stype_comm				
+		
+		# Now handle the special flags get them from int if present, (passed flags are ignored and reset
+						
+			if isinstance(stype,int) and typeflags == '':
+				if -(0x80000000 |0x40000000 ) <= stype < -0x80000000:	
+					typeflags = 'STYPE_BOTH'
+					stype += (0x80000000 |0x40000000 )
+				elif -0x80000000 <= stype < -0x40000000:
+					typeflags = 'STYPE_SPECIAL'
+					stype += 0x80000000
+				elif -0x40000000 <= stype < 0:
+					typeflags = 'STYPE_SPECIAL'
+					stype += 0x40000000	
 				for i in typelist :
-					if i[2] == stype:
+					if i[1] == stype:
 						stype_str = i[0]
 						stype_comm = i[1]
-			if comment == 0 :
-				return stype_int
-			elif comment == 1:
-				return stype_str
-			else :
-				return stype_comm
+			
+				return stype_str,typeflags,stype_comments
+		
+			if isinstance(stype,int) and typeflags != '' and stype >= 0:
+				stype_int = stype
+				if i in advanced_types:
+					if i[0] == typeflags:
+						stype_int |= -i[1]
+						stype_comm = i[2] + 'attribute added'
+						#can be used as an addon comment
+			
+				return stype_int,typeflags,stype_comments
 	
 	
-	def get_path_format(path= "",islocal= 0):
+	@staticmethod
+	def fix_path_format(path= "",islocal= 0):
 			""" Convert the unix path to relavant Info Struct path for samba share object 
 			It also checks for validity of path if it is local.
 			To be used for distktree (Files not IPC etc) type shares.
@@ -134,33 +167,25 @@ class srvsvcPipeManager(object) :
 				path = path.replace('/','\\')
 				path = "C:"+path
 				path = unicode(path)
-										
+			else :
+				raise TypeError							
 			return path	
 				
 	
-	def  modify_share(self,comment= "",max_users= 0xFFFFFFFF,name= "",password= "",path= "",permissions= None,sd_buf=None,stype= 'STYPE_DISKTREE',flags= "",islocal= 0):
+	def  modify_share(self,comment= "",max_users= 0xFFFFFFFF,password= "",path= "",permissions= None,sd_buf=None,islocal= 0):
 			""" Modifies share 502 object. """
 			
 			# FIXME sd_buf needs to be fixed 
-			
-			share = srvsvc.NetShareInfo502()
-			if comment == "" :
-				share.comment = translate_type_comment(stype,1)
-			else : 
+			self.get_share_local_cache()
+			share=self.get_share_info(name)
+			if comment != "" :
 				share.comment = comment
+			share.max_users= max_users
 			share.current_users = 0
-			share.name = name
 			share.password = password
-			share.path = get_path_format(path,islocal)
+			share.path = self.fix_path_format(path,islocal)
 			share.permissions = None
 			share.sd_buf = security 							#### FIXME
-			share.type = translate_type_comment(stype,0)
-			
-			# handle the special flags 
-			if flags == 'STYPE_TEMPORARY':
-				share.type |= 0x40000000
-			elif flags == 'STYPE_SPECIAL' :
-				share.type |= 0x80000000
 			parm_error = 0x00000000
 			parm_error = self.pipe.NetShareSetInfo(self.server_unc,name, 502, share, parm_error)
 			
@@ -179,13 +204,14 @@ class srvsvcPipeManager(object) :
 				self.share_types_list.append(i.type) 
 				
 				
-	def  add_share(self,name= ""):
+	def  add_share(self,name= "",stype= 'STYPE_DISKTREE',typeflags=""):
 		# Uses the default 502 share info
 			""" Add a share with a given name of type share info 502 with no parameters except name.
 			Should be followed by modify_share to complete the addition of the share."""
 			share = srvsvc.NetShareInfo502()
 			name = unicode(name)
 			share.name = name
+			share.type,typeflags,share.comment = translate_types(stype,typeflags)
 			parm_error = 0x00000000
 			parm_error = self.pipe.NetShareAdd(self.server_unc, 502, share, parm_error)
 			
@@ -220,3 +246,9 @@ class srvsvcPipeManager(object) :
 					stype =share_types_list[i.index()]
 			return stype
 	
+		
+	def  update_tod(self):
+			""" Updates Time and date (TOD) Info """
+			self.tod = self.pipe.NetRemoteTOD(self.server_unc)
+			
+				
