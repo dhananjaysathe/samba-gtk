@@ -335,25 +335,25 @@ class srvsvcPipeManager(object) :
 			return typestring,comment
 		
 		
-	def  get_file_security(self,sharename= "",filepath= "",secdesc):
+	def  get_file_security(self,secdesc,sharename= "",filepath= ""):
 			""" 
 			Returns a security  of a file .
 			Filepath must be full path relative to basepath of share's path.
 			
 			Usage:
-			s.get_file_security(self,sharename= "",filepath= "",secdesc)-> sd_buf
+			s.get_file_security(self,secdesc,sharename= "",filepath= "")-> sd_buf
 			"""
 			sharename=unicode(sharename)
 			sd_buf = self.pipe.NetGetFileSecurity(self.server_unc,share, filename, secdesc)	#FIXME secdesc	
 			return sd_buf
 		
-	def set_file_security (self,sharename= "",filepath= "",secdesc,sd_buf):
+	def set_file_security (self,secdesc,sd_buf,sharename= "",filepath= ""):
 			""" 
 			Returns a security  of a file .
 			Filepath must be full path relative to basepath of share's path.
 			
 			Usage:
-			S.set_file_security (self,sharename= "",filepath= "",secdesc,sd_buf) -> Boolean succes,[error]
+			S.set_file_security (self,secdesc,sd_buf,sharename= "",filepath= "") -> Boolean succes,[error]
 			"""
 			sharename=unicode(sharename)
 			try:
