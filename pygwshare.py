@@ -50,12 +50,15 @@ class srvsvcPipeManager(object) :
 			
 			self.server_unc = '\\'+server_address
 			self.server_info_basic = self.pipe.NetSrvGetInfo(self.server_unc,102) # basic user info object of type 102
+			
 			self.tod = self.pipe.NetRemoteTOD(self.server_unc)
+			self.conn_info=self.pipe.Net()
 			# both the above types are standard types as define in the SRVS specification
 			### Now init various default values
 			
 			self.resume_handle_conn = 0x00000000
 			self.resume_handle_share = 0x00000000
+			self.resume_handle = 0x00000000    #for general purposes where servers ignore this but it exists in the calls
 			self.max_buffer = -1
 			
 			# Initialise various cache lists :
@@ -67,6 +70,7 @@ class srvsvcPipeManager(object) :
 			self.share_list = []
 			self.share_names_list = []
 			self.share_types_list = []
+			self.disks_list = self.get_list_disks()
 						
 
 			
@@ -172,12 +176,13 @@ class srvsvcPipeManager(object) :
 			return path	
 				
 	
-	def  modify_share(self,comment= "",max_users= 0xFFFFFFFF,password= "",path= "",permissions= None,sd_buf=None,islocal= 0):
+	def  modify_share(self,name= "",comment= "",max_users= 0xFFFFFFFF,password= "",path= "",permissions= None,sd_buf=None,islocal= 0):
 			""" Modifies share 502 object. """
 			
 			# FIXME sd_buf needs to be fixed 
-			self.get_share_local_cache()
-			share=self.get_share_info(name)
+			name = unicode(name)
+			share = self.get_share_info_rpc(name)
+			
 			if comment != "" :
 				share.comment = comment
 			share.max_users= max_users
@@ -190,7 +195,7 @@ class srvsvcPipeManager(object) :
 			parm_error = self.pipe.NetShareSetInfo(self.server_unc,name, 502, share, parm_error)
 			
 	
-	def   get_share_local_cache(self) :
+	def   list_shares(self) :
 			""" Gets a list of all active shares and update the share and share_name list. """
 			self.share_list = []
 			self.share_names_list = []
@@ -216,21 +221,30 @@ class srvsvcPipeManager(object) :
 			parm_error = self.pipe.NetShareAdd(self.server_unc, 502, share, parm_error)
 			
 	
-	def  get_share_info(self,name= ""):
-			""" Gets share info for a share with a particular name """
+	def  get_share_info_local(self,name= ""):
+			""" Gets share info for a share with a particular name from local cache lists """
 			name = unicode(name)
 			for i in self.share_names_list :
 				if name == i :
 					return share_list[i.index()]
-			
+	
+	def get_share_info_rpc(self,name= ""):
+		""" Gets share info for a share with a particular name from the rpc server."""
+		name = unicode(name)
+		info = self.pipe.NetShareGetInfo(self.server_unc, name, 502)
+		return info		
+				
 	
 	def delete_share (self,name= ""):
 			""" Delete a share with the given name. """
 			reserved = None
 			name = unicode(name)
-			self.pipe.NetShareDel(self.server_unc, name, reserved)
-
-
+			try:
+				self.pipe.NetShareDel(self.server_unc, name, reserved)
+				return True
+			except e:
+				return False,e
+	# NOT supported yet :(
 	def remove_persistance (self,name= ""):
 			""" Removes persistance of a share """
 			reserved = None
@@ -239,7 +253,7 @@ class srvsvcPipeManager(object) :
 		
 	
 	def get_share_type (self,name= ""):
-			""" Returns type of share code """
+			""" Returns type of share code (uses local cache for now as the rpc server in samba4 does not support it yet"""
 			name = unicode(name)
 			for i in self.share_names_list :
 				if name == i :
@@ -251,4 +265,39 @@ class srvsvcPipeManager(object) :
 			""" Updates Time and date (TOD) Info """
 			self.tod = self.pipe.NetRemoteTOD(self.server_unc)
 			
-				
+	def  get_list_disks(self):
+		""" Returns a list of disks on the system , in samaba rpc server these are hard coded """
+		disk_info = srvsvc.NetDiskInfo()
+		self.disks_list = []
+		(disk_info, totalentries, self.resume_handle) = self.pipe.NetDiskEnum(self.server_unc,0, disk_info, 26, self.resume_handle)
+		for i in disk_info.disks :
+			if i != ""	:		# disk lists returns a blank entry not of consequence to the program
+				self.disks_list.append(i)
+		
+	@staticmethod	
+	def  get_platform_string(platform_id):
+		""" Returns OS type string and description"""
+		os_dict = {
+		300 :['PLATFORM_ID_DOS',' DOS'],
+		400 :['PLATFORM_ID_OS2',' OS2'],
+		500 :['PLATFORM_ID_NT',' Windows NT or a newer'],
+		600 :['PLATFORM_ID_OSF',' OSF/1'],
+		700 :['PLATFORM_ID_VMS',' VMS']
+		}
+		typestring,comment = os_dict[platform_id]
+		return typestring,comment
+		
+	def  get_file_security(self,sharename= "",filepath= "",secdesc= security.descriptor()):
+		""" Returns a security  of a file .
+		Filepath must be full path relative to basepath of share's path."""
+		sharename=unicode(sharename)
+		sd_buf = self.pipe.NetGetFileSecurity(self.server_unc,share, filename, secdesc)	#FIXME secdesc	
+		return sd_buf
+		
+	def set_file_security (self,sharename= "",filepath= "",secdesc= security.descriptor(),sd_buf):
+		""" Returns a security  of a file .
+		Filepath must be full path relative to basepath of share's path."""
+		sharename=unicode(sharename)
+		self.pipe.NetSetFileSecurity(self.server_unc,share, filename, secdesc,sd_buf)	#FIXME secdesc,sd_buf
+		
+		
