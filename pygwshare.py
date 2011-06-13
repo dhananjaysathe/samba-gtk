@@ -25,7 +25,7 @@ import os.path
 class srvsvcPipeManager(object) :
  
  def __init__(self, server_address, transport_type, username, password):
-  """ Initialize the pipe handling the srvsvc calls """
+  """ Initialize the pipe object handling the srvsvc calls """
   creds = credentials.Credentials()
   if (username.count("\\") > 0):
    creds.set_domain(username.split("\\")[0])
@@ -94,7 +94,7 @@ class srvsvcPipeManager(object) :
    
  @staticmethod
  def  translate_types(stype):
-  """ Translates SType dependinf on type.
+  """ Translates SType depending on type.
   
   If string is provided it gives the corresponding srvsvc.STYPE integer.
   If Integer value is input it returns the corresponding STYPE string.
@@ -246,8 +246,7 @@ class srvsvcPipeManager(object) :
  
  
  def get_share_info_rpc(self,name= ""):
-  """ 
-  Gets share info for a share with a particular name from the rpc server.
+  """ Gets share info for a share with a particular name from the rpc server.
   
   Usage:
   S.get_share_info_local(self,name= "") -> sahre_info (502 type)
@@ -285,8 +284,8 @@ class srvsvcPipeManager(object) :
  
  
  def get_share_type (self,name= ""):
-  """ 
-  Returns type of share code (uses local cache for now as the rpc server in samba4 does not support it yet
+  """ Returns type of share code 
+  uses local cache for now as the rpc server in samba4 does not support it yet
   		
   Usage:
   S.update_tod()
@@ -303,8 +302,7 @@ class srvsvcPipeManager(object) :
  
  
  def  update_tod(self):
-  """ 
-  Updates Time and date (TOD) Info of the pipe object.
+  """ Updates Time and date (TOD) Info of the pipe object.
   		
   Usage:
   update_tod() -> None
@@ -315,8 +313,8 @@ class srvsvcPipeManager(object) :
  
  
  def  get_list_disks(self):
-  """ 
-  Returns a list of disks on the system , in samaba rpc server these are hard coded .
+  """ Returns a list of disks on the system.
+  In samaba rpc server these are hard coded .
   Refreshes Disk list of the pipe object.
 			
   Usage:
@@ -333,8 +331,7 @@ class srvsvcPipeManager(object) :
  
  @staticmethod	
  def  get_platform_string(platform_id):
-  """ 
-  Returns OS type string and description.
+  """ Returns OS type string and description.
   
   Usage:
   S.get_platform_string(platform_id)-> platform_id_string,comment
@@ -353,8 +350,7 @@ class srvsvcPipeManager(object) :
  
  
  def  get_file_security(self,secdesc,sharename= "",filepath= ""):
-  """ 
-  Returns a security  of a file .
+  """ Returns a security descriptor buffer of a file .
   Filepath must be full path relative to basepath of share's path.
   
   Usage:
@@ -368,8 +364,7 @@ class srvsvcPipeManager(object) :
  
  
  def set_file_security (self,secdesc,sd_buf,sharename= "",filepath= ""):
-  """ 
-  Returns a security  of a file .
+  """ Sets the security  of a file .
   Filepath must be full path relative to basepath of share's path.
   
   Usage:
