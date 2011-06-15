@@ -25,7 +25,7 @@ import os.path
 class srvsvcPipeManager(object) :
  
  def __init__(self, server_address, transport_type, username, password):
-  """ Initialize the pipe object handling the srvsvc calls """
+  """ Initialize the pipe handling the srvsvc calls """
   creds = credentials.Credentials()
   if (username.count("\\") > 0):
    creds.set_domain(username.split("\\")[0])
@@ -39,8 +39,10 @@ class srvsvcPipeManager(object) :
    creds.set_workstation("")
    creds.set_password(password)
 
-  binding = "ncacn_np:%s" # srvsvc allows only named pipes tcp/upd not allowed under MS-SRVS specifications
-
+  #binding = "ncacn_np:%s" # srvsvc allows only named pipes tcp/upd not allowed
+  # How ever it worked in python console on localhost. Needs testing
+  
+  binding = ["ncacn_np:%s", "ncacn_ip_tcp:%s", "ncalrpc:%s"][transport_type]
   self.pipe = srvsvc.srvsvc(binding % (server_address), credentials = creds)
   
   # set up some basic parameters unique to the connection
@@ -92,7 +94,7 @@ class srvsvcPipeManager(object) :
    
  @staticmethod
  def  translate_types(stype):
-  """ Translates SType depending on type.
+  """ Translates SType dependinf on type.
   
   If string is provided it gives the corresponding srvsvc.STYPE integer.
   If Integer value is input it returns the corresponding STYPE string.
@@ -172,6 +174,7 @@ class srvsvcPipeManager(object) :
   S.modify_share(self,name= "",comment= "",max_users= 0xFFFFFFFF,password= "",path= "",permissions= None,sd_buf=None,islocal= 0) -> parm_error
 
   """
+  
   # FIXME sd_buf needs to be fixed 
   name = unicode(name)
   share = self.get_share_info_rpc(name)
@@ -191,26 +194,7 @@ class srvsvcPipeManager(object) :
  
  
  def  list_shares(self) :
-  """ Gets a list of all (not hidden/special)active shares and update the share and share_name list. 
-  
-  Usage:
-  S.list_shares() -> None
-  """
-  self.share_list = []
-  self.share_names_list = []
-  self.share_types_list = []
-  info_ctr = srvsvc.NetShareInfoCtr()
-  info_ctr.level = 502
-  (info_ctr, totalentries, resume_handle) = self.pipe.NetShareEnum(self.server_unc, info_ctr, self.max_buffer,self.resume_handle_share)
-  self.share_list = info_ctr.ctr.array
-  for i in self.share_list :
-   self.share_names_list.append(i.name)
-   self.share_types_list.append(i.type) 
- 
- 
- 
- def  list_shares_all(self) :
-  """ Gets a list of all (including hiden/special)active shares and update the share and share_name list. 
+  """ Gets a list of all active shares and update the share and share_name list. 
   
   Usage:
   S.list_shares() -> None
@@ -262,7 +246,8 @@ class srvsvcPipeManager(object) :
  
  
  def get_share_info_rpc(self,name= ""):
-  """ Gets share info for a share with a particular name from the rpc server.
+  """ 
+  Gets share info for a share with a particular name from the rpc server.
   
   Usage:
   S.get_share_info_local(self,name= "") -> sahre_info (502 type)
@@ -300,8 +285,8 @@ class srvsvcPipeManager(object) :
  
  
  def get_share_type (self,name= ""):
-  """ Returns type of share code 
-  uses local cache for now as the rpc server in samba4 does not support it yet
+  """ 
+  Returns type of share code (uses local cache for now as the rpc server in samba4 does not support it yet
   		
   Usage:
   S.update_tod()
@@ -318,7 +303,8 @@ class srvsvcPipeManager(object) :
  
  
  def  update_tod(self):
-  """ Updates Time and date (TOD) Info of the pipe object.
+  """ 
+  Updates Time and date (TOD) Info of the pipe object.
   		
   Usage:
   update_tod() -> None
@@ -329,8 +315,8 @@ class srvsvcPipeManager(object) :
  
  
  def  get_list_disks(self):
-  """ Returns a list of disks on the system.
-  In samaba rpc server these are hard coded .
+  """ 
+  Returns a list of disks on the system , in samaba rpc server these are hard coded .
   Refreshes Disk list of the pipe object.
 			
   Usage:
@@ -347,7 +333,8 @@ class srvsvcPipeManager(object) :
  
  @staticmethod	
  def  get_platform_string(platform_id):
-  """ Returns OS type string and description.
+  """ 
+  Returns OS type string and description.
   
   Usage:
   S.get_platform_string(platform_id)-> platform_id_string,comment
@@ -366,7 +353,8 @@ class srvsvcPipeManager(object) :
  
  
  def  get_file_security(self,secdesc,sharename= "",filepath= ""):
-  """ Returns a security descriptor buffer of a file .
+  """ 
+  Returns a security  of a file .
   Filepath must be full path relative to basepath of share's path.
   
   Usage:
@@ -380,7 +368,8 @@ class srvsvcPipeManager(object) :
  
  
  def set_file_security (self,secdesc,sd_buf,sharename= "",filepath= ""):
-  """ Sets the security  of a file .
+  """ 
+  Returns a security  of a file .
   Filepath must be full path relative to basepath of share's path.
   
   Usage:
