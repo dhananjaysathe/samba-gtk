@@ -9,7 +9,7 @@ import sys
 
 
 class srvsvcConnectDialog(gtk.Dialog):
- def __init__(self, server, transport_type, username, password = ""):
+ def __init__(self, server,username, password = ""):
   super(srvsvcConnectDialog, self).__init__()
   
   self.server_address = server
