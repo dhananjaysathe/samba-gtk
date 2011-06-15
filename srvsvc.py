@@ -101,7 +101,7 @@ class srvsvcConnectDialog(gtk.Dialog):
   label.set_alignment(0, 0.5)
   table.attach(label, 0, 1, 0, 1, gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
 
-  label = gtk.Label("RPC over SMB over TCP/IP")
+  label = gtk.Label("   RPC over SMB over TCP/IP")
   label.set_alignment(0, 0.5)
   label.set_tooltip_text("This is the only method supported by the Share Server Specification")
   table.attach(label, 0, 1, 1, 2, gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
