@@ -9,15 +9,19 @@ import sys
 
 
 class srvsvcConnectDialog(gtk.Dialog):
- def __init__(self, server,username, password = ""):
+ """Connect Dialog"""
+    
+ def __init__(self, server, transport_type, username, password = ""):
   super(srvsvcConnectDialog, self).__init__()
   
   self.server_address = server
   self.username = username
   self.password = password
-  
+  self.transport_type=transport_type
   
   self.create()
+  
+  self.update_sensitivity()
 
  def create (self):
   self.set_title("Connect to Samba Share Server")
@@ -88,23 +92,29 @@ class srvsvcConnectDialog(gtk.Dialog):
   self.password_entry.set_tooltip_text("Enter your Password")
   table.attach(self.password_entry, 1, 2, 2, 3, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
 
-  # transport frame
+ # transport frame
 
   self.transport_frame = gtk.Frame(" Transport type ")
   self.vbox.pack_start(self.transport_frame, False, True, 0)
 
-  table = gtk.Table(2, 1)
-  table.set_border_width(5)
-  self.transport_frame.add(table)
-  
-  label = gtk.Label(" Transport Type :")
-  label.set_alignment(0, 0.5)
-  table.attach(label, 0, 1, 0, 1, gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+  vbox = gtk.VBox()
+  vbox.set_border_width(5)
+  self.transport_frame.add(vbox)
 
-  label = gtk.Label("   RPC over SMB over TCP/IP")
-  label.set_alignment(0, 0.5)
-  label.set_tooltip_text("This is the only method supported by the Share Server Specification")
-  table.attach(label, 0, 1, 1, 2, gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+  self.rpc_smb_tcpip_radio_button = gtk.RadioButton(None, "RPC over SMB over TCP/IP ")
+  self.rpc_smb_tcpip_radio_button.set_tooltip_text("ncacn_np type : Recomended (default)") ## according MS-SRVS specification
+  self.rpc_smb_tcpip_radio_button.set_active(self.transport_type == 0)
+  vbox.pack_start(self.rpc_smb_tcpip_radio_button)
+
+  self.rpc_tcpip_radio_button = gtk.RadioButton(self.rpc_smb_tcpip_radio_button, "RPC over TCP/IP")
+  self.rpc_tcpip_radio_button.set_tooltip_text("ncacn_ip_tcp type") 
+  self.rpc_tcpip_radio_button.set_active(self.transport_type == 1)
+  vbox.pack_start(self.rpc_tcpip_radio_button)
+
+  self.localhost_radio_button = gtk.RadioButton(self.rpc_tcpip_radio_button, "Localhost")
+  self.localhost_radio_button.set_tooltip_text("ncalrpc type") ## MS-SRVS specification
+  self.localhost_radio_button.set_active(self.transport_type == 2)
+  vbox.pack_start(self.localhost_radio_button)
   
   
   # dialog buttons
@@ -123,6 +133,9 @@ class srvsvcConnectDialog(gtk.Dialog):
   self.set_default_response(gtk.RESPONSE_OK)
 
   # signals/events
+  self.rpc_smb_tcpip_radio_button.connect("toggled", self.on_radio_button_toggled)
+  self.rpc_tcpip_radio_button.connect("toggled", self.on_radio_button_toggled)
+  self.localhost_radio_button.connect("toggled", self.on_radio_button_toggled)
  
   def get_server_address(self):
    return self.server_address_entry.get_text().strip()
@@ -133,6 +146,30 @@ class srvsvcConnectDialog(gtk.Dialog):
   def get_password(self):
    return self.password_entry.get_text()
 
+  def update_sensitivity(self):
+   server_required = not self.localhost_radio_button.get_active()
+   self.server_address_entry.set_sensitive(server_required)
+   
+  def get_transport_type(self):
+   if self.rpc_smb_tcpip_radio_button.get_active():
+    return 0
+   elif self.rpc_tcpip_radio_button.get_active():
+    return 1
+   elif self.localhost_radio_button.get_active():
+    return 2
+   else:
+	return -1
+  
+  def on_radio_button_toggled(self, widget):
+   self.update_sensitivity()
 
 
-
+class ShareAddEditDialog(gtk.Dialog):
+ """ Share add and edit dialog 
+ 
+ if edit is set to True then in Edit mode .
+  """
+ 
+ def __init__ (self,  pipe_manager, share=None):
+  """ Class initialiser """
+  pass

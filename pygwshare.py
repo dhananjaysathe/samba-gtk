@@ -39,8 +39,9 @@ class srvsvcPipeManager(object) :
    creds.set_workstation("")
    creds.set_password(password)
 
-  binding = "ncacn_np:%s" # srvsvc allows only named pipes tcp/upd not allowed under MS-SRVS specifications
-
+  #binding = "ncacn_np:%s" # srvsvc allows only named pipes tcp/upd not allowed under MS-SRVS specifications
+  
+  binding = ["ncacn_np:%s", "ncacn_ip_tcp:%s", "ncalrpc:%s"][transport_type]
   self.pipe = srvsvc.srvsvc(binding % (server_address), credentials = creds)
   
   # set up some basic parameters unique to the connection
@@ -96,10 +97,10 @@ class srvsvcPipeManager(object) :
   
   If string is provided it gives the corresponding srvsvc.STYPE integer.
   If Integer value is input it returns the corresponding STYPE string.
-  Additionally it also generates the comments.
-  		
+  Additionally it also generates the share type comments.
+  		 
   Usage :
-  S.translate_types(stype)-> (stype_converted,comments)
+  S.translate_types(stype)-> (stype_converted,stype_comments)
 				
   """
   stype_table = (
@@ -350,7 +351,7 @@ class srvsvcPipeManager(object) :
   """ Returns OS type string and description.
   
   Usage:
-  S.get_platform_string(platform_id)-> platform_id_string,comment
+  S.get_platform_string(platform_id)-> platform_id_string,platform_comment
   """
   os_dict = {
   srvsvc.PLATFORM_ID_DOS:['PLATFORM_ID_DOS',' DOS'],
@@ -359,8 +360,8 @@ class srvsvcPipeManager(object) :
   srvsvc.PLATFORM_ID_NT :['PLATFORM_ID_OSF',' OSF/1'],
   srvsvc.PLATFORM_ID_VMS :['PLATFORM_ID_VMS',' VMS']
   }
-  typestring,comment = os_dict[platform_id]
-  return typestring,comment
+  typestring,platform_comment = os_dict[platform_id]
+  return typestring,platform_comment
  
  
  
