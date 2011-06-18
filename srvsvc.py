@@ -61,6 +61,8 @@ class srvsvcConnectDialog(gtk.Dialog):
 
         self.vbox.pack_start(self.artwork, False, True, 0)
 
+        # server frame
+        
         self.server_frame = gtk.Frame('Server')
         self.vbox.pack_start(self.server_frame, False, True, 0)
 
@@ -98,6 +100,8 @@ class srvsvcConnectDialog(gtk.Dialog):
         self.password_entry.set_tooltip_text('Enter your Password')
         table.attach(self.password_entry, 1, 2, 2, 3, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
 
+        # transport frame
+        
         self.transport_frame = gtk.Frame(' Transport type ')
         self.vbox.pack_start(self.transport_frame, False, True, 0)
 
