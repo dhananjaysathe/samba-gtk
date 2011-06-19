@@ -91,39 +91,39 @@ class srvsvcPipeManager(object):
   Additionally it also generates the share type comments.
   ........ 
   Usage :
-  S.translate_types(stype)-> (stype_converted,stype_comments)
+  S.translate_types(stype)-> (stype_converted,stype_comments,major_type)
 ................
   """
 
         stype_table = (
-            ('STYPE_DEVICE', srvsvc.STYPE_DEVICE, ' Device Share '),
-            ('STYPE_DEVICE_HIDDEN', srvsvc.STYPE_DEVICE_HIDDEN,' Hidden Device '),
-            ('STYPE_DEVICE_TEMPORARY', srvsvc.STYPE_DEVICE_TEMPORARY,' Temporary Device '),
-            ('STYPE_DISKTREE', srvsvc.STYPE_DISKTREE, ' Disktree Share '),
-            ('STYPE_DISKTREE_HIDDEN', srvsvc.STYPE_DISKTREE_HIDDEN,' Hidden Disktree Share '),
-            ('STYPE_DISKTREE_TEMPORARY',srvsvc.STYPE_DISKTREE_TEMPORARY,' Temporary Disktree Share '),
+            ('STYPE_DEVICE', srvsvc.STYPE_DEVICE, ' Device Share ',2),
+            ('STYPE_DEVICE_HIDDEN', srvsvc.STYPE_DEVICE_HIDDEN,' Hidden Device ',2),
+            ('STYPE_DEVICE_TEMPORARY', srvsvc.STYPE_DEVICE_TEMPORARY,' Temporary Device ',2),
+            ('STYPE_DISKTREE', srvsvc.STYPE_DISKTREE, ' Disktree Share ',0),
+            ('STYPE_DISKTREE_HIDDEN', srvsvc.STYPE_DISKTREE_HIDDEN,' Hidden Disktree Share ',0),
+            ('STYPE_DISKTREE_TEMPORARY',srvsvc.STYPE_DISKTREE_TEMPORARY,' Temporary Disktree Share ',0),
             #( 'STYPE_HIDDEN',srvsvc.STYPE_HIDDEN,' Hidden Share '),
-            ('STYPE_IPC', srvsvc.STYPE_IPC, ' IPC Pipe '),
-            ('STYPE_IPC_HIDDEN', srvsvc.STYPE_IPC_HIDDEN,' Hidden IPC Pipe '),
-            ('STYPE_IPC_TEMPORARY', srvsvc.STYPE_IPC_TEMPORARY,' Temporary IPC Pipe '),
-            ('STYPE_PRINTQ', srvsvc.STYPE_PRINTQ, ' Print Queue '),
-            ('STYPE_PRINTQ_HIDDEN', srvsvc.STYPE_PRINTQ_HIDDEN,' Hidden Print Que '),
-            ('STYPE_PRINTQ_TEMPORARY', srvsvc.STYPE_PRINTQ_TEMPORARY,' Temporary Print Que'),
+            ('STYPE_IPC', srvsvc.STYPE_IPC, ' IPC Pipe ',3),
+            ('STYPE_IPC_HIDDEN', srvsvc.STYPE_IPC_HIDDEN,' Hidden IPC Pipe ',3),
+            ('STYPE_IPC_TEMPORARY', srvsvc.STYPE_IPC_TEMPORARY,' Temporary IPC Pipe ',3),
+            ('STYPE_PRINTQ', srvsvc.STYPE_PRINTQ, ' Print Queue ',1),
+            ('STYPE_PRINTQ_HIDDEN', srvsvc.STYPE_PRINTQ_HIDDEN,' Hidden Print Que ',1),
+            ('STYPE_PRINTQ_TEMPORARY', srvsvc.STYPE_PRINTQ_TEMPORARY,' Temporary Print Que',1),
             #( 'STYPE_TEMPORARY',srvsvc.STYPE_TEMPORARY,' Temporary Share ')
             ) # breaking PEP-8 convention for readblity
 
         if isinstance(stype, str):
             for i in stype_table:
-                if i[0x00000000] == stype:
-                    (stype_int, stype_comm) = (i[1], i[2])
-                    return (stype_int, stype_comm)
+                if i[0] == stype:
+                    (stype_int, stype_comm,major_type) = (i[1], i[2],i[3])
+                    return (stype_int, stype_comm,major_type)
                 else:
                     raise KeyError('Invalid Share Type')
         if isinstance(stype, int):
             for i in stype_table:
                 if i[1] == stype:
-                    (stype_str, stype_comm) = (i[0x00000000], i[2])
-                    return (stype_str, stype_comm)
+                    (stype_str, stype_comm,major_type) = (i[0], i[2],i[3])
+                    return (stype_str, stype_comm,major_type)
                 else:
                     raise KeyError('Invalid Share Type')
 

@@ -198,14 +198,34 @@ class ShareAddEditDialog(gtk.Dialog):
             self.share = share
         
 
-    def  create():
+    def  create(self):
         """ Create the window """
         self.set_title([" New Share"," Edit Share : "][self.edit_mode]+ " " + self.share.name)
         self.set_border_width(5)
-        self.icon_name = ["network-folder","network-printer","network-pipe"][self.share_category] 
-        self.set_icon_from_file(os.path.join(sys.path[0], "images", self.icon_name))
+        if edit_mode:
+            self.share_category = 1 + self.pipe.translate_types(share.type)[2] 
+        else :
+            self.share_category = 0
+        self.icon_name = ["network","network-folder","network-printer","network","network-pipe"][self.share_category] 
+        self.icon_filename = os.path.join(sys.path[0], "images", (self.icon_name+'.png'))
+        self.set_icon_from_file(self.icon_filename)
+        
+        #artwork
+        self.desc_box= gtk.HBox()
+        
+        self.desc_icon_box = gtk.HBox()
+        self.desc_icon_box_image =  gtk.Image()
+        self.desc_icon_box_image.set_from_file(self.icon_filename)
+        
+        self.desc_icon_box.pack_start(self.desc_icon_box_image, True, True, 0)
+        self.desc_box.pack_start(self.desc_icon_box,False, True, 0)
         
         
-        
-        
+        self.desc_text_box = gtk.HBox()
+        self.desc_label = gtk.Label()
+        if edit_mode :
+            self.desc_label.set_text("Edit The Share")
+            
+    
+
         
