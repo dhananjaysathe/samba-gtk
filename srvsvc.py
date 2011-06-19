@@ -182,12 +182,30 @@ class ShareAddEditDialog(gtk.Dialog):
 
     """ Share add and edit dialog 
  
- if edit is set to True then in Edit mode .
+ If 'edit_mode' is set to True then in Edit mode .
+ Immutable fields are automatically greyed out.
   """
 
     def __init__(self, pipe_manager, share=None):
         """ Class initialiser """
+        super(ShareAddEditDialog, self).__init__()
+        self.pipe = pipe_manager
+        if share is None :
+            self.edit_mode = 0
+            
+		else :
+            self.edit_mode =  1
+            self.share = share
+        
 
-        pass
-
-
+    def  create():
+        """ Create the window """
+        self.set_title([" New Share"," Edit Share : "][self.edit_mode]+ " " + self.share.name)
+        self.set_border_width(5)
+        self.icon_name = ["network-folder","network-printer","network-pipe"][self.share_category] 
+        self.set_icon_from_file(os.path.join(sys.path[0], "images", self.icon_name))
+        
+        
+        
+        
+        

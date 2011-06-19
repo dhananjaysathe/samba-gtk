@@ -62,7 +62,10 @@ class srvsvcPipeManager(object):
         # This should reduce the queries and improve performance
         # The share list will be locally maintained any via the get_share_local_cache
         
-        self.islocal = 0x00000000  # set to one if connect is to localhost........
+        if server_address == '127.0.0.1':
+            self.islocal = True
+        else:
+            self.islocal = False
         self.conn_list = []
         self.share_list = []
         self.share_names_list = []
@@ -73,6 +76,7 @@ class srvsvcPipeManager(object):
         except:
             self.list_shares()
         
+
 
     def close(self):
         pass
@@ -114,28 +118,29 @@ class srvsvcPipeManager(object):
                     (stype_int, stype_comm) = (i[1], i[2])
                     return (stype_int, stype_comm)
                 else:
-                    raise KeyError
+                    raise KeyError('Invalid Share Type')
         if isinstance(stype, int):
             for i in stype_table:
                 if i[1] == stype:
                     (stype_str, stype_comm) = (i[0x00000000], i[2])
                     return (stype_str, stype_comm)
                 else:
-                    raise KeyError
+                    raise KeyError('Invalid Share Type')
 
-    @staticmethod
-    def fix_path_format(path='', islocal=0x00000000):
+
+
+    def fix_path_format(self,path=''):
         """ Fixes and checks the given path to make it in tthe correct format 
   
   Convert the unix path to relavant Info Struct path for samba share object 
   It also checks for validity of path if it is local.
   To be used for distktree (Files not IPC etc) type shares.
   Usage :
-  S.fix_path_format(path= \"\",islocal= 0) -> path
+  S.fix_path_format(path= "") -> path
   
   """
 
-        if self.islocal == 1:
+        if self.islocal :
             if os.path.exists(path):
                 path = os.path.realpath(path)  # gets canonical path
             else:
@@ -148,8 +153,9 @@ class srvsvcPipeManager(object):
             elif path.startswith('C:'):
                 path = unicode(path)
             else:
-                raise KeyError
+                raise TypeError('Invalid path Argument')
         return path
+
 
     
     # NOT supported yet
@@ -170,42 +176,26 @@ class srvsvcPipeManager(object):
                                  self.resume_handle_conn)
         for i in info_ctr.ctr.array :
             self.conn_list.append(i)
+
     
     
-    def modify_share(
-        self,
-        name='',
-        comment='',
-        max_users=0xFFFFFFFF,
-        password='',
-        path='',
-        permissions=None,
-        sd_buf=None,
-        islocal=0x00000000,
-        ):
+    def modify_share(self,share=None):
         """ Modifies share 502 object. 
   
   Usage:
-  S.modify_share(self,name= "",comment= "",max_users= 0xFFFFFFFF,password= "",path= "",permissions= None,sd_buf=None,islocal= 0) -> parm_error
+  S.modify_share(self,share)-> parm_error
 
   """
-
-        # FIXME sd_buf needs to be fixed 
-        name = unicode(name)
-        share = self.get_share_info_rpc(name)
-
-        if comment != '':
-            share.comment = comment
-        share.max_users = max_users
-        share.current_users = 0x00000000
-        share.password = password
-        share.path = self.fix_path_format(path, islocal)
-        share.permissions = None
-        share.sd_buf = security  # ### FIXME
+        if share is None:
+			raise KeyError("Illegal to pass null share type.")
+		
         parm_error = 0x00000000
+        name = share.name
         parm_error = self.pipe.NetShareSetInfo(self.server_unc, name,
                 502, share, parm_error)
         return parm_error
+
+
 
     def list_shares(self):
         """ Gets a list of all (not hidden/special)active shares and update the share and share_name list. 
@@ -228,6 +218,8 @@ class srvsvcPipeManager(object):
             self.share_names_list.append(i.name)
             self.share_types_list.append(i.type)
 
+
+
     def list_shares_all(self):
         """ Gets a list of all (including hiden/special)active shares and update the share and share_name list. 
   
@@ -248,25 +240,27 @@ class srvsvcPipeManager(object):
             self.share_names_list.append(i.name)
             self.share_types_list.append(i.type)
 
-    def add_share(self, name='', stype=''):
+
+
+    def add_share(self, share=None):
         """Adds a share with a given name and type
   This uses a share info 502 object.
   Should be followed by modify_share to complete the addition of the share.
   
   Usage :
-  S.add_share(self,name= \"\",stype= \"\") -> parm_error
+  S.add_share(self,share=None) -> parm_error
   
   """
-
+        name = share.name
+        if share is None :
+			raise KeyError("Illegal to pass null share type.")
         # Uses the default 502 share info
-        share = srvsvc.NetShareInfo502()
-        name = unicode(name)
-        share.name = name
-        (share.type, share.comment) = translate_types(stype)
         parm_error = 0x00000000
         parm_error = self.pipe.NetShareAdd(self.server_unc, 502, share,
                 parm_error)
         return parm_error
+
+
 
     def get_share_info_local(self, name=''):
         """ Gets share info for a share with a particular name from local cache lists.
@@ -280,6 +274,8 @@ class srvsvcPipeManager(object):
             if name == i:
                 return share_list[i.index()]
 
+
+
     def get_share_info_rpc(self, name=''):
         """ Gets share info for a share with a particular name from the rpc server.
   
@@ -290,6 +286,8 @@ class srvsvcPipeManager(object):
         name = unicode(name)
         info = self.pipe.NetShareGetInfo(self.server_unc, name, 502)
         return info
+
+
 
     def delete_share(self, name=''):
         """ Delete a share with the given name. 
@@ -302,6 +300,8 @@ class srvsvcPipeManager(object):
         name = unicode(name)
         self.pipe.NetShareDel(self.server_unc, name, reserved)
 
+
+
     # NOT supported yet 
     def remove_persistance(self, name=''):
         """ Removes persistance of a share .
@@ -313,6 +313,8 @@ class srvsvcPipeManager(object):
         reserved = None  # to figure out what type python accepts maybee int or str
         name = unicode(name)
         self.pipe.NetShareDelSticky(self.server_unc, name, reserved)
+
+
 
     def get_share_type(self, name=''):
         """ Returns type of share code 
@@ -330,6 +332,8 @@ class srvsvcPipeManager(object):
                 raise KeyError
         return stype
 
+
+
     def update_tod(self):
         """ Updates Time and date (TOD) Info of the pipe object.
   ........
@@ -338,6 +342,8 @@ class srvsvcPipeManager(object):
   """
 
         self.tod = self.pipe.NetRemoteTOD(self.server_unc)
+
+
 
     def get_list_disks(self):
         """ Returns a list of disks on the system.
@@ -357,6 +363,9 @@ class srvsvcPipeManager(object):
             if i != '':  # disk lists returns a blank entry not of consequence to the program
                 self.disks_list.append(i)
 
+
+
+
     @staticmethod
     def get_platform_string(platform_id):
         """ Returns OS type string and description.
@@ -374,6 +383,8 @@ class srvsvcPipeManager(object):
             }
         (typestring, platform_comment) = os_dict[platform_id]
         return (typestring, platform_comment)
+
+
 
     def get_file_security(
         self,
@@ -393,6 +404,8 @@ class srvsvcPipeManager(object):
                 filename, secdesc)  # FIXME secdesc....
         return sd_buf
 
+
+
     def set_file_security(
         self,
         secdesc,
@@ -411,4 +424,38 @@ class srvsvcPipeManager(object):
         self.pipe.NetSetFileSecurity(self.server_unc, share, filename,
                 secdesc, sd_buf)  # FIXME secdesc,sd_buf
 
-
+    def get_share_object (
+        self,
+        name= None,
+        stype= None,
+        comment= '',
+        max_users=0xFFFFFFFF,
+        password= '',
+        path= '',
+        #permissions= None,
+        sd_buf= None
+        ):
+        """ Gets a 502 type share object. 
+  Usage:
+  S.get_share_object(self,name= "",comment= "",max_users= 0xFFFFFFFF,password= "",path= "",permissions= None,sd_buf=None) -> share (502 type share object)
+  """
+        share = srvsvc.NetShareInfo502()
+        
+        if name is None or stype is None :
+            raise KeyError('Missing name / type')
+        
+        if comment is'':
+            share.comment = self.translate_types(stype)[1]
+        else:
+            share.comment = comment
+        
+        share.name = unicode(name)
+        share.type = stype
+        share.current_users = 0x00000000
+        share.max_users= max_users
+        share.password = password
+        share.path = self.fix_path_format(path)
+        share.permissions = None
+        share.sd_buf = sd_buf  # ### FIXME
+        
+        return share
