@@ -7,6 +7,7 @@ import gtk
 import gobject
 import os
 import sys
+from samba.dcerpc import srvsvc
 
 
 class srvsvcConnectDialog(gtk.Dialog):
@@ -40,7 +41,7 @@ class srvsvcConnectDialog(gtk.Dialog):
         self.vbox.set_spacing(5)
 
         # artwork
-        
+
         self.artwork = gtk.VBox()
 
         self.samba_image_filename = os.path.join(sys.path[0], 'images',
@@ -62,7 +63,7 @@ class srvsvcConnectDialog(gtk.Dialog):
         self.vbox.pack_start(self.artwork, False, True, 0)
 
         # server frame
-        
+
         self.server_frame = gtk.Frame('Server')
         self.vbox.pack_start(self.server_frame, False, True, 0)
 
@@ -101,7 +102,7 @@ class srvsvcConnectDialog(gtk.Dialog):
         table.attach(self.password_entry, 1, 2, 2, 3, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
 
         # transport frame
-        
+
         self.transport_frame = gtk.Frame(' Transport type ')
         self.vbox.pack_start(self.transport_frame, False, True, 0)
 
@@ -180,8 +181,8 @@ class srvsvcConnectDialog(gtk.Dialog):
 
 class ShareAddEditDialog(gtk.Dialog):
 
-    """ Share add and edit dialog 
- 
+    """ Share add and edit dialog
+
  If 'edit_mode' is set to True then in Edit mode .
  Immutable fields are automatically greyed out.
   """
@@ -190,42 +191,144 @@ class ShareAddEditDialog(gtk.Dialog):
         """ Class initialiser """
         super(ShareAddEditDialog, self).__init__()
         self.pipe = pipe_manager
+
         if share is None :
             self.edit_mode = 0
-            
-		else :
+            self.init_values_blank()
+
+        else :
             self.edit_mode =  1
             self.share = share
-        
+            self.share_to_values()
+        self.add_mode = not self.edit_mode
+
 
     def  create(self):
         """ Create the window """
         self.set_title([" New Share"," Edit Share : "][self.edit_mode]+ " " + self.share.name)
         self.set_border_width(5)
         if edit_mode:
-            self.share_category = 1 + self.pipe.translate_types(share.type)[2] 
+            self.share_category = 1 + self.pipe.translate_types(share.type)[2]
         else :
             self.share_category = 0
-        self.icon_name = ["network","network-folder","network-printer","network","network-pipe"][self.share_category] 
+        self.icon_name = ["network","network-folder","network-printer","network","network-pipe"][self.share_category]
         self.icon_filename = os.path.join(sys.path[0], "images", (self.icon_name+'.png'))
         self.set_icon_from_file(self.icon_filename)
-        
+
         #artwork
         self.desc_box= gtk.HBox()
-        
-        self.desc_icon_box = gtk.HBox()
-        self.desc_icon_box_image =  gtk.Image()
-        self.desc_icon_box_image.set_from_file(self.icon_filename)
-        
-        self.desc_icon_box.pack_start(self.desc_icon_box_image, True, True, 0)
-        self.desc_box.pack_start(self.desc_icon_box,False, True, 0)
-        
-        
-        self.desc_text_box = gtk.HBox()
-        self.desc_label = gtk.Label()
-        if edit_mode :
-            self.desc_label.set_text("Edit The Share")
-            
-    
+        self.vbox.pack_start(self.desc_box,False,True,0)
 
+        hbox = gtk.HBox()
+        icon =  gtk.Image()
+        icon.set_from_file(self.icon_filename)
+
+        hbox.pack_start(icon, False, True, 0)
+        self.desc_box.pack_start(hbox,False, True, 0)
+
+
+        hbox = gtk.HBox()
+        label = gtk.Label()
+        if edit_mode :
+            label.set_text("Edit The Share")
+        else :
+            label.set_text("Add a New Share")
+        label.set_alignment(0, 0.5)
+        hbox.pack_start(label, True, True, 0)
+        self.desc_box.pack_start(hbox,True, True, 0)
+
+        # main box
+
+        self.main_box  = gtk.HBox()
+        self.vbox.pack_start(self.main_box,True,True,0)
+
+        #vertical logo
+        vbox = gtk.VBox()
+        samba_image_filename = os.path.join(sys.path[0], 'images',
+                'samba-logo-vertical.png')
+        samba_image = gtk.Image()
+        samba_image.set_from_file(samba_image_filename)
+        vbox.pack_end(samba_image, False, True, 0)
+
+        self.main_box.pack_start(vbox, False, True, 0)
+
+        # the main form
+
+        self.form_box = gtk.VBox()
+        self.main_box.pack_start(self.form_box, True, True, 0)
+
+        # Name and comment frame
+        self.name_comment_frame = gtk.Frame("Name and Comment")
+        self.form_box.pack_start(self.name_comment_frame, True, True, 0)
+
+        table = gtk.Table(2,2)
+        table.set_border_width(5)
+        self.name_comment_frame.add(table)
+
+        label = gtk.Label(' Share Name : ')
+        label.set_alignment(0, 0.5)
+        table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        self.share_name_entry = gtk.Entry()
+        self.share_name_entry.set_activates_default(self.add_mode) # In edit Mode Disabled
+        self.share_name_entry.set_tooltip_text('Enter the Share Name')
+        table.attach(self.share_name_entry, 1, 2, 0, 1, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
+
+        label = gtk.Label(' Comment  : ')
+        label.set_alignment(0, 0.5)
+        table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        self.share_comment_entry = gtk.Entry()
+        self.share_comment_entry.set_max_length(40) # max allowed is 40 MS-SRVS
+        self.share_comment_entry.set_activates_default(True)
+        self.share_comment_entry.set_tooltip_text('Add a Comment or Description of the Share, Will default to share_type description')
+        table.attach(self.share_comment_entry, 1, 2, 1, 2, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
+
+        # Share frame
+        self.stype_frame = gtk.Frame("Share Type")
+        self.form_box.pack_start(self.stype_frame, False, True, 0)
+
+        self.stype_table = gtk.Table(1,2,True)
+        self.stype_frame.add(stype_table)
+
+        # Base Share Types
+        vbox = gtk.VBox()
+        vbox.set_border_width(5)
+        self.stype_table.attach(vbox,0,1,0,1,gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
+
+        # Radio buttons
+        self.stype_disktree_radio_button = gtk.RadioButton(None,'Disktree')
+        self.stype_disktree_radio_button.set_tooltip_text('Disktree (folder) type Share. Default')
+        self.stype_disktree_radio_button.set_active(self.share_type == srvsvc.STYPE_DISKTREE)
+        vbox.pack_start(self.stype_disktree_radio_button)
+
+        self.stype_printq_radio_button = gtk.RadioButton(self.stype_disktree_radio_button,'Print Queue')
+        self.stype_printq_radio_button.set_tooltip_text('Shared Print Queue')
+        self.stype_printq_radio_button.set_active(self.share_type == srvsvc.STYPE_PRINTQ)
+        vbox.pack_start(self.stype_printq_radio_button)
+
+        self.stype_ipc_radio_button = gtk.RadioButton(self.stype_printq_radio_button,'IPC ')
+        self.stype_ipc_radio_button.set_tooltip_text('Shared Interprocess Communication Pipe (IPC).')
+        self.stype_ipc_radio_button.set_active(self.share_type == srvsvc.STYPE_IPC)
+        vbox.pack_start(self.stype_ipc_radio_button)
         
+        # Special Share Flags
+        vbox = gtk.VBox()
+        vbox.set_border_width(5)
+        self.sflag_table.attach(vbox,1,2,0,1,gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
+
+        # Radio buttons
+        self.sflag_default_radio_button = gtk.RadioButton(None,'Default')
+        self.sflag_default_radio_button.set_tooltip_text('Defaults (No options) ')
+        self.sflag_default_radio_button.set_active(self.share_flag == 0)
+        vbox.pack_start(self.sflag_default_radio_button)
+
+        self.sflag_temp_radio_button = gtk.RadioButton(self.sflag_default_radio_button,'Temporary')
+        self.sflag_temp_radio_button.set_tooltip_text('Make share Temporary')
+        self.sflag_temp_radio_button.set_active(self.share_flag == srvsvc.STYPE_TEMPORARY)
+        vbox.pack_start(self.sflag_temp_radio_button)
+
+        self.sflag_hidden_radio_button = gtk.RadioButton(self.sflag_temp_radio_button,'Hidden ')
+        self.sflag_hidden_radio_button.set_tooltip_text('Make share hidden.')
+        self.sflag_hidden_radio_button.set_active(self.share_flag == STYPE_HIDDEN)
+        vbox.pack_start(self.sflag_hidden_radio_button)

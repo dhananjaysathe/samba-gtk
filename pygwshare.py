@@ -424,8 +424,10 @@ class srvsvcPipeManager(object):
         self.pipe.NetSetFileSecurity(self.server_unc, share, filename,
                 secdesc, sd_buf)  # FIXME secdesc,sd_buf
 
+
+
+    @staticmethod
     def get_share_object (
-        self,
         name= None,
         stype= None,
         comment= '',
