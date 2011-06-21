@@ -428,8 +428,8 @@ class srvsvcPipeManager(object):
 
     @staticmethod
     def get_share_object (
-        name= None,
-        stype= None,
+        name= "",
+        stype= 0,
         comment= '',
         max_users=0xFFFFFFFF,
         password= '',
@@ -443,14 +443,7 @@ class srvsvcPipeManager(object):
   """
         share = srvsvc.NetShareInfo502()
         
-        if name is None or stype is None :
-            raise KeyError('Missing name / type')
-        
-        if comment is'':
-            share.comment = self.translate_types(stype)[1]
-        else:
-            share.comment = comment
-        
+        share.comment = unicode(comment)
         share.name = unicode(name)
         share.type = stype
         share.current_users = 0x00000000
