@@ -194,24 +194,20 @@ class ShareAddEditDialog(gtk.Dialog):
 
         if share is None :
             self.edit_mode = 0
-            self.init_values_blank()
-
+            self.share = self.pipe.get_share_object()
         else :
             self.edit_mode =  1
             self.share = share
-            self.share_to_values()
-        self.add_mode = not self.edit_mode
+        self.share_to_fields()
+
+
 
 
     def  create(self):
         """ Create the window """
-        self.set_title([" New Share"," Edit Share : "][self.edit_mode]+ " " + self.share.name)
+        self.set_title([" New Share"," Edit Share : "][self.edit_mode]+ " " + self.share_name)
         self.set_border_width(5)
-        if edit_mode:
-            self.share_category = 1 + self.pipe.translate_types(share.type)[2]
-        else :
-            self.share_category = 0
-        self.icon_name = ["network","network-folder","network-printer","network","network-pipe"][self.share_category]
+        self.icon_name = ["network","network-folder","network-printer","network","network-pipe"][self.share_type]
         self.icon_filename = os.path.join(sys.path[0], "images", (self.icon_name+'.png'))
         self.set_icon_from_file(self.icon_filename)
 
@@ -257,20 +253,20 @@ class ShareAddEditDialog(gtk.Dialog):
         self.form_box = gtk.VBox()
         self.main_box.pack_start(self.form_box, True, True, 0)
 
-        # Name and comment frame
-        self.name_comment_frame = gtk.Frame("Name and Comment")
-        self.form_box.pack_start(self.name_comment_frame, True, True, 0)
+        # Name , password and comment (npc) frame
+        self.npc_frame = gtk.Frame("Name and Comment")
+        self.form_box.pack_start(self.npc_frame, True, True, 0)
 
         table = gtk.Table(2,2)
         table.set_border_width(5)
-        self.name_comment_frame.add(table)
+        self.npc_frame.add(table)
 
         label = gtk.Label(' Share Name : ')
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         self.share_name_entry = gtk.Entry()
-        self.share_name_entry.set_activates_default(self.add_mode) # In edit Mode Disabled
+        self.share_name_entry.set_activates_default(not self.edit_mode) # In edit Mode Disabled
         self.share_name_entry.set_tooltip_text('Enter the Share Name')
         table.attach(self.share_name_entry, 1, 2, 0, 1, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
 
@@ -279,14 +275,14 @@ class ShareAddEditDialog(gtk.Dialog):
         table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         self.share_comment_entry = gtk.Entry()
-        self.share_comment_entry.set_max_length(40) # max allowed is 40 MS-SRVS
+        self.share_comment_entry.set_max_length(48) # max allowed is 48 MS-SRVS
         self.share_comment_entry.set_activates_default(True)
         self.share_comment_entry.set_tooltip_text('Add a Comment or Description of the Share, Will default to share_type description')
         table.attach(self.share_comment_entry, 1, 2, 1, 2, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
 
         # Share frame
         self.stype_frame = gtk.Frame("Share Type")
-        self.form_box.pack_start(self.stype_frame, False, True, 0)
+        self.form_box.pack_start(self.stype_frame, True, True, 0)
 
         self.stype_table = gtk.Table(1,2,True)
         self.stype_frame.add(stype_table)
@@ -311,7 +307,7 @@ class ShareAddEditDialog(gtk.Dialog):
         self.stype_ipc_radio_button.set_tooltip_text('Shared Interprocess Communication Pipe (IPC).')
         self.stype_ipc_radio_button.set_active(self.share_type == srvsvc.STYPE_IPC)
         vbox.pack_start(self.stype_ipc_radio_button)
-        
+
         # Special Share Flags
         vbox = gtk.VBox()
         vbox.set_border_width(5)
@@ -332,3 +328,5 @@ class ShareAddEditDialog(gtk.Dialog):
         self.sflag_hidden_radio_button.set_tooltip_text('Make share hidden.')
         self.sflag_hidden_radio_button.set_active(self.share_flag == STYPE_HIDDEN)
         vbox.pack_start(self.sflag_hidden_radio_button)
+        
+        
