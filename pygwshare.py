@@ -82,89 +82,72 @@ class srvsvcPipeManager(object):
     def  get_share_type_info(stype,field):
         """ Return the desired info about a share type
         Retrievable types :
-        'typestring' : The generic name of the share type
-        'desc' : Description of the type
-        'base_type' : Base share type
-        'flags' : special flags (hidden/temp)
+        'typestring' -> The generic name of the share type
+        'desc' -> Description of the type
+        'base_type' -> Base share type
+        'flags' -> special flags (Boolean temporary,Boolean hidden)
  ..........
   Usage :
   S.get_share_type_info(stype,field) -> desired information
   """
-        share_type_info_dict = {
+        base_dict = {
             srvsvc.STYPE_DISKTREE : {
                         'typestring' :'STYPE_DISKTREE',
-                        'desc' : 'Disktree (Folder) Share',
-                        'base_type' : srvsvc.STYPE_DISKTREE,
-                        'flags' : 0,
+                        'desc' : 'Disktree (Folder) Share'
                         },
-            srvsvc.STYPE_DISKTREE_TEMPORARY : {
-                        'typestring' :'STYPE_DISKTREE_TEMPORARY',
-                        'desc' : 'Temporary Disktree (Folder) Share',
-                        'base_type' : srvsvc.STYPE_DISKTREE,
-                        'flags' : srvsvc.STYPE_TEMPORARY,
-                        },
-            srvsvc.STYPE_DISKTREE_HIDDEN : {
-                        'typestring' :'STYPE_DISKTREE_HIDDEN',
-                        'desc' : 'Hidden Disktree (Folder) Share',
-                        'base_type' : srvsvc.STYPE_DISKTREE,
-                        'flags' : srvsvc.STYPE_HIDDEN,
-                        },
+
             srvsvc.STYPE_PRINTQ : {
                         'typestring' :'STYPE_PRINTQ',
-                        'desc' : 'Print Queue Share',
-                        'base_type' : srvsvc.STYPE_PRINTQ,
-                        'flags' : 0,
+                        'desc' : 'Print Queue Share'
                         },
-            srvsvc.STYPE_PRINTQ_TEMPORARY : {
-                        'typestring' :'STYPE_PRINTQ_TEMPORARY',
-                        'desc' : 'Temporary Print Queue Share',
-                        'base_type' : srvsvc.STYPE_PRINTQ,
-                        'flags' : srvsvc.STYPE_TEMPORARY,
-                        },
-            srvsvc.STYPE_PRINTQ_HIDDEN : {
-                        'typestring' :'STYPE_PRINTQ_HIDDEN',
-                        'desc' : 'Hidden Print Queue Share',
-                        'base_type' : srvsvc.STYPE_PRINTQ,
-                        'flags' : srvsvc.STYPE_HIDDEN,
-                        },
+
             srvsvc.STYPE_DEVICE : {
                         'typestring' :'STYPE_DEVICE',
-                        'desc' : 'Device Share',
-                        'base_type' : srvsvc.STYPE_DEVICE,
-                        'flags' : 0,
+                        'desc' : 'Device Share'
                         },
-            srvsvc.STYPE_DEVICE_TEMPORARY : {
-                        'typestring' :'STYPE_DEVICE_TEMPORARY',
-                        'desc' : 'Temporary Device Share',
-                        'base_type' : srvsvc.STYPE_DEVICE,
-                        'flags' : srvsvc.STYPE_TEMPORARY,
-                        },
-            srvsvc.STYPE_DEVICE_HIDDEN : {
-                        'typestring' :'STYPE_DEVICE_HIDDEN',
-                        'desc' : 'Hidden Device Share',
-                        'base_type' : srvsvc.STYPE_DEVICE,
-                        'flags' : srvsvc.STYPE_HIDDEN,
-                        },
+
             srvsvc.STYPE_IPC : {
                         'typestring' :'STYPE_IPC',
-                        'desc' : 'IPC Share',
-                        'base_type' : srvsvc.STYPE_IPC,
-                        'flags' : 0,
-                        },
-            srvsvc.STYPE_IPC_TEMPORARY : {
-                        'typestring' :'STYPE_IPC_TEMPORARY',
-                        'desc' : 'Temporary IPC Share',
-                        'base_type' : srvsvc.STYPE_IPC,
-                        'flags' : srvsvc.STYPE_TEMPORARY,
-                        },
-            srvsvc.STYPE_IPC_HIDDEN : {
-                        'typestring' :'STYPE_IPC_HIDDEN',
-                        'desc' : 'Hidden IPC Share',
-                        'base_type' : srvsvc.STYPE_IPC,
-                        'flags' : srvsvc.STYPE_HIDDEN,
+                        'desc' : 'IPC Share'
                         }
-        }
-        return share_type_info_dict[stype][field]
+                    }
+
+        flag_temp = False
+        flag_hidden = False
+        if stype & srvsvc.STYPE_TEMPORARY:
+               flag_temp = True
+        if stype & srvsvc.STYPE_HIDDEN:
+               flag_hidden = True
+
+        if flag_temp is True and flag_hidden is False :
+               stype_base = stype -  srvsvc.STYPE_TEMPORARY
+               stype_typestring = base_dict[stype_base]['typestring'] + '_TEMPORARY'
+               stype_desc = 'Temporary '+base_dict[stype_base]['desc']
+
+        elif flag_temp is False and flag_hidden is True :
+                 stype_base = stype +  srvsvc.STYPE_HIDDEN
+                 stype_typestring = base_dict[stype_base]['typestring'] + '_HIDDEN'
+                 stype_desc = 'Hidden '+base_dict[stype_base]['desc']
+
+        elif flag_temp is True and flag_hidden is True :
+                 stype_base = stype -  srvsvc.STYPE_TEMPORARY +  srvsvc.STYPE_HIDDEN
+                 stype_typestring = base_dict[stype_base]['typestring'] + '_TEMPORARY_HIDDEN'
+                 stype_desc = 'Temporary Hidden '+base_dict[stype_base]['desc']
+        else:
+            stype_base = stype
+            stype_typestring = base_dict[stype_base]['typestring']
+            stype_desc = base_dict[stype_base]['desc']
+
+        final_properties = [('typestring',stype_typestring),
+                            ('desc',stype_desc),
+                            ('base',stype_base),
+                            ('flags',(flag_temp,flag_hidden))
+                            ]
+                            
+        stype_info_dict = dict(final_properties)
+        
+        return stype_info_dict[field]
+
 
 
 

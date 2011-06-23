@@ -257,7 +257,7 @@ class ShareAddEditDialog(gtk.Dialog):
         self.npc_frame = gtk.Frame("Name and Comment")
         self.form_box.pack_start(self.npc_frame, True, True, 0)
 
-        table = gtk.Table(2,2)
+        table = gtk.Table(3,2)
         table.set_border_width(5)
         self.npc_frame.add(table)
 
@@ -280,6 +280,16 @@ class ShareAddEditDialog(gtk.Dialog):
         self.share_comment_entry.set_tooltip_text('Add a Comment or Description of the Share, Will default to share_type description')
         table.attach(self.share_comment_entry, 1, 2, 1, 2, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
 
+        label = gtk.Label(' Password  : ')
+        label.set_alignment(0, 0.5)
+        table.attach(label, 0, 1, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        
+        self.share_comment_entry = gtk.Entry()
+        self.share_comment_entry.set_max_length(48) # max allowed is 48 MS-SRVS
+        self.share_comment_entry.set_activates_default(True)
+        self.share_comment_entry.set_tooltip_text('Set a Share Password')
+        table.attach(self.share_comment_entry, 1, 2, 2, 3, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
+        
         # Share frame
         self.stype_frame = gtk.Frame("Share Type")
         self.form_box.pack_start(self.stype_frame, True, True, 0)
@@ -328,5 +338,11 @@ class ShareAddEditDialog(gtk.Dialog):
         self.sflag_hidden_radio_button.set_tooltip_text('Make share hidden.')
         self.sflag_hidden_radio_button.set_active(self.share_flag == STYPE_HIDDEN)
         vbox.pack_start(self.sflag_hidden_radio_button)
+        
+        # Path frame 
+        
+        self.path_frame = gtk.Frame("Path")
+        self.form_box.pack_start(self.path_frame, True, True, 0)
+         
         
         
