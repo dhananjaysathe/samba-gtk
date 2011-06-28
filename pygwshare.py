@@ -59,7 +59,7 @@ class srvsvcPipeManager(object):
         # This should reduce the queries and improve performance
         # The share list will be locally maintained any via the get_share_local_cache
 
-        if server_address == '127.0.0.1':
+        if server_address in ('127.0.0.1','localhost') :
             self.islocal = True
         else:
             self.islocal = False
@@ -138,14 +138,12 @@ class srvsvcPipeManager(object):
             stype_typestring = base_dict[stype_base]['typestring']
             stype_desc = base_dict[stype_base]['desc']
 
-        final_properties = [('typestring',stype_typestring),
-                            ('desc',stype_desc),
-                            ('base',stype_base),
-                            ('flags',(flag_temp,flag_hidden))
-                            ]
-                            
-        stype_info_dict = dict(final_properties)
-        
+        stype_info_dict = {'typestring':stype_typestring,
+                            'desc':stype_desc,
+                            'base_type':stype_base,
+                            'flags':(flag_temp,flag_hidden)
+                            }
+
         return stype_info_dict[field]
 
 
@@ -301,7 +299,7 @@ class srvsvcPipeManager(object):
   """
         name = unicode(name)
         for i in self.share_names_list:
-            if name == i:
+            if name is i:
                 return share_list[i.index()]
 
 
@@ -366,7 +364,7 @@ class srvsvcPipeManager(object):
 
         name = unicode(name)
         for i in self.share_names_list:
-            if name == i:
+            if name is i:
                 stype = share_types_list[i.index()]
             else:
                 raise KeyError
