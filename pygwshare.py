@@ -40,7 +40,7 @@ class srvsvcPipeManager(object):
 
         # set up some basic parameters unique to the connection
 
-        self.server_unc = '\\' + server_address
+        self.server_unc = ''.join(['\\',server_address]
 
         # Retrive some info about the share server
 
@@ -121,18 +121,18 @@ class srvsvcPipeManager(object):
 
         if flag_temp is True and flag_hidden is False :
                stype_base = stype -  srvsvc.STYPE_TEMPORARY
-               stype_typestring = base_dict[stype_base]['typestring'] + '_TEMPORARY'
-               stype_desc = 'Temporary '+base_dict[stype_base]['desc']
+               stype_typestring = ''.join([base_dict[stype_base]['typestring'],'_TEMPORARY'])
+               stype_desc = ' '.join(['Temporary',base_dict[stype_base]['desc'] ])
 
         elif flag_temp is False and flag_hidden is True :
                  stype_base = stype +  srvsvc.STYPE_HIDDEN
-                 stype_typestring = base_dict[stype_base]['typestring'] + '_HIDDEN'
-                 stype_desc = 'Hidden '+base_dict[stype_base]['desc']
+                 stype_typestring = ''.join([base_dict[stype_base]['typestring'],'_HIDDEN'])
+                 stype_desc = ' '.join(['Hidden',base_dict[stype_base]['desc'] ])
 
         elif flag_temp is True and flag_hidden is True :
                  stype_base = stype -  srvsvc.STYPE_TEMPORARY +  srvsvc.STYPE_HIDDEN
-                 stype_typestring = base_dict[stype_base]['typestring'] + '_TEMPORARY_HIDDEN'
-                 stype_desc = 'Temporary Hidden '+base_dict[stype_base]['desc']
+                 stype_typestring = ''.join([base_dict[stype_base]['typestring'],'_TEMPORARY_HIDDEN'])
+                 stype_desc = ' '.join(['Temporary Hidden',base_dict[stype_base]['desc'] ])
         else:
             stype_base = stype
             stype_typestring = base_dict[stype_base]['typestring']
@@ -167,7 +167,7 @@ class srvsvcPipeManager(object):
 
             if path.startswith('/'):
                 path = path.replace('/', '\\')
-                path = 'C:' + path
+                path = ''.join(['C:',path])
                 path = unicode(path)
             elif path.startswith('C:'):
                 path = unicode(path)

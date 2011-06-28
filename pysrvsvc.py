@@ -283,12 +283,12 @@ class ShareAddEditDialog(gtk.Dialog):
 
     def  create(self):
         """ Create the window """
-        self.set_title([" New Share",
-                    " Edit Share : "][self.edit_mode]+ " " + self.name)
+        self.set_title(' '.join([(" New Share",
+                    " Edit Share : ")[self.edit_mode],self.name)
         self.icon_name = ["network","network-folder","network-printer",
                             "network","network-pipe"][self.stype]
         self.icon_filename = \
-        os.path.join(sys.path[0], "images", (self.icon_name+'.png'))
+        os.path.join(sys.path[0], "images", (''.join([self.icon_name,'.png']))
         self.set_icon_from_file(self.icon_filename)
         self.vbox.set_spacing(3)
         self.set_border_width(5)
