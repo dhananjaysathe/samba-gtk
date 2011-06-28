@@ -191,6 +191,8 @@ class ShareAddEditDialog(gtk.Dialog):
         """ Class initialiser """
         super(ShareAddEditDialog, self).__init__()
         self.pipe = pipe_manager
+        self.islocal = self.pipe.islocal
+
 
         if share is None :
             self.edit_mode = 0
@@ -203,13 +205,94 @@ class ShareAddEditDialog(gtk.Dialog):
 
 
 
+    def ():
+        """ Function doc """
+        
+    def set_window_edit_mode(self):
+        """ Deactivates a bunch of widgets in Edit mode """
+        if self.edit_mode is True:
+            self.share_name_entry.set_sensitive(False)
+            self.stype_disktree_radio_button.set_sensitive(False)
+            self.stype_printq_radio_button.set_sensitive(False)
+            self.stype_ipc_radio_button.set_sensitive(False)
+            self.sflag_temp_check_button.set_sensitive(False)
+            self.sflag_hidden_check_button.set_sensitive(False)
+
+
+    def  get_stype_final(self):
+        """ Calculates share type from base type and share flags """
+        stype = self.stype
+        if self.flags[0] :
+            stype |= srvsvc.STYPE_TEMPORARY
+        if self.flags[1] :
+            stype |= -(srvsvc.STYPE_HIDDEN)
+        return stype
+
+
+
+    def  share_to_fields(self):
+        """ Gets values from the share . """
+        self.name = self.share.name
+        self.stype = self.pipe.get_share_type_info(self.share.type,'base_type')
+        self.flags = self.pipe.get_share_type_info(self.share.type,'flags')
+        self.comment = self.share.comment
+        self.max_users = self.share.max_users
+        self.password = self.share.password
+        self.path = self.share.path
+
+
+
+    def collect_fields(self):
+        """ Collects fields from the GUI and saves in class variables """
+        self.name = self.share_name_entry.get_text()
+        self.comment = self.share_comment_entry.get_text()
+        self.password = self.share_name_entry.get_text()
+        # Now to handle the share type resolution
+        if self.stype_disktree_radio_button.get_active() :
+            self.stype = srvsvc.STYPE_DISKTREE
+        elif self.stype_printq_radio_button.get_active() :
+            self.stype = srvsvc.STYPE_PRINTQ
+        else:
+            self.stype = srvsvc.STYPE_IPC
+        # check flags
+        self.flags = (False,False)
+        if self.sflag_temp_check_button.get_active():
+            self.flags[0] = True
+        if self.sflag_hidden_check_button.get_active():
+            self.flags[1] = True
+        if self.islocal :
+            self.path =  self.entry_button.get_filename()
+        else:
+            self.path = self.path_entry.get_text()
+        self.max_users = self.max_users_spinbox.get_value_as_int()
+
+
+
+    def  fields_to_share(self):
+        """ Create a share type 502 object from the fields collected """
+        share = self.pipe.get_share_object(name= self.name,
+                    stype= self.get_stype_final(),
+                    comment= self.comment,
+                    max_users= self.max_users,
+                    password= self.password,
+                    path = self.path
+                    )
+        return share
+
+
+
     def  create(self):
         """ Create the window """
-        self.set_title([" New Share"," Edit Share : "][self.edit_mode]+ " " + self.share_name)
-        self.set_border_width(5)
-        self.icon_name = ["network","network-folder","network-printer","network","network-pipe"][self.share_type]
-        self.icon_filename = os.path.join(sys.path[0], "images", (self.icon_name+'.png'))
+        self.set_title([" New Share",
+                    " Edit Share : "][self.edit_mode]+ " " + self.name)
+        self.icon_name = ["network","network-folder","network-printer",
+                            "network","network-pipe"][self.stype]
+        self.icon_filename = \
+        os.path.join(sys.path[0], "images", (self.icon_name+'.png'))
         self.set_icon_from_file(self.icon_filename)
+        self.vbox.set_spacing(3)
+        self.set_border_width(5)
+
 
         #artwork
         self.desc_box= gtk.HBox()
@@ -250,99 +333,154 @@ class ShareAddEditDialog(gtk.Dialog):
 
         # the main form
 
-        self.form_box = gtk.VBox()
+        self.form_box = gtk.VBox(3)
         self.main_box.pack_start(self.form_box, True, True, 0)
 
         # Name , password and comment (npc) frame
-        self.npc_frame = gtk.Frame("Name and Comment")
-        self.form_box.pack_start(self.npc_frame, True, True, 0)
+        frame = gtk.Frame("Name and Comment")
+        self.form_box.pack_start(frame, True, True, 0)
+        frame.set_border_width(5)
 
-        table = gtk.Table(3,2)
+        table = gtk.Table(4,2)
         table.set_border_width(5)
-        self.npc_frame.add(table)
+        table.set_row_spacings(3)
+        table.set_col_spacings(6)
 
-        label = gtk.Label(' Share Name : ')
+        frame.add(table)
+
+        label = gtk.Label("Share Name : ")
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         self.share_name_entry = gtk.Entry()
-        self.share_name_entry.set_activates_default(not self.edit_mode) # In edit Mode Disabled
         self.share_name_entry.set_tooltip_text('Enter the Share Name')
+        self.share_name_entry.set_text(self.sname)
+        # dcesrv_srvsvc name check does this but just to reduce chances of an error limit max length
+        if self.flags(1):
+            self.share_name_entry.set_max_length(12)
+        else:
+            self.share_name_entry.set_max_length(80)
         table.attach(self.share_name_entry, 1, 2, 0, 1, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
 
-        label = gtk.Label(' Comment  : ')
+        label = gtk.Label("Comment  : ")
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         self.share_comment_entry = gtk.Entry()
         self.share_comment_entry.set_max_length(48) # max allowed is 48 MS-SRVS
         self.share_comment_entry.set_activates_default(True)
+        self.share_comment_entry.set_text(self.comment)
         self.share_comment_entry.set_tooltip_text('Add a Comment or Description of the Share, Will default to share_type description')
         table.attach(self.share_comment_entry, 1, 2, 1, 2, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
 
         label = gtk.Label(' Password  : ')
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
-        self.share_comment_entry = gtk.Entry()
-        self.share_comment_entry.set_max_length(48) # max allowed is 48 MS-SRVS
-        self.share_comment_entry.set_activates_default(True)
-        self.share_comment_entry.set_tooltip_text('Set a Share Password')
-        table.attach(self.share_comment_entry, 1, 2, 2, 3, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
-        
-        # Share frame
-        self.stype_frame = gtk.Frame("Share Type")
-        self.form_box.pack_start(self.stype_frame, True, True, 0)
 
-        self.stype_table = gtk.Table(1,2,True)
-        self.stype_frame.add(stype_table)
+        self.share_password_entry = gtk.Entry()
+        self.share_password_entry.set_max_length()
+        self.share_password_entry.set_activates_default(True)
+        self.share_password_entry.set_text(self.password)
+        self.share_password_entry.set_visibility(False)
+        self.share_password_entry.set_tooltip_text('Set a Share Password')
+        table.attach(self.share_password_entry, 1, 2, 2, 3, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
+        
+        self.set_pw_visiblity = gtk.CheckButton("Visible")
+        self.set_pw_visiblity.set_tooltip_text('Enable or disable the password visiblity')
+        self.set_pw_visiblity.set_active(False)
+        table.attach(self.set_pw_visiblity, 1, 2, 3, 4,gtk.SHRINK,gtk.FILL, 0, 0)
+        self.set_pw_visiblity.connecct()
+        
+
+        # Share frame
+        frame = gtk.Frame("Share Type")
+        self.form_box.pack_start(frame, True, True, 0)
+
+        table = gtk.Table(1,2,True)
+        frame.add(table)
 
         # Base Share Types
-        vbox = gtk.VBox()
+        vbox = gtk.VBox(True)
         vbox.set_border_width(5)
-        self.stype_table.attach(vbox,0,1,0,1,gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
+        table.attach(vbox,0,1,0,1,gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
 
         # Radio buttons
         self.stype_disktree_radio_button = gtk.RadioButton(None,'Disktree')
         self.stype_disktree_radio_button.set_tooltip_text('Disktree (folder) type Share. Default')
-        self.stype_disktree_radio_button.set_active(self.share_type == srvsvc.STYPE_DISKTREE)
+        self.stype_disktree_radio_button.set_active(self.stype == srvsvc.STYPE_DISKTREE)
         vbox.pack_start(self.stype_disktree_radio_button)
 
         self.stype_printq_radio_button = gtk.RadioButton(self.stype_disktree_radio_button,'Print Queue')
         self.stype_printq_radio_button.set_tooltip_text('Shared Print Queue')
-        self.stype_printq_radio_button.set_active(self.share_type == srvsvc.STYPE_PRINTQ)
+        self.stype_printq_radio_button.set_active(self.stype == srvsvc.STYPE_PRINTQ)
         vbox.pack_start(self.stype_printq_radio_button)
 
         self.stype_ipc_radio_button = gtk.RadioButton(self.stype_printq_radio_button,'IPC ')
         self.stype_ipc_radio_button.set_tooltip_text('Shared Interprocess Communication Pipe (IPC).')
-        self.stype_ipc_radio_button.set_active(self.share_type == srvsvc.STYPE_IPC)
+        self.stype_ipc_radio_button.set_active(self.stype == srvsvc.STYPE_IPC)
         vbox.pack_start(self.stype_ipc_radio_button)
 
         # Special Share Flags
-        vbox = gtk.VBox()
+        vbox = gtk.VBox(True)
         vbox.set_border_width(5)
-        self.sflag_table.attach(vbox,1,2,0,1,gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
+        table.attach(vbox,1,2,0,1,gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
 
-        # Radio buttons
-        self.sflag_default_radio_button = gtk.RadioButton(None,'Default')
-        self.sflag_default_radio_button.set_tooltip_text('Defaults (No options) ')
-        self.sflag_default_radio_button.set_active(self.share_flag == 0)
-        vbox.pack_start(self.sflag_default_radio_button)
+        # Check buttons
+        self.sflag_temp_check_button = gtk.CheckButton(self.sflag_default_check_button,'Temporary')
+        self.sflag_temp_check_button.set_tooltip_text('Make share Temporary')
+        self.sflag_temp_check_button.set_active(self.flags[0])
+        vbox.pack_start(self.sflag_temp_check_button)
 
-        self.sflag_temp_radio_button = gtk.RadioButton(self.sflag_default_radio_button,'Temporary')
-        self.sflag_temp_radio_button.set_tooltip_text('Make share Temporary')
-        self.sflag_temp_radio_button.set_active(self.share_flag == srvsvc.STYPE_TEMPORARY)
-        vbox.pack_start(self.sflag_temp_radio_button)
+        self.sflag_hidden_check_button = gtk.CheckButton(self.sflag_temp_check_button,'Hidden ')
+        self.sflag_hidden_check_button.set_tooltip_text('Make share hidden.')
+        self.sflag_hidden_check_button.set_active(self.flags[1])
+        vbox.pack_start(self.sflag_hidden_check_button)
 
-        self.sflag_hidden_radio_button = gtk.RadioButton(self.sflag_temp_radio_button,'Hidden ')
-        self.sflag_hidden_radio_button.set_tooltip_text('Make share hidden.')
-        self.sflag_hidden_radio_button.set_active(self.share_flag == STYPE_HIDDEN)
-        vbox.pack_start(self.sflag_hidden_radio_button)
-        
-        # Path frame 
-        
-        self.path_frame = gtk.Frame("Path")
-        self.form_box.pack_start(self.path_frame, True, True, 0)
-         
-        
-        
+        # Path frame
+
+        frame = gtk.Frame("Path")
+        self.form_box.pack_start(frame, True, True, 0)
+        frame.set_border_width(5)
+
+        table = gtk.Table(1,2)
+        table.set_col_spacings(6)
+
+        label = gtk.Label("Share path : ")
+        label.set_alignment(0, 0.5)
+        table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        # FIXME may need another parameter to select type of selctor in combination with local
+        # eg selecting a ipc / printer may be easier with a path
+
+        if self.islocal :
+            self.file_button = gtk.FileChooserButton('Browse')
+            self.file_button.set_current_folder('/home')
+            self.file_button.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+            self.file_button.set_tooltip_text('Select the folder to share')
+            table.attach(self.file_button, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        else:
+            self.file_button = gtk.Entry()
+            self.file_entry.set_text(self.path)
+            self.file_entry.set_tooltip_text('Path to the folder to share')
+            table.attach(self.file_entry, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        # max users frame
+
+        frame = gtk.Frame("Max Users")
+        self.form_box.pack_start(frame, True, True, 0)
+        frame.set_border_width(5)
+
+        table = gtk.Table(1,2)
+        table.set_col_spacings(6)
+
+        label = gtk.Label("Max Users : ")
+        label.set_alignment(0, 0.5)
+        table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        # adjustment for max users spinbox
+        self.max_users_adjustment = gtk.Adjustment(self.max_users,1,0xFFFFFFFF,1,5)
+
+        self.max_users_spinbox = gtk.SpinButton(adjustment)
+        self.max_users_spinbox.set_numeric(True)
+        self.max_users_spinbox.set_tooltip_text('Max Users for the Share')
+        table.attach(self.max_users_spinbox, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
