@@ -40,7 +40,7 @@ class srvsvcPipeManager(object):
 
         # set up some basic parameters unique to the connection
 
-        self.server_unc = ''.join(['\\',server_address]
+        self.server_unc = ''.join(['\\',server_address])
 
         # Retrive some info about the share server
 
@@ -206,7 +206,7 @@ class srvsvcPipeManager(object):
 
   """
         if share is None:
-            raise KeyError("Illegal to pass null share type.")
+            raise KeyError("Non existant Share cannot be modified")
 
         parm_error = 0x00000000
         name = share.name
