@@ -90,7 +90,7 @@ class srvsvcConnectDialog(gtk.Dialog):
         self.username_entry.set_activates_default(True)
         self.username_entry.set_tooltip_text('Enter your Username')
         table.attach(self.username_entry,1,2,1,2,gtk.FILL | gtk.EXPAND,gtk.FILL | gtk.EXPAND,1,1)
-        
+
         label = gtk.Label(' Password: ')
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
@@ -119,7 +119,7 @@ class srvsvcConnectDialog(gtk.Dialog):
                  == 0)
         vbox.pack_start(self.rpc_smb_tcpip_radio_button)
 
-        
+
         self.rpc_tcpip_radio_button = \
             gtk.RadioButton(self.rpc_smb_tcpip_radio_button,
                             'RPC over TCP/IP')
@@ -127,7 +127,7 @@ class srvsvcConnectDialog(gtk.Dialog):
         self.rpc_tcpip_radio_button.set_active(self.transport_type == 1)
         vbox.pack_start(self.rpc_tcpip_radio_button)
 
-        
+
         self.localhost_radio_button = \
             gtk.RadioButton(self.rpc_tcpip_radio_button, 'Localhost')
         self.localhost_radio_button.set_tooltip_text('ncalrpc type')  # # MS-SRVS specification
@@ -192,6 +192,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
     def __init__(self, pipe_manager, share=None):
         """ Class initialiser """
+
         super(ShareAddEditDialog, self).__init__()
         self.pipe = pipe_manager
         self.islocal = self.pipe.islocal
@@ -204,18 +205,21 @@ class ShareAddEditDialog(gtk.Dialog):
             self.edit_mode =  1
             self.share = share
         self.share_to_fields()
+        self.create()
+        self.set_window_mode()
 
 
 
-    def set_window_edit_mode(self):
+    def set_window_mode(self):
         """ Deactivates a bunch of widgets in Edit mode """
-        if self.edit_mode is True:
+        if self.edit_mode:
             self.share_name_entry.set_sensitive(False)
             self.stype_disktree_radio_button.set_sensitive(False)
             self.stype_printq_radio_button.set_sensitive(False)
             self.stype_ipc_radio_button.set_sensitive(False)
             self.sflag_temp_check_button.set_sensitive(False)
             self.sflag_hidden_check_button.set_sensitive(False)
+            self.apply_button.set_sensitive(False)
 
 
     def  get_stype_final(self):
@@ -237,7 +241,7 @@ class ShareAddEditDialog(gtk.Dialog):
         if (not self.edit_mode):
             for share in self.pipe.share_list:
                 if share.name == self.share_name_entry.get_text():
-                    return ' '.join(["A Share with the name : ", user.name ,"already exists!"])
+                    return ' '.join(["A Share with the name : ", share.name ,"already exists!"])
 
         return None
 
@@ -245,21 +249,24 @@ class ShareAddEditDialog(gtk.Dialog):
 
     def  share_to_fields(self):
         """ Gets values from the share . """
-        self.name = self.share.name
+        self.sname = self.share.name
         self.stype = self.pipe.get_share_type_info(self.share.type,'base_type')
         self.flags = self.pipe.get_share_type_info(self.share.type,'flags')
         self.comment = self.share.comment
         self.max_users = self.share.max_users
-        self.password = self.share.password
+        if self.share.password is None:
+            self.password = ""
+        else:
+            self.password = self.share.password
         self.path = self.share.path
 
 
 
     def collect_fields(self):
         """ Collects fields from the GUI and saves in class variables """
-        self.name = self.share_name_entry.get_text()
+        self.sname = self.share_name_entry.get_text()
         self.comment = self.share_comment_entry.get_text()
-        self.password = self.share_name_entry.get_text()
+        self.password = self.share_password_entry.get_text()
         # Now to handle the share type resolution
         if self.stype_disktree_radio_button.get_active() :
             self.stype = srvsvc.STYPE_DISKTREE
@@ -283,7 +290,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
     def  fields_to_share(self):
         """ Create a share type 502 object from the fields collected """
-        share = self.pipe.get_share_object(name= self.name,
+        share = self.pipe.get_share_object(name= self.sname,
                     stype= self.get_stype_final(),
                     comment= self.comment,
                     max_users= self.max_users,
@@ -297,7 +304,7 @@ class ShareAddEditDialog(gtk.Dialog):
     def  create(self):
         """ Create the window """
         self.set_title(' '.join([(" New Share",
-                    " Edit Share : ")[self.edit_mode],self.name]))
+                    " Edit Share : ")[self.edit_mode],self.sname]))
         self.icon_name = ["network-folder","network-printer",
                             "network","network-pipe"][self.stype]
         self.icon_filename = \
@@ -321,7 +328,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
         hbox = gtk.HBox()
         label = gtk.Label()
-        if edit_mode :
+        if self.edit_mode :
             label.set_text("Edit The Share")
         else :
             label.set_text("Add a New Share")
@@ -346,7 +353,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
         # the main form
 
-        self.form_box = gtk.VBox(3)
+        self.form_box = gtk.VBox()
         self.main_box.pack_start(self.form_box, True, True, 0)
 
         # Name , password and comment (npc) frame
@@ -356,7 +363,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
         table = gtk.Table(4,2)
         table.set_border_width(5)
-        table.set_row_spacings(3)
+        table.set_row_spacings(1)
         table.set_col_spacings(6)
 
         frame.add(table)
@@ -368,8 +375,10 @@ class ShareAddEditDialog(gtk.Dialog):
         self.share_name_entry = gtk.Entry()
         self.share_name_entry.set_tooltip_text('Enter the Share Name')
         self.share_name_entry.set_text(self.sname)
+        self.share_name_entry.set_activates_default(True)
+
         # dcesrv_srvsvc name check does this but just to reduce chances of an error limit max length
-        if self.flags(1):
+        if self.flags[1]:
             self.share_name_entry.set_max_length(12)
         else:
             self.share_name_entry.set_max_length(80)
@@ -391,7 +400,6 @@ class ShareAddEditDialog(gtk.Dialog):
         table.attach(label, 0, 1, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         self.share_password_entry = gtk.Entry()
-        self.share_password_entry.set_max_length()
         self.share_password_entry.set_activates_default(True)
         self.share_password_entry.set_text(self.password)
         self.share_password_entry.set_visibility(False)
@@ -402,7 +410,7 @@ class ShareAddEditDialog(gtk.Dialog):
         self.set_pw_visiblity.set_tooltip_text('Enable or disable the password visiblity')
         self.set_pw_visiblity.set_active(False)
         table.attach(self.set_pw_visiblity, 1, 2, 3, 4,gtk.SHRINK,gtk.FILL, 0, 0)
-        self.set_pw_visiblity.connecct()
+        
 
 
         # Share frame
@@ -413,7 +421,7 @@ class ShareAddEditDialog(gtk.Dialog):
         frame.add(table)
 
         # Base Share Types
-        vbox = gtk.VBox(True)
+        vbox = gtk.VBox()
         vbox.set_border_width(5)
         table.attach(vbox,0,1,0,1,gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
 
@@ -434,17 +442,17 @@ class ShareAddEditDialog(gtk.Dialog):
         vbox.pack_start(self.stype_ipc_radio_button)
 
         # Special Share Flags
-        vbox = gtk.VBox(True)
+        vbox = gtk.VBox()
         vbox.set_border_width(5)
         table.attach(vbox,1,2,0,1,gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
 
         # Check buttons
-        self.sflag_temp_check_button = gtk.CheckButton(self.sflag_default_check_button,'Temporary')
+        self.sflag_temp_check_button = gtk.CheckButton('Temporary')
         self.sflag_temp_check_button.set_tooltip_text('Make share Temporary')
         self.sflag_temp_check_button.set_active(self.flags[0])
         vbox.pack_start(self.sflag_temp_check_button)
 
-        self.sflag_hidden_check_button = gtk.CheckButton(self.sflag_temp_check_button,'Hidden ')
+        self.sflag_hidden_check_button = gtk.CheckButton('Hidden ')
         self.sflag_hidden_check_button.set_tooltip_text('Make share hidden.')
         self.sflag_hidden_check_button.set_active(self.flags[1])
         vbox.pack_start(self.sflag_hidden_check_button)
@@ -457,6 +465,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
         table = gtk.Table(1,2)
         table.set_col_spacings(6)
+        frame.add(table)
 
         label = gtk.Label("Share path : ")
         label.set_alignment(0, 0.5)
@@ -485,6 +494,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
         table = gtk.Table(1,2)
         table.set_col_spacings(6)
+        frame.add(table)
 
         label = gtk.Label("Max Users : ")
         label.set_alignment(0, 0.5)
@@ -493,7 +503,7 @@ class ShareAddEditDialog(gtk.Dialog):
         # adjustment for max users spinbox
         self.max_users_adjustment = gtk.Adjustment(self.max_users,1,0xFFFFFFFF,1,5)
 
-        self.max_users_spinbox = gtk.SpinButton(adjustment)
+        self.max_users_spinbox = gtk.SpinButton(self.max_users_adjustment)
         self.max_users_spinbox.set_numeric(True)
         self.max_users_spinbox.set_tooltip_text('Max Users for the Share')
         table.attach(self.max_users_spinbox, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
@@ -508,7 +518,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
         self.apply_button = gtk.Button("Apply", gtk.STOCK_APPLY)
         self.apply_button.set_flags(gtk.CAN_DEFAULT)
-        self.apply_button.set_sensitive(not self.brand_new) # disabled for new Share
+        #self.apply_button.set_sensitive(not self.edit_mode) # disabled for new Share
         self.add_action_widget(self.apply_button, gtk.RESPONSE_APPLY)
 
         self.ok_button = gtk.Button("OK", gtk.STOCK_OK)
@@ -516,31 +526,36 @@ class ShareAddEditDialog(gtk.Dialog):
         self.add_action_widget(self.ok_button, gtk.RESPONSE_OK)
 
         self.set_default_response(gtk.RESPONSE_OK)
-        
-        
-        
+
+
+
 class DeleteDialog(gtk.Dialog):
     """ The delete dialog """
-    
+
     def __init__(self, pipe_manager, share=None):
         """ Class initialiser """
         super(DeleteDialog, self).__init__()
         self.pipe = pipe_manager
-        
+
+
         if share is None :
             raise KeyError("Non existant Share cannot be deleted")
-        
+
+        self.share = share
+
         # resolving some types that are required for gtk dialog creation
         self.stype = self.pipe.get_share_type_info(self.share.type,'base_type')
         self.flags = self.pipe.get_share_type_info(self.share.type,'flags')
         self.generic_typestring = self.pipe.get_share_type_info(self.share.type,'typestring')
         self.desc = self.pipe.get_share_type_info(self.share.type,'desc')
-    
-    
-    
+
+        self.create()
+
+
+
     def  create(self):
         """ Create the window """
-        self.set_title(' '.join([" Delete Share",self.name]))
+        self.set_title(' '.join([" Delete Share",self.share.name]))
         self.icon_name = ["network-folder","network-printer",
                             "network","network-pipe"][self.stype]
         self.icon_filename = \
@@ -567,7 +582,7 @@ class DeleteDialog(gtk.Dialog):
         label.set_alignment(0, 0.5)
         hbox.pack_start(label, True, True, 0)
         self.desc_box.pack_start(hbox,True, True, 0)
-        
+
         # main box
 
         self.main_box  = gtk.HBox()
@@ -585,9 +600,9 @@ class DeleteDialog(gtk.Dialog):
 
         # the main form
 
-        self.form_box = gtk.VBox(3)
+        self.form_box = gtk.VBox()
         self.main_box.pack_start(self.form_box, True, True, 0)
-        
+
         frame = gtk.Frame("Share Details")
         self.form_box.pack_start(frame, True, True, 0)
         frame.set_border_width(5)
@@ -596,98 +611,100 @@ class DeleteDialog(gtk.Dialog):
         table.set_border_width(5)
         table.set_row_spacings(2)
         table.set_col_spacings(6)
-        
+
         frame.add(table)
-        
+
         label = gtk.Label(' Share Name  : ')
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(self.share.name)
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(' Comment  : ')
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(self.share.comment)
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(' Path  : ')
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(self.share.path)
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)       
-        
+        table.attach(label, 1, 2, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
         label = gtk.Label(' Password  : ')
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(self.share.password)
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(' Share Type  : ')
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(' Generic Typestring  : ')
         label.set_alignment(0.2, 0.5)
         table.attach(label, 0, 1, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(self.generic_typestring)
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(' Type Description  :   ') #spaces for Gui align do not change
         label.set_alignment(0.2, 0.5)
         table.attach(label, 0, 1, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(self.desc)
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(' Special FLags  : ')
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 7, 8, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(' Temporary  : ')
         label.set_alignment(0.2, 0.5)
         table.attach(label, 0, 1, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(str(self.flags[0]))
         label.set_alignment(0.2, 0.5)
         table.attach(label, 1, 2, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(' Hidden  :    ') #spaces for Gui align do not change
         label.set_alignment(0.2, 0.5)
         table.attach(label, 0, 1, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(str(self.flags[1]))
         label.set_alignment(0.2, 0.5)
-        table.attach(label, 0, 1, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+        table.attach(label, 1, 2, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
         label = gtk.Label(' Max Users  : ')
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 10, 11, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
-        label = gtk.Label(self.max_users)
+
+        label = gtk.Label(self.share.max_users)
         label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 10, 11, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+        table.attach(label, 1, 2, 10, 11, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
         box =  gtk.VBox()
         label = gtk.Label("Are yous sure you want to delete the share ?")
         box.pack_start(label,True,True,0)
         label = gtk.Label("(Please Note this is an irreversable action)")
         box.pack_start(label,True,True,0)
         box.set_border_width(5)
-        
+
         self.vbox.pack_start(box,True,True,0)
         
+        
+
         # action area
 
         self.action_area.set_layout(gtk.BUTTONBOX_END)
@@ -701,8 +718,8 @@ class DeleteDialog(gtk.Dialog):
         self.add_action_widget(self.ok_button, gtk.RESPONSE_OK)
 
         self.set_default_response(gtk.RESPONSE_OK)
-        
-        
-        
-        
-        
+
+
+
+
+

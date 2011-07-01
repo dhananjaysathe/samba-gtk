@@ -3,8 +3,10 @@
 
 from samba import credentials
 from samba.dcerpc import srvsvc
+from samba.dcerpc import security
 from sambagtk.dialogs import AboutDialog
 import os.path
+import pysrvsvc
 
 
 class srvsvcPipeManager(object):
@@ -445,8 +447,8 @@ class srvsvcPipeManager(object):
         return os_dict[platform_id][field]
 
 
-    @staticmethod
     def get_share_object (
+        self,
         name= "",
         stype= 0,
         comment= '',
@@ -468,9 +470,9 @@ class srvsvcPipeManager(object):
         share.current_users = 0x00000000
         share.max_users= max_users
         share.password = password
-        share.path = self.fix_path_format(path)
-        share.permissions = None
-        share.sd_buf = sd_buf  # ### FIXME
+        share.path = path # path validation needs to be done separately while insertion 
+        share.permissions = 0 #None
+        share.sd_buf =  security.sec_desc_buf()#sd_buf  # ### FIXME
 
         return share
 
