@@ -368,8 +368,8 @@ class ShareAddEditDialog(gtk.Dialog):
 
         frame.add(table)
 
-        label = gtk.Label("Share Name : ")
-        label.set_alignment(0, 0.5)
+        label = gtk.Label(" Share Name : ")
+        label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         self.share_name_entry = gtk.Entry()
@@ -384,8 +384,8 @@ class ShareAddEditDialog(gtk.Dialog):
             self.share_name_entry.set_max_length(80)
         table.attach(self.share_name_entry, 1, 2, 0, 1, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
 
-        label = gtk.Label("Comment  : ")
-        label.set_alignment(0, 0.5)
+        label = gtk.Label(" Comment  : ")
+        label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         self.share_comment_entry = gtk.Entry()
@@ -396,7 +396,7 @@ class ShareAddEditDialog(gtk.Dialog):
         table.attach(self.share_comment_entry, 1, 2, 1, 2, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
 
         label = gtk.Label(' Password  : ')
-        label.set_alignment(0, 0.5)
+        label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         self.share_password_entry = gtk.Entry()
@@ -459,7 +459,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
         # Path frame
 
-        frame = gtk.Frame("Path")
+        frame = gtk.Frame(" Path")
         self.form_box.pack_start(frame, True, True, 0)
         frame.set_border_width(5)
 
@@ -488,7 +488,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
         # max users frame
 
-        frame = gtk.Frame("Max Users")
+        frame = gtk.Frame(" Max Users")
         self.form_box.pack_start(frame, True, True, 0)
         frame.set_border_width(5)
 
@@ -496,7 +496,7 @@ class ShareAddEditDialog(gtk.Dialog):
         table.set_col_spacings(6)
         frame.add(table)
 
-        label = gtk.Label("Max Users : ")
+        label = gtk.Label(" Max Users : ")
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
