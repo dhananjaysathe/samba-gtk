@@ -343,6 +343,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
         #vertical logo
         vbox = gtk.VBox()
+        vbox.set_border_width(5)
         samba_image_filename = os.path.join(sys.path[0], 'images',
                 'samba-logo-vertical.png')
         samba_image = gtk.Image()
@@ -590,6 +591,7 @@ class DeleteDialog(gtk.Dialog):
 
         #vertical logo
         vbox = gtk.VBox()
+        vbox.set_border_width(5)
         samba_image_filename = os.path.join(sys.path[0], 'images',
                 'samba-logo-vertical.png')
         samba_image = gtk.Image()
