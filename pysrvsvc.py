@@ -615,7 +615,7 @@ class DeleteDialog(gtk.Dialog):
         frame.add(table)
 
         label = gtk.Label(' Share Name  : ')
-        label.set_alignment(0, 0.5)
+        label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(self.share.name)
@@ -623,7 +623,7 @@ class DeleteDialog(gtk.Dialog):
         table.attach(label, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Comment  : ')
-        label.set_alignment(0, 0.5)
+        label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(self.share.comment)
@@ -631,7 +631,7 @@ class DeleteDialog(gtk.Dialog):
         table.attach(label, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Path  : ')
-        label.set_alignment(0, 0.5)
+        label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(self.share.path)
@@ -639,55 +639,55 @@ class DeleteDialog(gtk.Dialog):
         table.attach(label, 1, 2, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Password  : ')
-        label.set_alignment(0, 0.5)
+        label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(self.share.password)
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(' Share Type  : ')
+        label = gtk.Label(' Share Type')
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Generic Typestring  : ')
-        label.set_alignment(0.2, 0.5)
+        label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(self.generic_typestring)
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(' Type Description  :   ') #spaces for Gui align do not change
-        label.set_alignment(0.2, 0.5)
+        label = gtk.Label(' Type Description  : ') #spaces for Gui align do not change
+        label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(self.desc)
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(' Special FLags  : ')
+        label = gtk.Label(' Special Flags ')
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 7, 8, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Temporary  : ')
-        label.set_alignment(0.2, 0.5)
+        label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(str(self.flags[0]))
-        label.set_alignment(0.2, 0.5)
+        label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(' Hidden  :    ') #spaces for Gui align do not change
-        label.set_alignment(0.2, 0.5)
+        label = gtk.Label(' Hidden  : ') #spaces for Gui align do not change
+        label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(str(self.flags[1]))
-        label.set_alignment(0.2, 0.5)
+        label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Max Users  : ')
-        label.set_alignment(0, 0.5)
+        label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 10, 11, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(self.share.max_users)
