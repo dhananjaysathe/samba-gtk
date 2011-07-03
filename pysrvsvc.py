@@ -29,6 +29,7 @@ class srvsvcConnectDialog(gtk.Dialog):
         self.transport_type = transport_type
 
         self.create()
+        self.set_position(gtk.WIN_POS_CENTER)
 
         self.update_sensitivity()
 
@@ -37,6 +38,7 @@ class srvsvcConnectDialog(gtk.Dialog):
         self.set_border_width(5)
         self.set_icon_name(gtk.STOCK_CONNECT)
         self.set_resizable(False)
+        self.set_decorated(True)
 
         self.vbox.set_spacing(5)
 
@@ -206,6 +208,7 @@ class ShareAddEditDialog(gtk.Dialog):
             self.share = share
         self.share_to_fields()
         self.create()
+        self.set_position(gtk.WIN_POS_CENTER)
         self.set_window_mode()
 
 
@@ -219,7 +222,7 @@ class ShareAddEditDialog(gtk.Dialog):
             self.stype_ipc_radio_button.set_sensitive(False)
             self.sflag_temp_check_button.set_sensitive(False)
             self.sflag_hidden_check_button.set_sensitive(False)
-            self.apply_button.set_sensitive(False)
+            self.apply_button.set_sensitive(True)
 
 
     def  get_stype_final(self):
@@ -247,6 +250,13 @@ class ShareAddEditDialog(gtk.Dialog):
 
 
 
+    def toggle_pwd_visiblity(self,widget,Junk):
+        """ Toggels Password visiblity"""
+        mode = self.set_pw_visiblity.get_active()
+        self.share_password_entry.set_visibility(mode)
+        
+            
+        
     def  share_to_fields(self):
         """ Gets values from the share . """
         self.sname = self.share.name
@@ -312,6 +322,8 @@ class ShareAddEditDialog(gtk.Dialog):
         self.set_icon_from_file(self.icon_filename)
         self.vbox.set_spacing(3)
         self.set_border_width(5)
+        self.set_decorated(True)
+        self.set_resizable(False)
 
 
         #artwork
@@ -329,10 +341,10 @@ class ShareAddEditDialog(gtk.Dialog):
         hbox = gtk.HBox()
         label = gtk.Label()
         if self.edit_mode :
-            label.set_text("Edit The Share")
+            label.set_markup("<b>%s</b>" %" ".join(["Editing The Share : ",self.sname]))
         else :
-            label.set_text("Add a New Share")
-        label.set_alignment(0, 0.5)
+            label.set_markup("<b>Add a New Share</b>")
+        label.set_alignment(0.5, 0.5)
         hbox.pack_start(label, True, True, 0)
         self.desc_box.pack_start(hbox,True, True, 0)
 
@@ -358,7 +370,10 @@ class ShareAddEditDialog(gtk.Dialog):
         self.main_box.pack_start(self.form_box, True, True, 0)
 
         # Name , password and comment (npc) frame
-        frame = gtk.Frame("Name and Comment")
+        frame = gtk.Frame()
+        label = gtk.Label('<b>Name and Comment</b>')
+        label.set_use_markup(True)
+        frame.set_label_widget(label)
         self.form_box.pack_start(frame, True, True, 0)
         frame.set_border_width(5)
 
@@ -410,12 +425,17 @@ class ShareAddEditDialog(gtk.Dialog):
         self.set_pw_visiblity = gtk.CheckButton("Visible")
         self.set_pw_visiblity.set_tooltip_text('Enable or disable the password visiblity')
         self.set_pw_visiblity.set_active(False)
+        self.set_pw_visiblity.connect("toggled",self.toggle_pwd_visiblity,None)
         table.attach(self.set_pw_visiblity, 1, 2, 3, 4,gtk.SHRINK,gtk.FILL, 0, 0)
         
 
 
         # Share frame
-        frame = gtk.Frame("Share Type")
+        frame = gtk.Frame()
+        label = gtk.Label('<b>Share Type</b>')
+        label.set_use_markup(True)
+        frame.set_label_widget(label)
+        
         self.form_box.pack_start(frame, True, True, 0)
 
         table = gtk.Table(1,2,True)
@@ -460,7 +480,10 @@ class ShareAddEditDialog(gtk.Dialog):
 
         # Path frame
 
-        frame = gtk.Frame(" Path")
+        frame = gtk.Frame()
+        label = gtk.Label('<b>Path</b>')
+        label.set_use_markup(True)
+        frame.set_label_widget(label)
         self.form_box.pack_start(frame, True, True, 0)
         frame.set_border_width(5)
 
@@ -489,7 +512,10 @@ class ShareAddEditDialog(gtk.Dialog):
 
         # max users frame
 
-        frame = gtk.Frame(" Max Users")
+        frame = gtk.Frame()
+        label = gtk.Label('<b>Max Users</b>')
+        label.set_use_markup(True)
+        frame.set_label_widget(label)
         self.form_box.pack_start(frame, True, True, 0)
         frame.set_border_width(5)
 
@@ -519,7 +545,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
         self.apply_button = gtk.Button("Apply", gtk.STOCK_APPLY)
         self.apply_button.set_flags(gtk.CAN_DEFAULT)
-        #self.apply_button.set_sensitive(not self.edit_mode) # disabled for new Share
+        self.apply_button.set_sensitive(self.edit_mode)
         self.add_action_widget(self.apply_button, gtk.RESPONSE_APPLY)
 
         self.ok_button = gtk.Button("OK", gtk.STOCK_OK)
@@ -551,6 +577,7 @@ class DeleteDialog(gtk.Dialog):
         self.desc = self.pipe.get_share_type_info(self.share.type,'desc')
 
         self.create()
+        self.set_position(gtk.WIN_POS_CENTER)
 
 
 
@@ -564,6 +591,8 @@ class DeleteDialog(gtk.Dialog):
         self.set_icon_from_file(self.icon_filename)
         self.vbox.set_spacing(3)
         self.set_border_width(5)
+        self.set_decorated(True)
+        self.set_resizable(False)
 
 
         #artwork
@@ -605,7 +634,10 @@ class DeleteDialog(gtk.Dialog):
         self.form_box = gtk.VBox()
         self.main_box.pack_start(self.form_box, True, True, 0)
 
-        frame = gtk.Frame("Share Details")
+        frame = gtk.Frame()
+        label = gtk.Label('<b>Share Details</b>')
+        label.set_use_markup(True)
+        frame.set_label_widget(label)
         self.form_box.pack_start(frame, True, True, 0)
         frame.set_border_width(5)
 
@@ -648,7 +680,8 @@ class DeleteDialog(gtk.Dialog):
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(' Share Type')
+        label = gtk.Label('<b>Share Type</b>')
+        label.set_use_markup(True)
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
@@ -668,7 +701,8 @@ class DeleteDialog(gtk.Dialog):
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(' Special Flags ')
+        label = gtk.Label()
+        label.set_markup('<b> Special Flags </b>')
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 7, 8, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
@@ -696,10 +730,14 @@ class DeleteDialog(gtk.Dialog):
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 10, 11, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        box =  gtk.VBox()
+        box =  gtk.VBox(3)
         label = gtk.Label("Are yous sure you want to delete the share ?")
+        label.set_alignment(0.5,0.5)
         box.pack_start(label,True,True,0)
-        label = gtk.Label("(Please Note this is an irreversable action)")
+        warning ="(Please Note this is an irreversable action)"
+        label = gtk.Label('<span foreground="red">%s</span>' % warning)
+        label.set_use_markup(True)
+        label.set_alignment(0.5,0.5)
         box.pack_start(label,True,True,0)
         box.set_border_width(5)
 
