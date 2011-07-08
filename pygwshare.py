@@ -1,12 +1,20 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
+import sys
+import os.path
+import traceback
+import getopt
+import gobject
+import gtk
 from samba import credentials
 from samba.dcerpc import srvsvc
 from samba.dcerpc import security
 from sambagtk.dialogs import AboutDialog
-import os.path
-import pysrvsvc
+from pysrvsvc import (
+    DeleteDialog,
+    ShareAddEditDialog,
+    srvsvcConnectDialog,
+    )
 
 
 class srvsvcPipeManager(object):
@@ -417,7 +425,7 @@ class srvsvcPipeManager(object):
   Filepath must be full path relative to basepath of share's path.
 
   Usage:
-  S.set_file_security (self,secdesc,sd_buf,sharename= \"\",filepath= \"\") -> Boolean succes,[error]
+  S.set_file_security (self,secdesc,sd_buf,sharename= "",filepath= "s") -> Boolean succes,[error]
   """
 
         sharename = unicode(sharename)
@@ -470,7 +478,7 @@ class srvsvcPipeManager(object):
         share.current_users = 0x00000000
         share.max_users= max_users
         share.password = password
-        share.path = path # path validation needs to be done separately while insertion 
+        share.path = path # path validation needs to be done separately while insertion
         share.permissions = 0 #None
         share.sd_buf =  security.sec_desc_buf()#sd_buf  # ### FIXME
 
@@ -512,3 +520,314 @@ class srvsvcPipeManager(object):
         for i in disk_info.disks:
             if i.disk != '':  # disk lists returns a blank entry not of consequence to the program
                 self.disks_list.append(i.disk)
+
+
+
+
+class ShareWindow(gkt.Window):
+    """ Share management interface window """
+
+    def __init__ (self, info_callback=None, server="", username="", password="",
+            transport_type=0,connect_now=False):
+        super(ShareWindow, self).__init__()
+
+        # It's nice to have this info saved when a user wants to reconnect
+        self.server_address = server
+        self.username = username
+        self.transport_type = transport_type
+
+        self.create()
+        self.pipe_manager = None
+        self.active_page_index = 0
+
+        self.set_status("Disconnected.")
+        self.on_connect_item_activate(None, server, transport_type, username, password, connect_now)
+
+        # This is used so the parent program can grab the server info after
+        # we've connected.
+        if info_callback is not None:
+            info_callback(server=self.server_address, username=self.username,
+                    transport_type=self.transport_type)
+
+    def create(self):
+        # main window
+        self.set_title("Share Management Interface")
+        self.set_default_size(800, 600)
+        self.icon_filename = os.path.join(sys.path[0], "images", "network.png")
+        self.share_icon_filename = os.path.join(sys.path[0], "images", "user.png")
+        self.set_icon_from_file(self.icon_filename)
+        self.set_position(gtk.WIN_POS_CENTER)
+        
+        accel_group = gtk.AccelGroup()
+        self.vbox = gtk.VBox(False, 0)
+        self.add(self.vbox)
+        
+        # menu
+        self.menubar = gtk.MenuBar()
+        self.vbox.pack_start(self.menubar, False, False, 0)
+        
+        self.file_item = gtk.MenuItem("_File")
+        self.menubar.add(self.file_item)
+
+        file_menu = gtk.Menu()
+        self.file_item.set_submenu(file_menu)
+
+        self.connect_item = gtk.ImageMenuItem(gtk.STOCK_CONNECT, accel_group)
+        file_menu.add(self.connect_item)
+
+        self.disconnect_item = gtk.ImageMenuItem(gtk.STOCK_DISCONNECT, accel_group)
+        self.disconnect_item.set_sensitive(False)
+        file_menu.add(self.disconnect_item)
+
+        menu_separator_item = gtk.SeparatorMenuItem()
+        menu_separator_item.set_sensitive(False)
+        file_menu.add(menu_separator_item)
+
+        self.quit_item = gtk.ImageMenuItem(gtk.STOCK_QUIT, accel_group)
+        file_menu.add(self.quit_item)
+        
+        self.view_item = gtk.MenuItem("_View")
+        self.menubar.add(self.view_item)
+
+        view_menu = gtk.Menu()
+        self.view_item.set_submenu(view_menu)
+
+        self.refresh_item = gtk.ImageMenuItem(gtk.STOCK_REFRESH, accel_group)
+        self.refresh_item.set_sensitive(False)
+        view_menu.add(self.refresh_item)
+        
+        self.share_item = gtk.MenuItem("_Share")
+        self.menubar.add(self.share_item)
+
+        share_menu = gtk.Menu()
+        self.share_item.set_submenu(share_menu)
+
+        self.new_item = gtk.ImageMenuItem(gtk.STOCK_NEW, accel_group)
+        self.new_item.set_sensitive(False)
+        share_menu.add(self.new_item)
+
+        self.delete_item = gtk.ImageMenuItem(gtk.STOCK_DELETE, accel_group)
+        self.delete_item.set_sensitive(False)
+        share_menu.add(self.delete_item)
+
+        self.edit_item = gtk.ImageMenuItem(gtk.STOCK_EDIT, accel_group)
+        self.edit_item.set_sensitive(False)
+        share_menu.add(self.edit_item)
+        
+        self.help_item = gtk.MenuItem("_Help")
+        self.menubar.add(self.help_item)
+
+        help_menu = gtk.Menu()
+        self.help_item.set_submenu(help_menu)
+
+        self.about_item = gtk.ImageMenuItem(gtk.STOCK_ABOUT, accel_group)
+        help_menu.add(self.about_item)
+        
+        # toolbar
+        self.toolbar = gtk.Toolbar()
+        self.vbox.pack_start(self.toolbar, False, False, 0)
+
+        self.connect_button = gtk.ToolButton(gtk.STOCK_CONNECT)
+        self.connect_button.set_is_important(True)
+        self.connect_button.set_tooltip_text("Connect to a server")
+        self.toolbar.insert(self.connect_button, 0)
+
+        self.disconnect_button = gtk.ToolButton(gtk.STOCK_DISCONNECT)
+        self.disconnect_button.set_is_important(True)
+        self.disconnect_button.set_tooltip_text("Disconnect from the server")
+        self.toolbar.insert(self.disconnect_button, 1)
+
+        self.toolbar.insert(gtk.SeparatorToolItem(), 2)
+
+        self.new_button = gtk.ToolButton(gtk.STOCK_NEW)
+        self.new_button.set_is_important(True)
+        self.new_button.set_tootip_text("New Share")
+        self.toolbar.insert(self.new_button, 3)
+
+        self.edit_button = gtk.ToolButton(gtk.STOCK_EDIT)
+        self.edit_button.set_is_important(True)
+        self.edit_button.set_tootip_text("Edit Share")
+        self.toolbar.insert(self.edit_button, 4)
+
+        self.delete_button = gtk.ToolButton(gtk.STOCK_DELETE)
+        self.delete_button.set_is_important(True)
+        self.delete_button.set_tootip_text("Delete Share")
+        self.toolbar.insert(self.delete_button, 5)
+        
+        #share-page
+        self.share_notebook = gtk.Notebook()
+        self.vbox.pack_start(self.share_notebook, True, True, 0)
+        
+        hbox = gtk.HBox()
+        self.share_notebook.append_page(hbox, gtk.Label("Share Management"))
+        
+        vpane = gtk.VPaned()
+        hbox.add(vpane)
+        
+        ### left active widget :
+        vbox = gtk.VBox()
+        vpane.add1(vbox)
+        
+        frame = gtk.Frame()
+        label = gtk.Label('<b>Selected Share Details</b>')
+        label.set_use_markup(True)
+        frame.set_label_widget(label)
+        vbox.pack_start(frame, True, True, 0)
+        frame.set_border_width(5)
+
+        table = gtk.Table(11,2)
+        table.set_border_width(5)
+        table.set_row_spacings(2)
+        table.set_col_spacings(6)
+
+        frame.add(table)
+
+        label = gtk.Label(' Share Name  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        self.active_window_name_label = gtk.Label()
+        self.active_window_name_label.set_alignment(0, 0.5)
+        table.attach(self.active_window_name_label, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' Comment  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        self.active_window_comment_label = gtk.Label()
+        self.active_window_comment_label.set_alignment(0, 0.5)
+        table.attach(self.active_window_comment_label, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' Path  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        self.active_window_path_label = gtk.Label()
+        self.active_window_path_label.set_alignment(0, 0.5)
+        table.attach(self.active_window_path_label, 1, 2, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' Password  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        self.active_window_password_label = gtk.Label()
+        self.active_window_password_label.set_alignment(0, 0.5)
+        table.attach(self.active_window_password_label, 1, 2, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label('<b>Share Type</b>')
+        label.set_use_markup(True)
+        label.set_alignment(0, 0.5)
+        table.attach(label, 0, 1, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' Generic Typestring  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        self.active_window_tstring_label = gtk.Label()
+        self.active_window_tstring_label.set_alignment(0, 0.5)
+        table.attach(self.active_window_tstring_label, 1, 2, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' Type Description  : ') #spaces for Gui align do not change
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        self.active_window_tdesc_label = gtk.Label()
+        self.active_window_tdesc_label.set_alignment(0, 0.5)
+        table.attach(self.active_window_tdesc_label, 1, 2, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label()
+        label.set_markup('<b> Special Flags </b>')
+        label.set_alignment(0, 0.5)
+        table.attach(label, 0, 1, 7, 8, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' Temporary  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        self.active_window_tflag_label = gtk.Label()
+        self.active_window_tflag_label.set_alignment(0, 0.5)
+        table.attach(self.active_window_tflag_label, 1, 2, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' Hidden  : ') #spaces for Gui align do not change
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        self.active_window_hflag_label = gtk.Label()
+        self.active_window_hflag_label.set_alignment(0, 0.5)
+        table.attach(self.active_window_hflag_label, 1, 2, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' Max Users  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 10, 11, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        self.active_window_maxusr_label = gtk.Label()
+        self.active_window_maxusr_label.set_alignment(0, 0.5)
+        table.attach(self.active_window_maxusr_label, 1, 2, 10, 11, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        
+        hbox = gtk.HBox()
+        hbox 
+        # shares listing on right side
+        
+        scrolledwindow = gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
+        vpane.add2(scrolledwindow)
+        
+        self.shares_tree_view = gtk.TreeView()
+        scrolledwindow.add(self.shares_tree_view)
+        
+        column = gtk.TreeViewColumn()
+        column.set_title("")
+        renderer = gtk.CellRendererPixbuf()
+        renderer.set_property("pixbuf", gtk.gdk.pixbuf_new_from_file_at_size(self.share_icon_filename, 22, 22))
+        column.pack_start(renderer, True)
+        self.users_tree_view.append_column(column)
+        
+        column = gtk.TreeViewColumn()
+        column.set_title("Name")
+        column.set_resizable(True)
+        column.set_sort_column_id(0)
+        renderer = gtk.CellRendererText()
+        column.pack_start(renderer, True)
+        self.users_tree_view.append_column(column)
+        column.add_attribute(renderer, "text", 0)
+        
+        column = gtk.TreeViewColumn()
+        column.set_title("Type")
+        column.set_resizable(True)
+        column.set_expand(True)
+        column.set_sort_column_id(1)
+        renderer = gtk.CellRendererText()
+        column.pack_start(renderer, True)
+        self.users_tree_view.append_column(column)
+        column.add_attribute(renderer, "text", 1)
+
+        column = gtk.TreeViewColumn()
+        column.set_title("Description")
+        column.set_resizable(True)
+        column.set_expand(True)
+        column.set_sort_column_id(2)
+        renderer = gtk.CellRendererText()
+        column.pack_start(renderer, True)
+        self.users_tree_view.append_column(column)
+        column.add_attribute(renderer, "text", 2)
+
+        column = gtk.TreeViewColumn()
+        column.set_title("Path")
+        column.set_resizable(True)
+        column.set_sort_column_id(3)
+        renderer = gtk.CellRendererText()
+        column.pack_start(renderer, True)
+        self.users_tree_view.append_column(column)
+        column.add_attribute(renderer, "text", 3)
+        
+        self.shares_store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING)
+        self.shares_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
+        self.shares_tree_view.set_model(self.shares_store)
+        
+        
+        
+        
+
+        
+

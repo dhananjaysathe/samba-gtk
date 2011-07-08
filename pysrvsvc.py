@@ -240,7 +240,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
         if len(self.share_name_entry.get_text()) == 0:
             return "Share name may not be empty!"
-
+        
         if (not self.edit_mode):
             for share in self.pipe.share_list:
                 if share.name == self.share_name_entry.get_text():
@@ -254,9 +254,9 @@ class ShareAddEditDialog(gtk.Dialog):
         """ Toggels Password visiblity"""
         mode = self.set_pw_visiblity.get_active()
         self.share_password_entry.set_visibility(mode)
-        
-            
-        
+
+
+
     def  share_to_fields(self):
         """ Gets values from the share . """
         self.sname = self.share.name
@@ -427,7 +427,7 @@ class ShareAddEditDialog(gtk.Dialog):
         self.set_pw_visiblity.set_active(False)
         self.set_pw_visiblity.connect("toggled",self.toggle_pwd_visiblity,None)
         table.attach(self.set_pw_visiblity, 1, 2, 3, 4,gtk.SHRINK,gtk.FILL, 0, 0)
-        
+
 
 
         # Share frame
@@ -435,7 +435,7 @@ class ShareAddEditDialog(gtk.Dialog):
         label = gtk.Label('<b>Share Type</b>')
         label.set_use_markup(True)
         frame.set_label_widget(label)
-        
+
         self.form_box.pack_start(frame, True, True, 0)
 
         table = gtk.Table(1,2,True)
@@ -742,8 +742,8 @@ class DeleteDialog(gtk.Dialog):
         box.set_border_width(5)
 
         self.vbox.pack_start(box,True,True,0)
-        
-        
+
+
 
         # action area
 
@@ -754,7 +754,6 @@ class DeleteDialog(gtk.Dialog):
         self.add_action_widget(self.cancel_button, gtk.RESPONSE_CANCEL)
 
         self.ok_button = gtk.Button("Delete", gtk.STOCK_OK)
-        self.ok_button.set_flags(gtk.CAN_DEFAULT)
         self.add_action_widget(self.ok_button, gtk.RESPONSE_OK)
 
         self.set_default_response(gtk.RESPONSE_OK)
