@@ -549,6 +549,20 @@ class ShareWindow(gkt.Window):
             info_callback(server=self.server_address, username=self.username,
                     transport_type=self.transport_type)
 
+    def fill_active_pane(self,share)
+        """ Fills sthe active left pane """
+        stype = self.share.type
+        self.active_window_name_label.set_text(self.share.name)
+        self.active_window_comment_label.set_text(self.share.comment)
+        self.active_window_path_label.set_text(self.share.path)
+        self.active_window_password_label.set_text(self.share.password)
+        self.active_window_tstring_label.set_text(self.pipe_manager.get_share_type_info(stype,'typestring'))
+        self.active_window_tdesc_label.set_text(self.pipe_manager.get_share_type_info(stype,'desc'))
+        flag_set = self.pipe_manager.get_share_type_info(stype,'flags')
+        self.active_window_tflag_label.set_text(str(flag_set[0]))
+        self.active_window_hflag_label.set_text(str(flag_set[1]))
+        self.active_window_maxusr_label.set_text(self.share.max_users)
+
     def create(self):
         # main window
         self.set_title("Share Management Interface")
@@ -557,15 +571,15 @@ class ShareWindow(gkt.Window):
         self.share_icon_filename = os.path.join(sys.path[0], "images", "user.png")
         self.set_icon_from_file(self.icon_filename)
         self.set_position(gtk.WIN_POS_CENTER)
-        
+
         accel_group = gtk.AccelGroup()
         self.vbox = gtk.VBox(False, 0)
         self.add(self.vbox)
-        
+
         # menu
         self.menubar = gtk.MenuBar()
         self.vbox.pack_start(self.menubar, False, False, 0)
-        
+
         self.file_item = gtk.MenuItem("_File")
         self.menubar.add(self.file_item)
 
@@ -585,7 +599,7 @@ class ShareWindow(gkt.Window):
 
         self.quit_item = gtk.ImageMenuItem(gtk.STOCK_QUIT, accel_group)
         file_menu.add(self.quit_item)
-        
+
         self.view_item = gtk.MenuItem("_View")
         self.menubar.add(self.view_item)
 
@@ -595,7 +609,7 @@ class ShareWindow(gkt.Window):
         self.refresh_item = gtk.ImageMenuItem(gtk.STOCK_REFRESH, accel_group)
         self.refresh_item.set_sensitive(False)
         view_menu.add(self.refresh_item)
-        
+
         self.share_item = gtk.MenuItem("_Share")
         self.menubar.add(self.share_item)
 
@@ -613,7 +627,7 @@ class ShareWindow(gkt.Window):
         self.edit_item = gtk.ImageMenuItem(gtk.STOCK_EDIT, accel_group)
         self.edit_item.set_sensitive(False)
         share_menu.add(self.edit_item)
-        
+
         self.help_item = gtk.MenuItem("_Help")
         self.menubar.add(self.help_item)
 
@@ -622,7 +636,7 @@ class ShareWindow(gkt.Window):
 
         self.about_item = gtk.ImageMenuItem(gtk.STOCK_ABOUT, accel_group)
         help_menu.add(self.about_item)
-        
+
         # toolbar
         self.toolbar = gtk.Toolbar()
         self.vbox.pack_start(self.toolbar, False, False, 0)
@@ -653,21 +667,21 @@ class ShareWindow(gkt.Window):
         self.delete_button.set_is_important(True)
         self.delete_button.set_tootip_text("Delete Share")
         self.toolbar.insert(self.delete_button, 5)
-        
+
         #share-page
         self.share_notebook = gtk.Notebook()
         self.vbox.pack_start(self.share_notebook, True, True, 0)
-        
+
         hbox = gtk.HBox()
         self.share_notebook.append_page(hbox, gtk.Label("Share Management"))
-        
+
         vpane = gtk.VPaned()
         hbox.add(vpane)
-        
+
         ### left active widget :
-        vbox = gtk.VBox()
+        vbox = gtk.VBox(5)
         vpane.add1(vbox)
-        
+
         frame = gtk.Frame()
         label = gtk.Label('<b>Selected Share Details</b>')
         label.set_use_markup(True)
@@ -763,26 +777,36 @@ class ShareWindow(gkt.Window):
         self.active_window_maxusr_label = gtk.Label()
         self.active_window_maxusr_label.set_alignment(0, 0.5)
         table.attach(self.active_window_maxusr_label, 1, 2, 10, 11, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         hbox = gtk.HBox()
-        hbox 
-        # shares listing on right side
+        vbox.pack_start(hbox,True,True,0)
         
+        button = gtk.Button("New")
+        hbox.pack_start(button,True,True,0)
+        
+        button = gtk.Button("Edit")
+        hbox.pack_start(button,True,True,0)
+        
+        button = gtk.Button("Delete")
+        hbox.pack_start(button,True,True,0)
+        
+        # shares listing on right side
+
         scrolledwindow = gtk.ScrolledWindow(None, None)
         scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
         vpane.add2(scrolledwindow)
-        
+
         self.shares_tree_view = gtk.TreeView()
         scrolledwindow.add(self.shares_tree_view)
-        
+
         column = gtk.TreeViewColumn()
         column.set_title("")
         renderer = gtk.CellRendererPixbuf()
         renderer.set_property("pixbuf", gtk.gdk.pixbuf_new_from_file_at_size(self.share_icon_filename, 22, 22))
         column.pack_start(renderer, True)
         self.users_tree_view.append_column(column)
-        
+
         column = gtk.TreeViewColumn()
         column.set_title("Name")
         column.set_resizable(True)
@@ -791,7 +815,7 @@ class ShareWindow(gkt.Window):
         column.pack_start(renderer, True)
         self.users_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 0)
-        
+
         column = gtk.TreeViewColumn()
         column.set_title("Type")
         column.set_resizable(True)
@@ -820,14 +844,14 @@ class ShareWindow(gkt.Window):
         column.pack_start(renderer, True)
         self.users_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 3)
-        
+
         self.shares_store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING)
         self.shares_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
         self.shares_tree_view.set_model(self.shares_store)
-        
-        
-        
-        
 
-        
+
+
+
+
+
 
