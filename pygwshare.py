@@ -6,9 +6,12 @@ import traceback
 import getopt
 import gobject
 import gtk
+
 from samba import credentials
-from samba.dcerpc import srvsvc
-from samba.dcerpc import security
+from samba.dcerpc import (
+    srvsvc,
+    security,
+    )
 from sambagtk.dialogs import AboutDialog
 from pysrvsvc import (
     DeleteDialog,
@@ -478,9 +481,9 @@ class srvsvcPipeManager(object):
         share.current_users = 0x00000000
         share.max_users= max_users
         share.password = password
-        share.path = path # path validation needs to be done separately while insertion
+        share.path = path # As a result path validation needs to be done separately while insertion
         share.permissions = 0 #None
-        share.sd_buf =  security.sec_desc_buf()#sd_buf  # ### FIXME
+        share.sd_buf =  security.sec_desc_buf()
 
         return share
 
@@ -524,7 +527,7 @@ class srvsvcPipeManager(object):
 
 
 
-class ShareWindow(gkt.Window):
+class ShareWindow(gtk.Window):
     """ Share management interface window """
 
     def __init__ (self, info_callback=None, server="", username="", password="",
@@ -549,26 +552,47 @@ class ShareWindow(gkt.Window):
             info_callback(server=self.server_address, username=self.username,
                     transport_type=self.transport_type)
 
-    def fill_active_pane(self,share)
+    def connected(self):
+        return self.pipe_manager is not None
+
+    def set_status(self, message):
+        self.statusbar.pop(0)
+        self.statusbar.push(0, message)
+
+
+    def fill_active_pane(self,share):
         """ Fills sthe active left pane """
-        stype = self.share.type
-        self.active_window_name_label.set_text(self.share.name)
-        self.active_window_comment_label.set_text(self.share.comment)
-        self.active_window_path_label.set_text(self.share.path)
-        self.active_window_password_label.set_text(self.share.password)
-        self.active_window_tstring_label.set_text(self.pipe_manager.get_share_type_info(stype,'typestring'))
-        self.active_window_tdesc_label.set_text(self.pipe_manager.get_share_type_info(stype,'desc'))
-        flag_set = self.pipe_manager.get_share_type_info(stype,'flags')
-        self.active_window_tflag_label.set_text(str(flag_set[0]))
-        self.active_window_hflag_label.set_text(str(flag_set[1]))
-        self.active_window_maxusr_label.set_text(self.share.max_users)
+        if share is None:
+            self.active_pane_frame_label.set_markup('<b>No Share Selected</b>')
+            self.active_window_name_label.set_text("-NA-")
+            self.active_window_comment_label.set_text("-NA-")
+            self.active_window_path_label.set_text("-NA-")
+            self.active_window_password_label.set_text("-NA-")
+            self.active_window_tstring_label.set_text("-NA-")
+            self.active_window_tdesc_label.set_text("-NA-")
+            self.active_window_tflag_label.set_text("-NA-")
+            self.active_window_hflag_label.set_text("-NA-")
+            self.active_window_maxusr_label.set_text("-NA-")
+        else:
+            self.active_pane_frame_label.set_markup('<b>Selected Share Details</b>')
+            stype = self.share.type
+            self.active_window_name_label.set_text(self.share.name)
+            self.active_window_comment_label.set_text(self.share.comment)
+            self.active_window_path_label.set_text(self.share.path)
+            self.active_window_password_label.set_text(self.share.password)
+            self.active_window_tstring_label.set_text(self.pipe_manager.get_share_type_info(stype,'typestring'))
+            self.active_window_tdesc_label.set_text(self.pipe_manager.get_share_type_info(stype,'desc'))
+            flag_set = self.pipe_manager.get_share_type_info(stype,'flags')
+            self.active_window_tflag_label.set_text(str(flag_set[0]))
+            self.active_window_hflag_label.set_text(str(flag_set[1]))
+            self.active_window_maxusr_label.set_text(self.share.max_users)
 
     def create(self):
         # main window
         self.set_title("Share Management Interface")
-        self.set_default_size(800, 600)
+        #self.set_default_size(800, 600)
         self.icon_filename = os.path.join(sys.path[0], "images", "network.png")
-        self.share_icon_filename = os.path.join(sys.path[0], "images", "user.png")
+        self.share_icon_filename = os.path.join(sys.path[0], "images", "network.png")
         self.set_icon_from_file(self.icon_filename)
         self.set_position(gtk.WIN_POS_CENTER)
 
@@ -651,21 +675,22 @@ class ShareWindow(gkt.Window):
         self.disconnect_button.set_tooltip_text("Disconnect from the server")
         self.toolbar.insert(self.disconnect_button, 1)
 
-        self.toolbar.insert(gtk.SeparatorToolItem(), 2)
+        sep = gtk.SeparatorToolItem()
+        self.toolbar.insert(sep, 2)
 
         self.new_button = gtk.ToolButton(gtk.STOCK_NEW)
         self.new_button.set_is_important(True)
-        self.new_button.set_tootip_text("New Share")
+        #self.new_button.set_tootip_text("New Share")
         self.toolbar.insert(self.new_button, 3)
 
         self.edit_button = gtk.ToolButton(gtk.STOCK_EDIT)
         self.edit_button.set_is_important(True)
-        self.edit_button.set_tootip_text("Edit Share")
+        #self.edit_button.set_tootip_text("Edit Share")
         self.toolbar.insert(self.edit_button, 4)
 
         self.delete_button = gtk.ToolButton(gtk.STOCK_DELETE)
         self.delete_button.set_is_important(True)
-        self.delete_button.set_tootip_text("Delete Share")
+        #self.delete_button.set_tootip_text("Delete Share")
         self.toolbar.insert(self.delete_button, 5)
 
         #share-page
@@ -683,9 +708,10 @@ class ShareWindow(gkt.Window):
         vpane.add1(vbox)
 
         frame = gtk.Frame()
-        label = gtk.Label('<b>Selected Share Details</b>')
-        label.set_use_markup(True)
-        frame.set_label_widget(label)
+        self.active_pane_frame_label = gtk.Label()
+        self.active_pane_frame_label.set_use_markup(True)
+        self.active_pane_frame_label.set_markup('<b>Selected Share Details</b>')
+        frame.set_label_widget(self.active_pane_frame_label)
         vbox.pack_start(frame, True, True, 0)
         frame.set_border_width(5)
 
@@ -780,16 +806,16 @@ class ShareWindow(gkt.Window):
 
         hbox = gtk.HBox()
         vbox.pack_start(hbox,True,True,0)
-        
+
         button = gtk.Button("New")
         hbox.pack_start(button,True,True,0)
-        
+
         button = gtk.Button("Edit")
         hbox.pack_start(button,True,True,0)
-        
+
         button = gtk.Button("Delete")
         hbox.pack_start(button,True,True,0)
-        
+
         # shares listing on right side
 
         scrolledwindow = gtk.ScrolledWindow(None, None)
@@ -805,7 +831,7 @@ class ShareWindow(gkt.Window):
         renderer = gtk.CellRendererPixbuf()
         renderer.set_property("pixbuf", gtk.gdk.pixbuf_new_from_file_at_size(self.share_icon_filename, 22, 22))
         column.pack_start(renderer, True)
-        self.users_tree_view.append_column(column)
+        self.shares_tree_view.append_column(column)
 
         column = gtk.TreeViewColumn()
         column.set_title("Name")
@@ -813,7 +839,7 @@ class ShareWindow(gkt.Window):
         column.set_sort_column_id(0)
         renderer = gtk.CellRendererText()
         column.pack_start(renderer, True)
-        self.users_tree_view.append_column(column)
+        self.shares_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 0)
 
         column = gtk.TreeViewColumn()
@@ -823,7 +849,7 @@ class ShareWindow(gkt.Window):
         column.set_sort_column_id(1)
         renderer = gtk.CellRendererText()
         column.pack_start(renderer, True)
-        self.users_tree_view.append_column(column)
+        self.shares_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 1)
 
         column = gtk.TreeViewColumn()
@@ -833,7 +859,7 @@ class ShareWindow(gkt.Window):
         column.set_sort_column_id(2)
         renderer = gtk.CellRendererText()
         column.pack_start(renderer, True)
-        self.users_tree_view.append_column(column)
+        self.shares_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 2)
 
         column = gtk.TreeViewColumn()
@@ -842,16 +868,79 @@ class ShareWindow(gkt.Window):
         column.set_sort_column_id(3)
         renderer = gtk.CellRendererText()
         column.pack_start(renderer, True)
-        self.users_tree_view.append_column(column)
+        self.shares_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 3)
 
         self.shares_store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING)
         self.shares_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
         self.shares_tree_view.set_model(self.shares_store)
 
+        #
+        hbox = gtk.HBox()
+        self.share_notebook.append_page(hbox, gtk.Label("Share Server Info"))
+
+        label = gtk.Label('<b>Share Details</b>')
+        label.set_use_markup(True)
+        frame.set_label_widget(label)
+        hbox.pack_start(frame, True, True, 0)
+        frame.set_border_width(5)
+
+        table = gtk.Table(11,2)
+        table.set_border_width(5)
+        table.set_row_spacings(2)
+        table.set_col_spacings(6)
 
 
 
 
+        # status bar
+
+        self.statusbar = gtk.Statusbar()
+        self.statusbar.set_has_resize_grip(True)
+        self.vbox.pack_start(self.statusbar, False, False, 0)
+
+############################################################################################################
+
+def PrintUsage():
+    print "Usage: %s [OPTIONS]" % (str(os.path.split(__file__)[-1]))
+    print "All options are optional. The user will be queried for additional information if needed.\n"
+    print "  -s  --server\t\tspecify the server to connect to."
+    print "  -u  --user\t\tspecify the user."
+    print "  -p  --password\tThe password for the user."
+    print "  -t  --transport\tTransport type.\n\t\t\t\t0 for RPC, SMB, TCP/IP\n\t\t\t\t1 for RPC, TCP/IP\n\t\t\t\t2 for localhost."
+    print "  -c  --connect-now\tSkip the connect dialog."
+    #TODO: mention domain index. And maybe come up with a better way of handling it?
+
+def ParseArgs(argv):
+    arguments = {}
+
+    try: #get arguments into a nicer format
+        opts, args = getopt.getopt(argv, "chu:s:p:t:", ["help", "user=", "server=", "password=", "connect-now", "transport="])
+    except getopt.GetoptError:
+        PrintUsage()
+        sys.exit(2)
+
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            PrintUsage()
+            sys.exit(0)
+        elif opt in ("-s", "--server"):
+            arguments.update({"server":arg})
+        elif opt in ("-u", "--user"):
+            arguments.update({"username":arg})
+        elif opt in ("-p", "--password"):
+            arguments.update({"password":arg})
+        elif opt in ("-t", "--transport"):
+            arguments.update({"transport_type":int(arg)})
+        elif opt in ("-c", "--connect-now"):
+            arguments.update({"connect_now":True})
+    return (arguments)
 
 
+
+if __name__ == "__main__":
+    arguments = ParseArgs(sys.argv[1:]) #the [1:] ignores the first argument, which is the path to our utility
+
+    main_window = ShareWindow(**arguments)
+    main_window.show_all()
+    gtk.main()
