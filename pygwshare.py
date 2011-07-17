@@ -308,7 +308,7 @@ class srvsvcPipeManager(object):
         """ Gets share info for a share with a particular name from local cache lists.
 
   Usage:
-  S.get_share_info_local(self,name= \"\") -> sahre_info (502 type)
+  S.get_share_info_local(self,name= "") -> sahre_info (502 type)
   """
         name = unicode(name)
         for i in self.share_names_list:
@@ -344,7 +344,7 @@ class srvsvcPipeManager(object):
         """ Delete a share with the given name.
 
   Usage:
-  S.delete_share (self,name= \"\") -> Boolean indicating success or faliure ,[error object]
+  S.delete_share (self,name= "") -> Boolean indicating success or faliure ,[error object]
   """
 
         reserved = None
@@ -452,7 +452,7 @@ class srvsvcPipeManager(object):
             srvsvc.PLATFORM_ID_DOS: {'typestring':'PLATFORM_ID_DOS','desc':'DOS'},
             srvsvc.PLATFORM_ID_OS2: {'typestring':'PLATFORM_ID_OS2','desc':'OS2'},
             srvsvc.PLATFORM_ID_NT: {'typestring':'PLATFORM_ID_NT','desc':'Windows NT or a newer'},
-            srvsvc.PLATFORM_ID_NT: {'typestring':'PLATFORM_ID_OSF','desc':'OSF/1'},
+            srvsvc.PLATFORM_ID_OSF: {'typestring':'PLATFORM_ID_OSF','desc':'OSF/1'},
             srvsvc.PLATFORM_ID_VMS: {'typestring':'PLATFORM_ID_VMS','desc':'VMS'},
             }
         return os_dict[platform_id][field]
@@ -531,7 +531,7 @@ class ShareWindow(gtk.Window):
     """ Share management interface window """
 
     def __init__ (self, info_callback=None, server="", username="", password="",
-            transport_type=0,connect_now=False):
+            transport_type=0,connect_now=False,testpipe=None):
         super(ShareWindow, self).__init__()
 
         # It's nice to have this info saved when a user wants to reconnect
@@ -539,12 +539,15 @@ class ShareWindow(gtk.Window):
         self.username = username
         self.transport_type = transport_type
 
-        self.create()
-        self.pipe_manager = None
+        
+        self.pipe_manager = testpipe
         self.active_page_index = 0
+        self.server_info = self.pipe_manager.server_info # for easier further use
 
+
+        self.create()
         self.set_status("Disconnected.")
-        self.on_connect_item_activate(None, server, transport_type, username, password, connect_now)
+        #self.on_connect_item_activate(None, server, transport_type, username, password, connect_now)
 
         # This is used so the parent program can grab the server info after
         # we've connected.
@@ -585,12 +588,12 @@ class ShareWindow(gtk.Window):
             flag_set = self.pipe_manager.get_share_type_info(stype,'flags')
             self.active_window_tflag_label.set_text(str(flag_set[0]))
             self.active_window_hflag_label.set_text(str(flag_set[1]))
-            self.active_window_maxusr_label.set_text(self.share.max_users)
+            self.active_window_maxusr_label.set_text(str(self.share.max_users))
 
     def create(self):
         # main window
         self.set_title("Share Management Interface")
-        #self.set_default_size(800, 600)
+        self.set_default_size(800, 600)
         self.icon_filename = os.path.join(sys.path[0], "images", "network.png")
         self.share_icon_filename = os.path.join(sys.path[0], "images", "network.png")
         self.set_icon_from_file(self.icon_filename)
@@ -700,7 +703,7 @@ class ShareWindow(gtk.Window):
         hbox = gtk.HBox()
         self.share_notebook.append_page(hbox, gtk.Label("Share Management"))
 
-        vpane = gtk.VPaned()
+        vpane = gtk.HPaned()
         hbox.add(vpane)
 
         ### left active widget :
@@ -805,16 +808,19 @@ class ShareWindow(gtk.Window):
         table.attach(self.active_window_maxusr_label, 1, 2, 10, 11, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         hbox = gtk.HBox()
-        vbox.pack_start(hbox,True,True,0)
+        vbox.pack_start(hbox,True,False,0)
+        
+        table = gtk.Table(3,5,True)
+        hbox.pack_start(table,True,True,0)
 
         button = gtk.Button("New")
-        hbox.pack_start(button,True,True,0)
+        table.attach(button, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         button = gtk.Button("Edit")
-        hbox.pack_start(button,True,True,0)
+        table.attach(button, 2, 3, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         button = gtk.Button("Delete")
-        hbox.pack_start(button,True,True,0)
+        table.attach(button, 3, 4, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         # shares listing on right side
 
@@ -879,19 +885,137 @@ class ShareWindow(gtk.Window):
         hbox = gtk.HBox()
         self.share_notebook.append_page(hbox, gtk.Label("Share Server Info"))
 
-        label = gtk.Label('<b>Share Details</b>')
+        vbox = gtk.VBox()
+        hbox.pack_start(vbox, True, True, 0)
+        frame =  gtk.Frame()
+        label = gtk.Label('<b>Share Server Details</b>')
         label.set_use_markup(True)
         frame.set_label_widget(label)
-        hbox.pack_start(frame, True, True, 0)
+        vbox.pack_start(frame, True, True, 0)
         frame.set_border_width(5)
 
         table = gtk.Table(11,2)
         table.set_border_width(5)
-        table.set_row_spacings(2)
+        table.set_row_spacings(1)
         table.set_col_spacings(6)
+        frame.add(table)
+
+        label = gtk.Label(' Platform Id  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        self.srv_type_genstr = self.pipe_manager.get_platform_info(
+                            self.server_info.platform_id,'typestring')
+        label = gtk.Label('/'.join([str(self.server_info.platform_id),self.srv_type_genstr]))
+        label.set_alignment(0, 0.5)
+        table.attach(label, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' NetBIOS Name : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(self.server_info.server_name)
+        label.set_alignment(0, 0.5)
+        table.attach(label, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' Hidden  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(bool(self.server_info.hidden))
+        label.set_alignment(0, 0.5)
+        table.attach(label, 1, 2, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' Comment  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(self.server_info.comment)
+        label.set_alignment(0, 0.5)
+        table.attach(label, 1, 2, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' Version Major : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(self.server_info.version_major)
+        label.set_alignment(0, 0.5)
+        table.attach(label, 1, 2, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' Version Minor  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(self.server_info.version_minor)
+        label.set_alignment(0, 0.5)
+        table.attach(label, 1, 2, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
 
+        label = gtk.Label(' Server Type  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
+        server_typedict = {
+        0x00000001:'SV_TYPE_WORKSTATION',
+        0x00000002:'SV_TYPE_SERVER',
+        0x00000004:'SV_TYPE_SQLSERVER',
+        0x00000008:'SV_TYPE_DOMAIN_CTRL',
+        0x00000010:'SV_TYPE_DOMAIN_BAKCTRL',
+        0x00000020:'SV_TYPE_TIME_SOURCE',
+        0x00000040:'SV_TYPE_AFP',
+        0x00000080:'SV_TYPE_NOVELL',
+        0x00000100:'SV_TYPE_DOMAIN_MEMBER'
+        }
+        
+        try:
+            label = gtk.Label(server_typedict[self.server_info.server_type])
+        except:
+            label = gtk.Label('Resolution Error')
+        label.set_alignment(0, 0.5)
+        table.attach(label, 1, 2, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' Max Users  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 7, 8, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(str(self.server_info.users))
+        label.set_alignment(0, 0.5)
+        table.attach(label, 1, 2, 7, 8, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' Timeout  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(self.server_info.disc)
+        label.set_alignment(0, 0.5)
+        table.attach(label, 1, 2, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' Announce / Anndelta  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label('/'.join([str(self.server_info.announce),
+                            str(self.server_info.anndelta)]))
+        label.set_alignment(0, 0.5)
+        table.attach(label, 1, 2, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(' User Path  : ')
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 10, 11, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        label = gtk.Label(self.server_info.userpath.upper())
+        label.set_alignment(0, 0.5)
+        table.attach(label, 1, 2, 10, 11, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+        vbox = gtk.VBox()
+        hbox.pack_start(vbox,True,True,0)
+
+        frame =  gtk.Frame()
+        label = gtk.Label('<b>Server Time</b>')
+        label.set_use_markup(True)
+        frame.set_label_widget(label)
+        vbox.pack_start(frame, True, True, 0)
+        frame.set_border_width(5)
 
         # status bar
 
@@ -938,9 +1062,10 @@ def ParseArgs(argv):
 
 
 
-if __name__ == "__main__":
+'''if __name__ == "__main__":
     arguments = ParseArgs(sys.argv[1:]) #the [1:] ignores the first argument, which is the path to our utility
 
     main_window = ShareWindow(**arguments)
     main_window.show_all()
     gtk.main()
+'''
