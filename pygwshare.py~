@@ -1048,7 +1048,7 @@ def PrintUsage():
     print "  -p  --password\tThe password for the user."
     print "  -t  --transport\tTransport type.\n\t\t\t\t0 for RPC, SMB, TCP/IP\n\t\t\t\t1 for RPC, TCP/IP\n\t\t\t\t2 for localhost."
     print "  -c  --connect-now\tSkip the connect dialog."
-
+    #TODO: mention domain index. And maybe come up with a better way of handling it?
 
 def ParseArgs(argv):
     arguments = {}
