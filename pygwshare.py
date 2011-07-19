@@ -81,6 +81,8 @@ class srvsvcPipeManager(object):
         self.share_names_list = []
         self.share_types_list = []
         self.get_list_disks()
+        # attempt to control listing of shares.
+        self.show_all_shares = False
         self.get_shares_list()
 
 
@@ -161,7 +163,6 @@ class srvsvcPipeManager(object):
 
 
 
-
     def fix_path_format(self,path=''):
         """ Fixes and checks the given path to make it in tthe correct format
 
@@ -231,13 +232,19 @@ class srvsvcPipeManager(object):
 
     def  get_shares_list(self):
         """ Updates the share list of the pipe object .
-        It first tries to list all shares if that fails it falls back to list standard shares """
-        try:
-            self.list_shares_all()
-            self.all_listable = True
-        except:
+  If show_all_shares is set to flase Hidden shares are set to false and not returned
+  It first tries to list all shares if that fails it falls back to list standard shares
+  and sets the show_all_shares boolean accordingly"""
+
+        if self.show_all_shares is False:
             self.list_shares()
-            self.all_listable = False
+        else:
+            try:
+                self.list_shares_all()
+                self.show_all_shares = True
+            except:
+                self.list_shares()
+                self.show_all_shares = False
 
 
 
@@ -245,7 +252,7 @@ class srvsvcPipeManager(object):
         """ Gets a list of all (not hidden/special)active shares and update the share and share_name list.
 
   Usage:
-  Recomended do not USE , use get list
+  Recomended do not USE , use get_shares_list
   S.list_shares() -> None
   """
         self.share_list = []
@@ -563,6 +570,231 @@ class ShareWindow(gtk.Window):
         self.statusbar.push(0, message)
 
 
+
+    def run_message_dialog(self, type, buttons, message, parent=None):
+        if parent is None:
+            parent = self
+
+        message_box = gtk.MessageDialog(parent, gtk.DIALOG_MODAL, type,
+            buttons, message)
+        response = message_box.run()
+        message_box.hide()
+
+        return response
+
+
+
+    def on_connect_item_activate(self, widget, server="", transport_type=0,
+            username="", password="", connect_now=False):
+        server = server or self.server_address
+        transport_type = transport_type or self.transport_type
+        username = username or self.username
+
+        try:
+            self.pipe_manager = self.run_connect_dialog(None, server,
+                transport_type, username, password, connect_now)
+            if self.pipe_manager is not None:
+                self.pipe_manager.get_shares_list()
+
+                self.set_status("Connected to %s/%s." % (
+                    self.server_address,self.pipe_manager.server_info.server_name))
+
+        except RuntimeError, re:
+            msg = "Failed to connect: %s." % (re.args[1])
+            self.set_status(msg)
+            print msg
+            traceback.print_exc()
+            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+
+        except Exception, ex:
+            msg = "Failed to connect: %s." % (str(ex))
+            self.set_status(msg)
+            print msg
+            traceback.print_exc()
+            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+
+        self.refresh_shares_view()
+        self.update_sensitivity()
+
+
+
+    def get_selected_share(self):
+        if not self.connected():
+            return None
+
+        (model, iter) = self.shares_tree_view.get_selection().get_selected()
+        if iter is None: # no selection
+            return None
+        else:
+            share_name = model.get_value(iter, 0)
+            share_list = [share for share in self.pipe_manager.share_list if share.name == share_name]
+            if len(share_list) > 0:
+                return share_list[0]
+            else:
+                return None
+
+
+    def on_about_item_activate(self, widget):
+        dialog = AboutDialog("PyGWShare",
+            "A tool to manage user shares on a SRVS Share server.\n"
+            "Based on Jelmer Vernooij's original Samba-GTK",
+            self.icon_pixbuf)
+        dialog.run()
+        dialog.hide()
+
+
+    def run_share_add_edit_dialog(self, share=None, apply_callback=None,):
+        dialog = ShareAddEditDialog(self.pipe_manager, share)
+        dialog.show_all()
+
+        # loop to handle the applies
+        while True:
+            response_id = dialog.run()
+
+            if response_id in [gtk.RESPONSE_OK, gtk.RESPONSE_APPLY]:
+                problem_msg = dialog.check_for_problems()
+
+                if problem_msg is not None:
+                    self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, problem_msg, dialog)
+                else:
+                    dialog.fields_to_share()
+
+                    if apply_callback is not None: #seems like there's only a callback when a user is modified, never when creating a new user.
+                        apply_callback(dialog.share)
+                        dialog.share_to_fields()
+
+                    if response_id == gtk.RESPONSE_OK:
+                        dialog.hide()
+                        break
+
+            else:
+                dialog.hide()
+                return None
+
+        return dialog.share
+
+    def update_sensitivity():
+        pass
+
+    def on_disconnect_item_activate(self, widget):
+        if self.pipe_manager is not None:
+            self.pipe_manager.close()
+            self.pipe_manager = None
+
+        self.shares_store.clear()
+        self.update_sensitivity()
+
+        self.set_status("Disconnected.")
+
+
+
+    def toggle_share_view_visiblity(self,widget,Junk):
+        """ Toggels Visiblity of hidden shares if authorised """
+        is_visible = self.show_all_share_checkbox.get_active()
+        self.pipe_manager.show_all_shares = is_visible
+        self.pipe_manager.get_shares_list()
+        # set the box accordingly from get_shares list
+        self.show_all_share_checkbox.set_active(self.pipe_manager.show_all_shares)
+        # now refresh the share view
+        self.refresh_shares_view()
+
+
+
+    def on_edit_item_activate(self, widget):
+        share = self.get_selected_share()
+        self.run_share_add_edit_dialog(share, self.update_share_callback)
+
+
+
+    def on_delete_item_activate(self, widget):
+        share = self.get_selected_share()
+
+      #  if (self.run_message_dialog(gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO, "Do you want to delete share '%s'?" % del_share.name) != gtk.RESPONSE_YES):
+   #TODO    #     return
+
+        try:
+            self.pipe_manager.delete_share(share)
+            self.pipe_manager.get_shares_list()
+
+            self.set_status("Successfully deleted share \'%s\'." % (share.name))
+        except RuntimeError, re:
+            msg = "Failed to delete share: %s." % (re.args[1])
+            self.set_status(msg)
+            print msg
+            traceback.print_exc()
+            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+        except Exception, ex:
+            msg = "Failed to delete share: %s." % (str(ex))
+            self.set_status(msg)
+            print msg
+            traceback.print_exc()
+            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+
+        self.refresh_shares_view()
+
+    def on_refresh_item_activate(self, widget):
+        try:
+            self.pipe_manager.get_shares_list()
+        except RuntimeError, re:
+            msg = "Failed to refresh SRV info: %s." % (re.args[1])
+            self.set_status(msg)
+            print msg
+            traceback.print_exc()
+            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+        except Exception, ex:
+            msg = "Failed to refresh SRV info: %s." % (str(ex))
+            self.set_status(msg)
+            print msg
+            traceback.print_exc()
+            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+
+        self.refresh_shares_view()
+        self.set_status("Successfully Shares.")
+
+        #deselect any selected groups and users
+        (model, iter) = self.shares_tree_view.get_selection().get_selected()
+        if iter is None:
+            return
+        selector = self.shares_tree_view.get_selection()
+        selector.unselect_iter(iter)
+
+
+
+    def on_groups_tree_view_button_press(self, widget, event):
+        if self.get_selected_share() is None:
+            return
+
+        if event.type == gtk.gdk._2BUTTON_PRESS:
+            self.on_edit_item_activate(self.edit_item)
+
+
+
+    def on_self_delete(self, widget, event):
+        if (self.pipe_manager is not None):
+            self.on_disconnect_item_activate(self.disconnect_item)
+
+        gtk.main_quit()
+        return False
+
+
+
+    def refresh_shares_view(self):
+        if not self.connected():
+            return None
+
+        (model, paths) = self.shares_tree_view.get_selection().get_selected_rows()
+
+        self.shares_store.clear()
+        for share in self.pipe_manager.share_list :
+            view_compat_data = [share.name, self.get_share_type_info(share.type,'base_type'),
+                share.comment, share.path.upper()]
+            self.shares_store.append(view_compat_data)
+
+        if (len(paths) > 0):
+            self.shares_tree_view.get_selection().select_path(paths[0])
+
+
+
     def fill_active_pane(self,share):
         """ Fills sthe active left pane """
         if share is None:
@@ -589,6 +821,8 @@ class ShareWindow(gtk.Window):
             self.active_window_tflag_label.set_text(str(flag_set[0]))
             self.active_window_hflag_label.set_text(str(flag_set[1]))
             self.active_window_maxusr_label.set_text(str(self.share.max_users))
+
+
 
     def create(self):
         # main window
@@ -824,10 +1058,14 @@ class ShareWindow(gtk.Window):
 
         # shares listing on right side
 
+        rvbox = gtk.VBox()
+        vpane.add2(rvbox)
+
         scrolledwindow = gtk.ScrolledWindow(None, None)
         scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
-        vpane.add2(scrolledwindow)
+        rvbox.pack_start(scrolledwindow,True,True,2)
+
 
         self.shares_tree_view = gtk.TreeView()
         scrolledwindow.add(self.shares_tree_view)
@@ -849,7 +1087,7 @@ class ShareWindow(gtk.Window):
         column.add_attribute(renderer, "text", 0)
 
         column = gtk.TreeViewColumn()
-        column.set_title("Type")
+        column.set_title("Base Type")
         column.set_resizable(True)
         column.set_expand(True)
         column.set_sort_column_id(1)
@@ -859,7 +1097,7 @@ class ShareWindow(gtk.Window):
         column.add_attribute(renderer, "text", 1)
 
         column = gtk.TreeViewColumn()
-        column.set_title("Description")
+        column.set_title("Comment")
         column.set_resizable(True)
         column.set_expand(True)
         column.set_sort_column_id(2)
@@ -880,6 +1118,17 @@ class ShareWindow(gtk.Window):
         self.shares_store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING)
         self.shares_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
         self.shares_tree_view.set_model(self.shares_store)
+
+        hbox = gtk.HBox()
+        rvbox.pack_start(hbox,False,False,0)
+
+
+        self.show_all_share_checkbox = gtk.CheckButton("Show Hiddden Shares")
+        hbox.pack_end(self.show_all_share_checkbox,False,False,0)
+        self.show_all_share_checkbox.set_tooltip_text('Enable or disable the visiblity of hidden shares')
+        self.show_all_share_checkbox.set_active(False)
+        self.show_all_share_checkbox.connect("toggled",self.toggle_share_view_visiblity,None)
+
 
         #
         hbox = gtk.HBox()
@@ -1026,11 +1275,27 @@ class ShareWindow(gtk.Window):
         hbox.pack_start(vbox,True,True,0)
 
         frame =  gtk.Frame()
-        label = gtk.Label('<b>Server Time</b>')
+        label = gtk.Label('<b> Shared Disks </b>')
         label.set_use_markup(True)
         frame.set_label_widget(label)
-        vbox.pack_start(frame, True, True, 0)
+        vbox.pack_start(frame, False, False, 0)
         frame.set_border_width(5)
+
+        num_disks =  len (self.pipe_manager.disks_list)
+        table = gtk.Table(num_disks+1,2,True)
+        frame.add(table)
+        label = gtk.Label('<b> Disks </b>')
+        label.set_use_markup(True)
+        label.set_alignment(1, 0.5)
+        table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        for i in self.pipe_manager.disks_list :
+            label = gtk.Label(i)
+            label.set_alignment(1, 0.5)
+            attach_index =  self.pipe_manager.disks_list.index(i) + 2
+            #Note : attcah ofsets for uniformity of gui , no other practical reason
+            table.attach(label, 0, 1, attach_index, attach_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+
 
         # status bar
 

@@ -300,15 +300,15 @@ class ShareAddEditDialog(gtk.Dialog):
 
     def  fields_to_share(self):
         """ Create a share type 502 object from the fields collected """
-        share = self.pipe.get_share_object(name= self.sname,
-                    stype= self.get_stype_final(),
-                    comment= self.comment,
-                    max_users= self.max_users,
-                    password= self.password,
-                    path = self.path
-                    )
-        return share
-
+        self.collect_fields()
+        self.share.name= self.sname
+        self.share.type= self.get_stype_final()
+        self.share.comment= self.comment
+        self.share.max_users= self.max_users
+        self.share.password= self.password
+        self.share.path = self.path
+        
+        
 
 
     def  create(self):
