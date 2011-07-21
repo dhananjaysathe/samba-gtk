@@ -584,7 +584,7 @@ class SAMConnectDialog(gtk.Dialog):
         vbox.set_border_width(5)
         self.transport_frame.add(vbox)
 
-        self.rpc_smb_tcpip_radio_button = gtk.RadioButton(None, "RPC over SMB over TCP/IP ")
+        self.rpc_smb_tcpip_radio_button = gtk.RadioButton(None, "RPC over SMB over TCP/IP")
         self.rpc_smb_tcpip_radio_button.set_active(self.transport_type == 0)
         vbox.pack_start(self.rpc_smb_tcpip_radio_button)
 
@@ -683,5 +683,6 @@ class SAMConnectDialog(gtk.Dialog):
 
     def on_radio_button_toggled(self, widget):
         self.update_sensitivity()
+
 
 
