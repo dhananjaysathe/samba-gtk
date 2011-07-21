@@ -407,7 +407,7 @@ class srvsvcPipeManager(object):
 
         filename = unicode(filename)
         sd_buf = self.pipe.NetGetFileSecurity(self.server_unc, share,
-                filename, secdesc)  # FIXME secdesc....
+                filename, secdesc)
         return sd_buf
 
 
@@ -440,7 +440,7 @@ class srvsvcPipeManager(object):
 
         sharename = unicode(sharename)
         self.pipe.NetSetFileSecurity(self.server_unc, share, filename,
-                secdesc, sd_buf)  # FIXME secdesc,sd_buf
+                secdesc, sd_buf)
 
 
 
@@ -554,7 +554,7 @@ class ShareWindow(gtk.Window):
 
         self.create()
         self.set_status("Disconnected.")
-        #self.on_connect_item_activate(None, server, transport_type, username, password, connect_now)
+        self.on_connect_item_activate(None, server, transport_type, username, password, connect_now)
 
         # This is used so the parent program can grab the server info after
         # we've connected.
@@ -617,6 +617,79 @@ class ShareWindow(gtk.Window):
         self.update_sensitivity()
 
 
+    def run_connect_dialog(self, pipe_manager, server_address, transport_type,
+            username, password="", connect_now=False):
+        connect_now2 = connect_now #this other value is used later on to skip domain selection.
+        #We need a second variable for this or else we would freeze if we had an error while connecting
+
+        dialog = srvsvcConnectDialog(server_address, transport_type, username, password)
+        dialog.show_all()
+
+
+        while True:
+            if connect_now:
+                connect_now = False
+                response_id = gtk.RESPONSE_OK
+            else:
+                response_id = dialog.run()
+
+            if response_id != gtk.RESPONSE_OK:
+                dialog.hide()
+                return None
+            else:
+                try:
+                    server_address = dialog.get_server_address()
+                    self.server_address = server_address
+                    transport_type = dialog.get_transport_type()
+                    self.transport_type = transport_type
+                    username = dialog.get_username()
+                    self.username = username
+                    password = dialog.get_password()
+
+                    pipe_manager = srvsvcPipeManager(server_address, transport_type, username, password)
+
+
+                except RuntimeError, re:
+                    if re.args[1] == 'Logon failure': #user got the password wrong
+                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Failed to connect: Invalid username or password.", dialog)
+                        dialog.password_entry.grab_focus()
+                        dialog.password_entry.select_region(0, -1) #select all the text in the password box
+                    elif re.args[0] == 5 or re.args[1] == 'Access denied':
+                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Failed to connect: Access Denied.", dialog)
+                        dialog.username_entry.grab_focus()
+                        dialog.username_entry.select_region(0, -1)
+                    elif re.args[1] == 'NT_STATUS_HOST_UNREACHABLE':
+                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Failed to connect: Could not contact the server", dialog)
+                        dialog.server_address_entry.grab_focus()
+                        dialog.server_address_entry.select_region(0, -1)
+                    elif re.args[1] == 'NT_STATUS_NETWORK_UNREACHABLE':
+                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Failed to connect: The network is unreachable.\n\nPlease check your network connection.", dialog)
+                    else:
+                        msg = "Failed to connect: %s." % (re.args[1])
+                        print msg
+                        traceback.print_exc()
+                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg, dialog)
+
+                except Exception, ex:
+                    msg = "Failed to connect: %s." % (str(ex))
+                    print msg
+                    traceback.print_exc()
+                    self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg, dialog)
+
+
+        #return RESPONSE_OK if we were told to auto-connect. Otherwise run the dialog
+        response_id = connect_now2 and gtk.RESPONSE_OK or dialog.run()
+        dialog.hide()
+
+        if response_id != gtk.RESPONSE_OK:
+            return None
+
+        return pipe_manager
+
+
+    def on_update_sensitivity(self, widget):
+        self.update_sensitivity()
+
 
     def get_selected_share(self):
         if not self.connected():
@@ -643,7 +716,18 @@ class ShareWindow(gtk.Window):
         dialog.hide()
 
 
-    def run_share_add_edit_dialog(self, share=None, apply_callback=None,):
+    def run_delete_dialog(self, share=None):
+        dialog = DeleteDialog(self.pipe_manager, share)
+        dialog.show_all()
+        # loop to handle the applies
+        while True:
+            response_id = dialog.run()
+            if response_id in [gtk.RESPONSE_OK, gtk.RESPONSE_APPLY]:
+                return response_id
+
+
+
+    def run_share_edit_dialog(self, share=None):
         dialog = ShareAddEditDialog(self.pipe_manager, share)
         dialog.show_all()
 
@@ -700,9 +784,66 @@ class ShareWindow(gtk.Window):
 
 
 
+    def on_groups_tree_view_button_press(self, widget, event):
+        if self.get_selected_share() is None:
+            return
+
+        if event.type == gtk.gdk._2BUTTON_PRESS:
+            self.on_edit_item_activate(self.edit_item)
+
+
+
+    def on_key_press(self, widget, event):
+        if event.keyval == gtk.keysyms.F5:
+            self.on_refresh_item_activate(None)
+        elif event.keyval == gtk.keysyms.Delete:
+            self.on_delete_item_activate(None)
+        elif event.keyval == gtk.keysyms.Return:
+            myev = gtk.gdk.Event(gtk.gdk._2BUTTON_PRESS) #emulate a double-click
+            if self.active_page_index == 0:
+                self.on_users_tree_view_button_press(None, myev)
+
+
+
+    def on_quit_item_activate(self, widget):
+        self.on_self_delete(None, None)
+        
+        
+        
+    def on_new_item_activate(self, widget):
+
+        share = self.run_share_add_dialog()
+        if new_user is None:
+            self.set_status("User creation canceled.")
+            return
+
+        try:
+            self.pipe_manager.add_user(new_user)
+            self.pipe_manager.fetch_users_and_groups()
+            self.set_status("Successfully created user \'%s\'." %
+                (new_user.username))
+        except RuntimeError, re:
+            msg = "Failed to create user: %s." % (re.args[1])
+            self.set_status(msg)
+            print msg
+            traceback.print_exc()
+            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+        except Exception, ex:
+            msg = "Failed to create user: %s." % (str(ex))
+            self.set_status(msg)
+            print msg
+            traceback.print_exc()
+            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+
+        self.refresh_user_list_view()
+
+
+
+
+
     def on_edit_item_activate(self, widget):
         share = self.get_selected_share()
-        self.run_share_add_edit_dialog(share, self.update_share_callback)
+        self.run_share_edit_dialog(share, self.update_share_callback)
 
 
 
@@ -732,6 +873,15 @@ class ShareWindow(gtk.Window):
 
         self.refresh_shares_view()
 
+    
+    
+    def on_notebook_switch_page(self, widget, page, page_num):
+        self.active_page_index = page_num # workaround - the signal is emitted before the actual change
+        self.update_captions()
+        self.update_sensitivity()
+        
+        
+        
     def on_refresh_item_activate(self, widget):
         try:
             self.pipe_manager.get_shares_list()
@@ -749,7 +899,7 @@ class ShareWindow(gtk.Window):
             self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
 
         self.refresh_shares_view()
-        self.set_status("Successfully Shares.")
+        self.set_status("Successfully Refreshed Shares List.")
 
         #deselect any selected groups and users
         (model, iter) = self.shares_tree_view.get_selection().get_selected()
@@ -760,7 +910,7 @@ class ShareWindow(gtk.Window):
 
 
 
-    def on_groups_tree_view_button_press(self, widget, event):
+    def on_shares_tree_view_button_press(self, widget, event):
         if self.get_selected_share() is None:
             return
 
