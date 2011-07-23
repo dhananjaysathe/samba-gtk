@@ -1,6 +1,29 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+#       pysrvsvc.py
+#
+#       Copyright 2011 Dhananjay Sathe <dhananjaysathe@gmail.com>
+#
+#       This program is free software; you can redistribute it and/or modify
+#       it under the terms of the GNU General Public License as published by
+#       the Free Software Foundation; either version 3 of the License, or
+#       (at your option) any later version.
+#
+#       This program is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#       GNU General Public License for more details.
+#
+#       You should have received a copy of the GNU General Public License
+#       along with this program; if not, write to the Free Software
+#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#       MA 02110-1301, USA.
+#
+#
+
+
+
 """ srvsvc related dialogues"""
 
 import gtk
@@ -240,7 +263,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
         if len(self.share_name_entry.get_text()) == 0:
             return "Share name may not be empty!"
-        
+
         if (not self.edit_mode):
             for share in self.pipe.share_list:
                 if share.name == self.share_name_entry.get_text():
@@ -307,8 +330,8 @@ class ShareAddEditDialog(gtk.Dialog):
         self.share.max_users= self.max_users
         self.share.password= self.password
         self.share.path = self.path
-        
-        
+
+
 
 
     def  create(self):
@@ -635,7 +658,7 @@ class DeleteDialog(gtk.Dialog):
         self.main_box.pack_start(self.form_box, True, True, 0)
 
         frame = gtk.Frame()
-        label = gtk.Label('<b>Share Details</b>')
+        label = gtk.Label('<b> Share Details</b>')
         label.set_use_markup(True)
         frame.set_label_widget(label)
         self.form_box.pack_start(frame, True, True, 0)
@@ -676,11 +699,14 @@ class DeleteDialog(gtk.Dialog):
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(self.share.password)
+        if self.share.password:
+            label = gtk.Label("Share Password Enabled")
+        else:
+            label = gtk.Label("Share Password Disabled")
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label('<b>Share Type</b>')
+        label = gtk.Label('<b> Share Type</b>')
         label.set_use_markup(True)
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
@@ -757,8 +783,5 @@ class DeleteDialog(gtk.Dialog):
         self.add_action_widget(self.ok_button, gtk.RESPONSE_OK)
 
         self.set_default_response(gtk.RESPONSE_OK)
-
-
-
 
 

@@ -1,5 +1,27 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
+#       pygwshare.py
+#
+#       Copyright 2011 Dhananjay Sathe <dhananjaysathe@gmail.com>
+#
+#       This program is free software; you can redistribute it and/or modify
+#       it under the terms of the GNU General Public License as published by
+#       the Free Software Foundation; either version 3 of the License, or
+#       (at your option) any later version.
+#
+#       This program is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#       GNU General Public License for more details.
+#
+#       You should have received a copy of the GNU General Public License
+#       along with this program; if not, write to the Free Software
+#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#       MA 02110-1301, USA.
+#
+#
+
 import sys
 import os.path
 import traceback
@@ -807,9 +829,9 @@ class ShareWindow(gtk.Window):
 
     def on_quit_item_activate(self, widget):
         self.on_self_delete(None, None)
-        
-        
-        
+
+
+
     def on_new_item_activate(self, widget):
 
         share = self.run_share_add_dialog()
@@ -873,15 +895,15 @@ class ShareWindow(gtk.Window):
 
         self.refresh_shares_view()
 
-    
-    
+
+
     def on_notebook_switch_page(self, widget, page, page_num):
         self.active_page_index = page_num # workaround - the signal is emitted before the actual change
         self.update_captions()
         self.update_sensitivity()
-        
-        
-        
+
+
+
     def on_refresh_item_activate(self, widget):
         try:
             self.pipe_manager.get_shares_list()
@@ -960,17 +982,20 @@ class ShareWindow(gtk.Window):
             self.active_window_maxusr_label.set_text("-NA-")
         else:
             self.active_pane_frame_label.set_markup('<b>Selected Share Details</b>')
-            stype = self.share.type
-            self.active_window_name_label.set_text(self.share.name)
-            self.active_window_comment_label.set_text(self.share.comment)
-            self.active_window_path_label.set_text(self.share.path)
-            self.active_window_password_label.set_text(self.share.password)
+            stype = share.type
+            self.active_window_name_label.set_text(share.name)
+            self.active_window_comment_label.set_text(share.comment)
+            self.active_window_path_label.set_text(share.path)
+            if share.password :
+                self.active_window_password_label.set_text("Share Password Enabled")
+            else:
+                self.active_window_password_label.set_text("Share Password Disabled")
             self.active_window_tstring_label.set_text(self.pipe_manager.get_share_type_info(stype,'typestring'))
             self.active_window_tdesc_label.set_text(self.pipe_manager.get_share_type_info(stype,'desc'))
             flag_set = self.pipe_manager.get_share_type_info(stype,'flags')
             self.active_window_tflag_label.set_text(str(flag_set[0]))
             self.active_window_hflag_label.set_text(str(flag_set[1]))
-            self.active_window_maxusr_label.set_text(str(self.share.max_users))
+            self.active_window_maxusr_label.set_text(str(share.max_users))
 
 
 
@@ -1141,7 +1166,7 @@ class ShareWindow(gtk.Window):
         self.active_window_password_label.set_alignment(0, 0.5)
         table.attach(self.active_window_password_label, 1, 2, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label('<b>Share Type</b>')
+        label = gtk.Label('<b> Share Type</b>')
         label.set_use_markup(True)
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
@@ -1290,12 +1315,12 @@ class ShareWindow(gtk.Window):
         label = gtk.Label('<b>Share Server Details</b>')
         label.set_use_markup(True)
         frame.set_label_widget(label)
-        vbox.pack_start(frame, True, True, 0)
+        vbox.pack_start(frame, False, True, 0)
         frame.set_border_width(5)
 
-        table = gtk.Table(11,2)
+        table = gtk.Table(9,2)
         table.set_border_width(5)
-        table.set_row_spacings(1)
+        table.set_row_spacings(2)
         table.set_col_spacings(6)
         frame.add(table)
 
@@ -1333,93 +1358,79 @@ class ShareWindow(gtk.Window):
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(' Version Major : ')
+        label = gtk.Label(' Version :')
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(self.server_info.version_major)
+        version = '.'.join([self.server_info.version_major,self.server_info.version_minor])
+        label = gtk.Label(version)
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(' Version Minor  : ')
+        label = gtk.Label(' Server Type  : ')
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(self.server_info.version_minor)
+        server_typedict = {
+        0x00000001:('SV_TYPE_WORKSTATION','Workstation Service'),
+        0x00000002:('SV_TYPE_SERVER','Server Service'),
+        0x00000004:('SV_TYPE_SQLSERVER','SQL Server'),
+        0x00000008:('SV_TYPE_DOMAIN_CTRL','Primary Domain Controller'),
+        0x00000010:('SV_TYPE_DOMAIN_BAKCTRL','Backup Domain Controller'),
+        0x00000020:('SV_TYPE_TIME_SOURCE','Time Source'),
+        0x00000040:('SV_TYPE_AFP','Apple File Protocol Server'),
+        0x00000080:('SV_TYPE_NOVELL','Novel Server'),
+        0x00000100:('SV_TYPE_DOMAIN_MEMBER','LAN Manager 2.x Domain Member'),
+        0x40000000:('SV_TYPE_LOCAL_LIST_ONLY','Server Maintained By the Browser'),
+        0x00000200:('SV_TYPE_PRINTQ_SERVER','Print Queue Server'),
+        0x00000400:('SV_TYPE_DIALIN_SERVER','Dial-In Server'),
+        0x00000800:('SV_TYPE_XENIX_SERVER','Xenix Server'),
+        0x00004000:('SV_TYPE_SERVER_MFPN','Microsoft File and Print for NetWare'),
+        0x00001000:('SV_TYPE_NT','Windows NT/XP/2003 or Newer'),
+        0x00002000:('SV_TYPE_WFW','Windows for Workgroups'),
+        0x00008000:('SV_TYPE_SERVER_NT','Non DC Windows Server 2000/2003 or Newer'),
+        0x00010000:('SV_TYPE_POTENTIAL_BROWSER','Potential Browser Service '),
+        0x00020000:('SV_TYPE_BACKUP_BROWSER','Browser Service As Backup'),
+        0x00040000:('SV_TYPE_MASTER_BROWSER','Master Browser Service'),
+        0x00080000:('SV_TYPE_DOMAIN_MASTER','Domain Master Browser'),
+        0x80000000:('SV_TYPE_DOMAIN_ENUM','Primary Domain'),
+        0x00400000:('SV_TYPE_WINDOWS','Windows ME/98/95'),
+        0xFFFFFFFF:('SV_TYPE_ALL','All Servers'),
+        0x02000000:('SV_TYPE_TERMINALSERVER','Terminal Server'),
+        0x10000000:('SV_TYPE_CLUSTER_NT','Server Cluster'),
+        0x04000000:('SV_TYPE_CLUSTER_VS_NT','Virtual Server Cluster')
+        }
+
+        label_data = server_typedict.get(self.server_info.server_type,('','Unknown'))[1]
+        label = gtk.Label(label_data)
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-
-        label = gtk.Label(' Server Type  : ')
+        label = gtk.Label(' User Path  : ')
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        server_typedict = {
-        0x00000001:'SV_TYPE_WORKSTATION',
-        0x00000002:'SV_TYPE_SERVER',
-        0x00000004:'SV_TYPE_SQLSERVER',
-        0x00000008:'SV_TYPE_DOMAIN_CTRL',
-        0x00000010:'SV_TYPE_DOMAIN_BAKCTRL',
-        0x00000020:'SV_TYPE_TIME_SOURCE',
-        0x00000040:'SV_TYPE_AFP',
-        0x00000080:'SV_TYPE_NOVELL',
-        0x00000100:'SV_TYPE_DOMAIN_MEMBER',
-        0x40000000:'SV_TYPE_LOCAL_LIST_ONLY',
-        0x00000200:'SV_TYPE_PRINTQ_SERVER',
-        0x00000400:'SV_TYPE_DIALIN_SERVER',
-        0x00000800:'SV_TYPE_XENIX_SERVER',
-        0x00004000:'SV_TYPE_SERVER_MFPN',
-        0x00001000:'SV_TYPE_NT',
-        0x00002000:'SV_TYPE_WFW',
-        0x00008000:'SV_TYPE_SERVER_NT',
-        0x00010000:'SV_TYPE_POTENTIAL_BROWSER',
-        0x00020000:'SV_TYPE_BACKUP_BROWSER',
-        0x00040000:'SV_TYPE_MASTER_BROWSER',
-        0x00080000:'SV_TYPE_DOMAIN_MASTER',
-        0x80000000:'SV_TYPE_DOMAIN_ENUM',
-        0x00400000:'SV_TYPE_WINDOWS',
-        0xFFFFFFFF:'SV_TYPE_ALL',
-        0x02000000:'SV_TYPE_TERMINALSERVER',
-        0x10000000:'SV_TYPE_CLUSTER_NT',
-        }
-
-        label_data = server_typedict.get(self.server_info.server_type,'SV_TYPE_CLUSTER_VS_NT')
-        label = gtk.Label(label_data)
+        label = gtk.Label(self.server_info.userpath.upper())
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(' Max Users  : ')
+        label = gtk.Label(' Timeout  : ')
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 7, 8, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(str(self.server_info.users))
+        label = gtk.Label(self.server_info.disc)
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 7, 8, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(' Timeout  : ')
-        label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-
-        label = gtk.Label(self.server_info.disc)
-        label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Announce / Anndelta  : ')
         label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 0, 1, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label('/'.join([str(self.server_info.announce),
                             str(self.server_info.anndelta)]))
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-
-        label = gtk.Label(' User Path  : ')
-        label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 10, 11, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-
-        label = gtk.Label(self.server_info.userpath.upper())
-        label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 10, 11, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 1, 2, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         vbox = gtk.VBox()
         hbox.pack_start(vbox,True,True,0)
@@ -1499,3 +1510,4 @@ def ParseArgs(argv):
     main_window.show_all()
     gtk.main()
 '''
+
