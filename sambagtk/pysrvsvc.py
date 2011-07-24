@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 #       pysrvsvc.py
+#       Frontends to Samba-Gtk Share Management
 #
 #       Copyright 2011 Dhananjay Sathe <dhananjaysathe@gmail.com>
+#       Copyright 2011 Jelmer Vernooij <jelmer@samba.org>
 #
 #       This program is free software; you can redistribute it and/or modify
 #       it under the terms of the GNU General Public License as published by
