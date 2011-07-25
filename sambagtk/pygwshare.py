@@ -566,7 +566,7 @@ class ShareWindow(gtk.Window):
     """ Share management interface window """
 
     def __init__ (self, info_callback=None, server="", username="", password="",
-            transport_type=0,connect_now=False,testpipe=None):# TODO testpipe to be removed post testing
+            transport_type=0,connect_now=False):# TODO testpipe to be removed post testing
         super(ShareWindow, self).__init__()
 
         # It's nice to have this info saved when a user wants to reconnect
@@ -575,16 +575,20 @@ class ShareWindow(gtk.Window):
         self.transport_type = transport_type
 
 
-        self.pipe_manager = testpipe
+        #self.pipe_manager = testpipe
         self.active_page_index = 0
-        self.server_info = self.pipe_manager.server_info
+        self.server_info = None
+        self.on_connect_item_activate(None, server, transport_type, username, password, connect_now)
+        
 
 
         self.create()
         self.fill_active_pane()
+        self.fill_server_info()
         self.set_status("Disconnected.")
-        #self.on_connect_item_activate(None, server, transport_type, username, password, connect_now)
+        
          # for easier further use
+        
 
         # This is used so the parent program can grab the server info after
         # we've connected.
@@ -644,13 +648,13 @@ class ShareWindow(gtk.Window):
             self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
 
         self.refresh_shares_view()
-        self.update_sensitivity()
+        #self.update_sensitivity()
+        
 
 
     def run_connect_dialog(self, pipe_manager, server_address, transport_type,
             username, password="", connect_now=False):
-        connect_now2 = connect_now #this other value is used later on to skip domain selection.
-        #We need a second variable for this or else we would freeze if we had an error while connecting
+        
 
         dialog = srvsvcConnectDialog(server_address, transport_type, username, password)
         dialog.show_all()
@@ -675,8 +679,9 @@ class ShareWindow(gtk.Window):
                     username = dialog.get_username()
                     self.username = username
                     password = dialog.get_password()
-
+                    
                     pipe_manager = srvsvcPipeManager(server_address, transport_type, username, password)
+                    break
 
 
                 except RuntimeError, re:
@@ -708,7 +713,8 @@ class ShareWindow(gtk.Window):
 
 
         #return RESPONSE_OK if we were told to auto-connect. Otherwise run the dialog
-        response_id = connect_now2 and gtk.RESPONSE_OK or dialog.run()
+        response_id = gtk.RESPONSE_OK or dialog.run()
+        print "fuck"
         dialog.hide()
 
         if response_id != gtk.RESPONSE_OK:
@@ -721,6 +727,105 @@ class ShareWindow(gtk.Window):
         self.update_sensitivity()
 
 
+    def fill_server_info (self):
+        """ Gracious fill of server info """
+        try:
+            self.server_info = self.pipe_manager.server_info
+        except:
+            self.server_info = None
+        if self.server_info is None:
+            self.srvinfo_tos_label.set_text('-NA-')
+            self.srvinfo_pid_label.set_text('-NA-')
+            self.srvinfo_name_label.set_text('-NA-')
+            self.srvinfo_hidden_label.set_text('-NA-')
+            self.srvinfo_comment_label.set_text('-NA-')
+            self.srvinfo_version_label.set_text('-NA-')
+            self.srvinfo_type_label.set_text('-NA-')
+            self.srvinfo_upath_label.set_text('-NA-')
+            self.srvinfo_to_label.set_text('-NA-')
+            self.srvinfo_aa_label.set_text('-NA-')
+            #handle the disk data
+            table = gtk.Table(2,2,True)
+            table.set_border_width(5)
+            table.set_row_spacings(4)
+            label = gtk.Label('Not connected to share server.')
+            label.set_alignment(1, 0.5)
+            table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+            self.sd_frame.add(table)
+            self.sd_frame.show_all()
+            
+        else:
+            label_data = self.pipe_manager.get_platform_info(
+                                        self.server_info.platform_id,'desc')
+            self.srvinfo_tos_label.set_text(label_data)
+            srv_type_genstr = self.pipe_manager.get_platform_info(
+                                        self.server_info.platform_id,'typestring')
+            label_data='/'.join([str(self.server_info.platform_id),srv_type_genstr])
+            self.srvinfo_pid_label.set_text(label_data)
+            self.srvinfo_name_label.set_text(self.server_info.server_name)
+            self.srvinfo_hidden_label.set_text(self.server_info.hidden)
+            self.srvinfo_comment_label.set_text(self.server_info.comment)
+            label_data = '.'.join([str(self.server_info.version_major),str(self.server_info.version_minor)])
+            self.srvinfo_version_label.set_text(label_data)
+            server_typedict = {
+                    0x00000001:('SV_TYPE_WORKSTATION','Workstation Service'),
+                    0x00000002:('SV_TYPE_SERVER','Server Service'),
+                    0x00000004:('SV_TYPE_SQLSERVER','SQL Server'),
+                    0x00000008:('SV_TYPE_DOMAIN_CTRL','Primary Domain Controller'),
+                    0x00000010:('SV_TYPE_DOMAIN_BAKCTRL','Backup Domain Controller'),
+                    0x00000020:('SV_TYPE_TIME_SOURCE','Time Source'),
+                    0x00000040:('SV_TYPE_AFP','Apple File Protocol Server'),
+                    0x00000080:('SV_TYPE_NOVELL','Novel Server'),
+                    0x00000100:('SV_TYPE_DOMAIN_MEMBER','LAN Manager 2.x Domain Member'),
+                    0x40000000:('SV_TYPE_LOCAL_LIST_ONLY','Server Maintained By the Browser'),
+                    0x00000200:('SV_TYPE_PRINTQ_SERVER','Print Queue Server'),
+                    0x00000400:('SV_TYPE_DIALIN_SERVER','Dial-In Server'),
+                    0x00000800:('SV_TYPE_XENIX_SERVER','Xenix Server'),
+                    0x00004000:('SV_TYPE_SERVER_MFPN','Microsoft File and Print for NetWare'),
+                    0x00001000:('SV_TYPE_NT','Windows NT/XP/2003 or Newer'),
+                    0x00002000:('SV_TYPE_WFW','Windows for Workgroups'),
+                    0x00008000:('SV_TYPE_SERVER_NT','Non DC Windows Server 2000/2003 or Newer'),
+                    0x00010000:('SV_TYPE_POTENTIAL_BROWSER','Potential Browser Service '),
+                    0x00020000:('SV_TYPE_BACKUP_BROWSER','Browser Service As Backup'),
+                    0x00040000:('SV_TYPE_MASTER_BROWSER','Master Browser Service'),
+                    0x00080000:('SV_TYPE_DOMAIN_MASTER','Domain Master Browser'),
+                    0x80000000:('SV_TYPE_DOMAIN_ENUM','Primary Domain'),
+                    0x00400000:('SV_TYPE_WINDOWS','Windows ME/98/95'),
+                    0xFFFFFFFF:('SV_TYPE_ALL','All Servers'),
+                    0x02000000:('SV_TYPE_TERMINALSERVER','Terminal Server'),
+                    0x10000000:('SV_TYPE_CLUSTER_NT','Server Cluster'),
+                    0x04000000:('SV_TYPE_CLUSTER_VS_NT','Virtual Server Cluster')
+                    }
+            
+            label_data = server_typedict.get(self.server_info.server_type,('','Unknown'))[1]
+            self.srvinfo_type_label.set_text(label_data)
+            self.srvinfo_upath_label.set_text(self.server_info.userpath.upper())
+            self.srvinfo_to_label.set_text(self.server_info.disc)
+            label_data = '/'.join([str(self.server_info.announce),
+                                        str(self.server_info.anndelta)])
+            self.srvinfo_aa_label.set_text(label_data)
+            
+            #handle server data windo
+            num_disks =  len (self.pipe_manager.disks_list)
+            table = gtk.Table(num_disks+2,2,True)
+            table.set_border_width(5)
+            table.set_row_spacings(4)
+            label = gtk.Label('<b> Disks </b>')
+            label.set_use_markup(True)
+            label.set_alignment(1, 0.5)
+            table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+            for i in self.pipe_manager.disks_list :
+                label = gtk.Label(i)
+                label.set_alignment(1, 0.5)
+                attach_index =  self.pipe_manager.disks_list.index(i) + 2
+                #Note : attcah ofsets for uniformity of gui , no other practical reason
+                table.attach(label, 0, 1, attach_index, attach_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+            self.sd_frame.add(table)
+            self.sd_frame.show_all()
+
+        
+            
+        
     def get_selected_share(self):
         if not self.connected():
             return None
@@ -771,7 +876,7 @@ class ShareWindow(gtk.Window):
                 else:
                     dialog.fields_to_share()
 
-                    if apply_callback is not None: #seems like there's only a callback when a user is modified, never when creating a new user.
+                    if apply_callback is not None: #seems like there's only a callback when a share is modified, never when creating a new user.
                         apply_callback(dialog.share)
                         dialog.share_to_fields()
                         dialog.fields_to_gui()
@@ -822,7 +927,7 @@ class ShareWindow(gtk.Window):
         elif event.keyval == gtk.keysyms.Return:
             myev = gtk.gdk.Event(gtk.gdk._2BUTTON_PRESS) #emulate a double-click
             if self.active_page_index == 0:
-                self.on_users_tree_view_button_press(None, myev)
+                self.on_shares_tree_view_button_press(None, myev)
 
 
 
@@ -960,7 +1065,7 @@ class ShareWindow(gtk.Window):
         self.refresh_shares_view()
         self.set_status("Successfully Refreshed Shares List.")
 
-        #deselect any selected groups and users
+        #deselect any selected shares
         (model, iter) = self.shares_tree_view.get_selection().get_selected()
         if iter is None:
             return
@@ -1369,148 +1474,93 @@ class ShareWindow(gtk.Window):
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        os_name = self.pipe_manager.get_platform_info(
-                            self.server_info.platform_id,'desc')
-        label = gtk.Label(os_name)
+        self.srvinfo_tos_label = gtk.Label()
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(self.srvinfo_tos_label, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
         
         label = gtk.Label(' Platform Id  : ')
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        srv_type_genstr = self.pipe_manager.get_platform_info(
-                            self.server_info.platform_id,'typestring')
-        label = gtk.Label('/'.join([str(self.server_info.platform_id),srv_type_genstr]))
+        self.srvinfo_pid_label = gtk.Label()
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(self.srvinfo_pid_label, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' NetBIOS Name : ')
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(self.server_info.server_name)
+        self.srvinfo_name_label = gtk.Label()
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(self.srvinfo_name_label, 1, 2, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Hidden  : ')
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(bool(self.server_info.hidden))
+        self.srvinfo_hidden_label = gtk.Label()
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(self.srvinfo_hidden_label, 1, 2, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Comment  : ')
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(self.server_info.comment)
+        self.srvinfo_comment_label = gtk.Label()
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(self.srvinfo_comment_label, 1, 2, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Version : ')
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        version = '.'.join([str(self.server_info.version_major),str(self.server_info.version_minor)])
-        label = gtk.Label(version)
+        self.srvinfo_version_label = gtk.Label()
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(self.srvinfo_version_label, 1, 2, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Server Type  : ')
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        server_typedict = {
-        0x00000001:('SV_TYPE_WORKSTATION','Workstation Service'),
-        0x00000002:('SV_TYPE_SERVER','Server Service'),
-        0x00000004:('SV_TYPE_SQLSERVER','SQL Server'),
-        0x00000008:('SV_TYPE_DOMAIN_CTRL','Primary Domain Controller'),
-        0x00000010:('SV_TYPE_DOMAIN_BAKCTRL','Backup Domain Controller'),
-        0x00000020:('SV_TYPE_TIME_SOURCE','Time Source'),
-        0x00000040:('SV_TYPE_AFP','Apple File Protocol Server'),
-        0x00000080:('SV_TYPE_NOVELL','Novel Server'),
-        0x00000100:('SV_TYPE_DOMAIN_MEMBER','LAN Manager 2.x Domain Member'),
-        0x40000000:('SV_TYPE_LOCAL_LIST_ONLY','Server Maintained By the Browser'),
-        0x00000200:('SV_TYPE_PRINTQ_SERVER','Print Queue Server'),
-        0x00000400:('SV_TYPE_DIALIN_SERVER','Dial-In Server'),
-        0x00000800:('SV_TYPE_XENIX_SERVER','Xenix Server'),
-        0x00004000:('SV_TYPE_SERVER_MFPN','Microsoft File and Print for NetWare'),
-        0x00001000:('SV_TYPE_NT','Windows NT/XP/2003 or Newer'),
-        0x00002000:('SV_TYPE_WFW','Windows for Workgroups'),
-        0x00008000:('SV_TYPE_SERVER_NT','Non DC Windows Server 2000/2003 or Newer'),
-        0x00010000:('SV_TYPE_POTENTIAL_BROWSER','Potential Browser Service '),
-        0x00020000:('SV_TYPE_BACKUP_BROWSER','Browser Service As Backup'),
-        0x00040000:('SV_TYPE_MASTER_BROWSER','Master Browser Service'),
-        0x00080000:('SV_TYPE_DOMAIN_MASTER','Domain Master Browser'),
-        0x80000000:('SV_TYPE_DOMAIN_ENUM','Primary Domain'),
-        0x00400000:('SV_TYPE_WINDOWS','Windows ME/98/95'),
-        0xFFFFFFFF:('SV_TYPE_ALL','All Servers'),
-        0x02000000:('SV_TYPE_TERMINALSERVER','Terminal Server'),
-        0x10000000:('SV_TYPE_CLUSTER_NT','Server Cluster'),
-        0x04000000:('SV_TYPE_CLUSTER_VS_NT','Virtual Server Cluster')
-        }
-
-        label_data = server_typedict.get(self.server_info.server_type,('','Unknown'))[1]
-        label = gtk.Label(label_data)
+        self.srvinfo_type_label = gtk.Label()
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(self.srvinfo_type_label, 1, 2, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' User Path  : ')
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 7, 8, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(self.server_info.userpath.upper())
+        self.srvinfo_upath_label = gtk.Label()
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 7, 8, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(self.srvinfo_upath_label, 1, 2, 7, 8, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Timeout  : ')
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(self.server_info.disc)
+        self.srvinfo_to_label = gtk.Label()
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(self.srvinfo_to_label, 1, 2, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
 
         label = gtk.Label(' Announce / Anndelta  : ')
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label('/'.join([str(self.server_info.announce),
-                            str(self.server_info.anndelta)]))
+        self.srvinfo_aa_label = gtk.Label()
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(self.srvinfo_aa_label, 1, 2, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         vbox = gtk.VBox()
         hbox.pack_start(vbox,True,True,0)
 
-        frame =  gtk.Frame()
+        self.sd_frame =  gtk.Frame()
         label = gtk.Label('<b> Shared Disks </b>')
         label.set_use_markup(True)
-        frame.set_label_widget(label)
-        vbox.pack_start(frame, False, False, 0)
+        self.sd_frame.set_label_widget(label)
+        vbox.pack_start(self.sd_frame, False, False, 0)
         frame.set_border_width(5)
-
-        num_disks =  len (self.pipe_manager.disks_list)
-        table = gtk.Table(num_disks+2,2,True)
-        table.set_border_width(5)
-        table.set_row_spacings(4)
-        frame.add(table)
-        label = gtk.Label('<b> Disks </b>')
-        label.set_use_markup(True)
-        label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        for i in self.pipe_manager.disks_list :
-            label = gtk.Label(i)
-            label.set_alignment(1, 0.5)
-            attach_index =  self.pipe_manager.disks_list.index(i) + 2
-            #Note : attcah ofsets for uniformity of gui , no other practical reason
-            table.attach(label, 0, 1, attach_index, attach_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-
-
-
+        
         # status bar
 
         self.statusbar = gtk.Statusbar()
@@ -1523,7 +1573,7 @@ def PrintUsage():
     print "Usage: %s [OPTIONS]" % (str(os.path.split(__file__)[-1]))
     print "All options are optional. The user will be queried for additional information if needed.\n"
     print "  -s  --server\t\tspecify the server to connect to."
-    print "  -u  --user\t\tspecify the user."
+    print "  -u  --user\t\tspecify the username."
     print "  -p  --password\tThe password for the user."
     print "  -t  --transport\tTransport type.\n\t\t\t\t0 for RPC, SMB, TCP/IP\n\t\t\t\t1 for RPC, TCP/IP\n\t\t\t\t2 for localhost."
     print "  -c  --connect-now\tSkip the connect dialog."
