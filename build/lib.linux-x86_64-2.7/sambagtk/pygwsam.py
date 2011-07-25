@@ -752,7 +752,7 @@ class SAMWindow(gtk.Window):
                 return user_list[0]
             else:
                 return None
-
+    #test
     def get_selected_group(self):
         if not self.connected():
             return None

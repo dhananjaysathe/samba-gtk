@@ -32,8 +32,6 @@ import gobject
 import gtk
 
 sys.path.append('/usr/local/samba/lib/python2.7/site-packages/')
-#for use against the default binaries from default .configure.developer for use on python 2.7
-#TODO remove these entries
 
 from samba import credentials
 from samba.dcerpc import (
@@ -577,14 +575,12 @@ class ShareWindow(gtk.Window):
 
         self.pipe_manager = testpipe
         self.active_page_index = 0
-        self.server_info = self.pipe_manager.server_info
+        self.server_info = self.pipe_manager.server_info # for easier further use
 
 
         self.create()
-        self.fill_active_pane()
         self.set_status("Disconnected.")
-        #self.on_connect_item_activate(None, server, transport_type, username, password, connect_now)
-         # for easier further use
+        self.on_connect_item_activate(None, server, transport_type, username, password, connect_now)
 
         # This is used so the parent program can grab the server info after
         # we've connected.
@@ -749,13 +745,15 @@ class ShareWindow(gtk.Window):
     def run_delete_dialog(self, share=None):
         dialog = DeleteDialog(self.pipe_manager, share)
         dialog.show_all()
-        response_id = dialog.run()
-        dialog.hide()
-        return response_id
+        # loop to handle the applies
+        while True:
+            response_id = dialog.run()
+            if response_id in [gtk.RESPONSE_OK, gtk.RESPONSE_APPLY]:
+                return response_id
 
 
 
-    def run_share_add_edit_dialog(self, share=None):
+    def run_share_edit_dialog(self, share=None):
         dialog = ShareAddEditDialog(self.pipe_manager, share)
         dialog.show_all()
 
@@ -774,7 +772,6 @@ class ShareWindow(gtk.Window):
                     if apply_callback is not None: #seems like there's only a callback when a user is modified, never when creating a new user.
                         apply_callback(dialog.share)
                         dialog.share_to_fields()
-                        dialog.fields_to_gui()
 
                     if response_id == gtk.RESPONSE_OK:
                         dialog.hide()
@@ -796,7 +793,6 @@ class ShareWindow(gtk.Window):
 
         self.shares_store.clear()
         self.update_sensitivity()
-        self.fill_active_pane()
 
         self.set_status("Disconnected.")
 
@@ -811,6 +807,15 @@ class ShareWindow(gtk.Window):
         self.show_all_share_checkbox.set_active(self.pipe_manager.show_all_shares)
         # now refresh the share view
         self.refresh_shares_view()
+
+
+
+    def on_groups_tree_view_button_press(self, widget, event):
+        if self.get_selected_share() is None:
+            return
+
+        if event.type == gtk.gdk._2BUTTON_PRESS:
+            self.on_edit_item_activate(self.edit_item)
 
 
 
@@ -833,29 +838,30 @@ class ShareWindow(gtk.Window):
 
     def on_new_item_activate(self, widget):
 
-        share = self.run_share_add_edit_dialog()
-        if share is None:
-            self.set_status("Share creation canceled.")
+        share = self.run_share_add_dialog()
+        if new_user is None:
+            self.set_status("User creation canceled.")
             return
 
         try:
-            self.pipe_manager.add_share(share)
-            self.set_status("Successfully added share \'%s\'." %
-                (share.name))
+            self.pipe_manager.add_user(new_user)
+            self.pipe_manager.fetch_users_and_groups()
+            self.set_status("Successfully created user \'%s\'." %
+                (new_user.username))
         except RuntimeError, re:
-            msg = "Failed to add share: %s." % (re.args[1])
+            msg = "Failed to create user: %s." % (re.args[1])
             self.set_status(msg)
             print msg
             traceback.print_exc()
             self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
         except Exception, ex:
-            msg = "Failed to ad share: %s." % (str(ex))
+            msg = "Failed to create user: %s." % (str(ex))
             self.set_status(msg)
             print msg
             traceback.print_exc()
             self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
 
-        self.refresh_shares_view()
+        self.refresh_user_list_view()
 
 
 
@@ -863,23 +869,29 @@ class ShareWindow(gtk.Window):
 
     def on_edit_item_activate(self, widget):
         share = self.get_selected_share()
-        share = self.run_share_add_edit_dialog(share, self.update_share_callback)
-        if share is None:
-            self.set_status("Last Share Edit Cancelled.")
-            return
+        self.run_share_edit_dialog(share, self.update_share_callback)
+
+
+
+    def on_delete_item_activate(self, widget):
+        share = self.get_selected_share()
+
+      #  if (self.run_message_dialog(gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO, "Do you want to delete share '%s'?" % del_share.name) != gtk.RESPONSE_YES):
+   #TODO    #     return
 
         try:
-            self.pipe_manager.modify_share(share)
-            self.set_status("Successfully modified share \'%s\'." %
-                (share.name))
+            self.pipe_manager.delete_share(share)
+            self.pipe_manager.get_shares_list()
+
+            self.set_status("Successfully deleted share \'%s\'." % (share.name))
         except RuntimeError, re:
-            msg = "Failed to add share: %s." % (re.args[1])
+            msg = "Failed to delete share: %s." % (re.args[1])
             self.set_status(msg)
             print msg
             traceback.print_exc()
             self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
         except Exception, ex:
-            msg = "Failed to ad share: %s." % (str(ex))
+            msg = "Failed to delete share: %s." % (str(ex))
             self.set_status(msg)
             print msg
             traceback.print_exc()
@@ -889,69 +901,24 @@ class ShareWindow(gtk.Window):
 
 
 
-    def on_delete_item_activate(self, widget):
-        share = self.get_selected_share()
-
-        response = self.run_delete_dialog(share)
-        if response in [gtk.RESPONSE_OK, gtk.RESPONSE_APPLY]:
-
-            try:
-                self.pipe_manager.delete_share(share.name)
-                self.set_status("Successfully deleted share \'%s\'." % (share.name))
-            
-            except RuntimeError, re:
-                msg = "Failed to delete share: %s." % (re.args[1])
-                self.set_status(msg)
-                print msg
-                traceback.print_exc()
-                self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
-            except Exception, ex:
-                msg = "Failed to delete share: %s." % (str(ex))
-                self.set_status(msg)
-                print msg
-                traceback.print_exc()
-                self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
-
-            self.refresh_shares_view()
-
-
-
     def on_notebook_switch_page(self, widget, page, page_num):
         self.active_page_index = page_num # workaround - the signal is emitted before the actual change
+        self.update_captions()
         self.update_sensitivity()
 
-    def update_share_callback(self, share):
-        try:
-            self.pipe_manager.modify_share(share)
-            self.set_status("Share \'%s\' Modified." % (share.name))
-        except RuntimeError, re:
-            msg = "Failed to Modify Share: %s." % (re.args[1])
-            print msg
-            self.set_status(msg)
-            traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
-
-        except Exception, ex:
-            msg = "Failed to Modify Share: %s." % (str(ex))
-            print msg
-            self.set_status(msg)
-            traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
-        finally:
-            self.refresh_shares_view()
 
 
     def on_refresh_item_activate(self, widget):
         try:
             self.pipe_manager.get_shares_list()
         except RuntimeError, re:
-            msg = "Failed to Refresh SRV Info: %s." % (re.args[1])
+            msg = "Failed to refresh SRV info: %s." % (re.args[1])
             self.set_status(msg)
             print msg
             traceback.print_exc()
             self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
         except Exception, ex:
-            msg = "Failed to Refresh SRV Info: %s." % (str(ex))
+            msg = "Failed to refresh SRV info: %s." % (str(ex))
             self.set_status(msg)
             print msg
             traceback.print_exc()
@@ -992,7 +959,6 @@ class ShareWindow(gtk.Window):
             return None
 
         (model, paths) = self.shares_tree_view.get_selection().get_selected_rows()
-        self.pipe_manager.get_shares_list()
 
         self.shares_store.clear()
         for share in self.pipe_manager.share_list :
@@ -1005,7 +971,7 @@ class ShareWindow(gtk.Window):
 
 
 
-    def fill_active_pane(self,share=None):
+    def fill_active_pane(self,share):
         """ Fills sthe active left pane """
         if share is None:
             self.active_pane_frame_label.set_markup('<b>No Share Selected</b>')
@@ -1041,8 +1007,8 @@ class ShareWindow(gtk.Window):
         # main window
         self.set_title("Share Management Interface")
         self.set_default_size(800, 600)
-        self.icon_filename = os.path.join(sys.path[0],"..", "images", "network.png")
-        self.share_icon_filename = os.path.join(sys.path[0],"..", "images", "network.png")
+        self.icon_filename = os.path.join(sys.path[0], "images", "network.png")
+        self.share_icon_filename = os.path.join(sys.path[0], "images", "network.png")
         self.set_icon_from_file(self.icon_filename)
         self.set_position(gtk.WIN_POS_CENTER)
 
@@ -1143,9 +1109,6 @@ class ShareWindow(gtk.Window):
         #self.delete_button.set_tootip_text("Delete Share")
         self.toolbar.insert(self.delete_button, 5)
 
-        self.new_button.set_tooltip_text("Add a new Share")
-        self.edit_button.set_tooltip_text("Edit a Share") 
-        self.delete_button.set_tooltip_text("Delete a Share") 
         #share-page
         self.share_notebook = gtk.Notebook()
         self.vbox.pack_start(self.share_notebook, True, True, 0)
@@ -1347,7 +1310,7 @@ class ShareWindow(gtk.Window):
 
 
         #
-        hbox = gtk.HBox(True)
+        hbox = gtk.HBox()
         self.share_notebook.append_page(hbox, gtk.Label("Share Server Info"))
 
         vbox = gtk.VBox()
@@ -1359,68 +1322,58 @@ class ShareWindow(gtk.Window):
         vbox.pack_start(frame, False, True, 0)
         frame.set_border_width(5)
 
-        table = gtk.Table(10,2)
+        table = gtk.Table(9,2)
         table.set_border_width(5)
-        table.set_row_spacings(3)
+        table.set_row_spacings(2)
         table.set_col_spacings(6)
         frame.add(table)
 
-        label = gtk.Label(' Target Platform OS  : ')
+        label = gtk.Label(' Platform Id  : ')
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        os_name = self.pipe_manager.get_platform_info(
-                            self.server_info.platform_id,'desc')
-        label = gtk.Label(os_name)
+        self.srv_type_genstr = self.pipe_manager.get_platform_info(
+                            self.server_info.platform_id,'typestring')
+        label = gtk.Label('/'.join([str(self.server_info.platform_id),self.srv_type_genstr]))
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
-        label = gtk.Label(' Platform Id  : ')
-        label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-
-        srv_type_genstr = self.pipe_manager.get_platform_info(
-                            self.server_info.platform_id,'typestring')
-        label = gtk.Label('/'.join([str(self.server_info.platform_id),srv_type_genstr]))
-        label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' NetBIOS Name : ')
         label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(self.server_info.server_name)
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Hidden  : ')
         label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 0, 1, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(bool(self.server_info.hidden))
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 1, 2, 2, 3, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Comment  : ')
         label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 0, 1, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(self.server_info.comment)
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 1, 2, 3, 4, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        label = gtk.Label(' Version : ')
+        label = gtk.Label(' Version :')
         label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 0, 1, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        version = '.'.join([str(self.server_info.version_major),str(self.server_info.version_minor)])
+        version = '.'.join([self.server_info.version_major,self.server_info.version_minor])
         label = gtk.Label(version)
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 1, 2, 4, 5, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Server Type  : ')
         label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 0, 1, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         server_typedict = {
         0x00000001:('SV_TYPE_WORKSTATION','Workstation Service'),
@@ -1455,33 +1408,33 @@ class ShareWindow(gtk.Window):
         label_data = server_typedict.get(self.server_info.server_type,('','Unknown'))[1]
         label = gtk.Label(label_data)
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 1, 2, 5, 6, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' User Path  : ')
         label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 7, 8, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 0, 1, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(self.server_info.userpath.upper())
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 7, 8, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 1, 2, 6, 7, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' Timeout  : ')
         label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 0, 1, 7, 8, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(self.server_info.disc)
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 1, 2, 7, 8, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
 
         label = gtk.Label(' Announce / Anndelta  : ')
         label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 0, 1, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label('/'.join([str(self.server_info.announce),
                             str(self.server_info.anndelta)]))
         label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 9, 10, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 1, 2, 8, 9, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         vbox = gtk.VBox()
         hbox.pack_start(vbox,True,True,0)
@@ -1494,9 +1447,7 @@ class ShareWindow(gtk.Window):
         frame.set_border_width(5)
 
         num_disks =  len (self.pipe_manager.disks_list)
-        table = gtk.Table(num_disks+2,2,True)
-        table.set_border_width(5)
-        table.set_row_spacings(4)
+        table = gtk.Table(num_disks+1,2,True)
         frame.add(table)
         label = gtk.Label('<b> Disks </b>')
         label.set_use_markup(True)

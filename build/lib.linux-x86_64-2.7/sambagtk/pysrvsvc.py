@@ -71,7 +71,7 @@ class srvsvcConnectDialog(gtk.Dialog):
 
         self.artwork = gtk.VBox()
 
-        self.samba_image_filename = os.path.join(sys.path[0],"..", 'images',
+        self.samba_image_filename = os.path.join(sys.path[0], 'images',
                 'samba-logo-small.png')
         self.samba_image = gtk.Image()
         self.samba_image.set_from_file(self.samba_image_filename)
@@ -295,30 +295,7 @@ class ShareAddEditDialog(gtk.Dialog):
             self.password = self.share.password
         self.path = self.share.path
 
-    def fields_to_gui (self):
-        """" Used to reset the gui fields from share fields on apply"""
-        self.share_name_entry.set_text(self.sname)
-        self.share_comment_entry.set_text(self.comment)
-        self.share_password_entry.set_text(self.password)
-        if  self.stype == srvsvc.STYPE_DISKTREE:
-            self.stype_disktree_radio_button.set_active()
-        elif self.stype == srvsvc.STYPE_PRINTQ :
-            self.stype_printq_radio_button.set_active()
-        else:
-            self.stype_ipc_radio_button.set_active()
-        
-        if self.flags[0]:
-            self.sflag_temp_check_button.set_active()
-        if self.flags[1]:
-            self.sflag_hidden_check_button.set_active()
-        
-        if self.islocal:
-            self.file_button.set_current_folder(self.path)
-        else:
-            self.file_entry.set_text(self.path)
-        self.max_users_spinbox.set_value(self.max_users)
-            
-        
+
 
     def collect_fields(self):
         """ Collects fields from the GUI and saves in class variables """
@@ -366,7 +343,7 @@ class ShareAddEditDialog(gtk.Dialog):
         self.icon_name = ["network-folder","network-printer",
                             "network","network-pipe"][self.stype]
         self.icon_filename = \
-        os.path.join(sys.path[0], "..","images",''.join([self.icon_name,'.png']))
+        os.path.join(sys.path[0], "images",''.join([self.icon_name,'.png']))
         self.set_icon_from_file(self.icon_filename)
         self.vbox.set_spacing(3)
         self.set_border_width(5)
@@ -404,7 +381,7 @@ class ShareAddEditDialog(gtk.Dialog):
         #vertical logo
         vbox = gtk.VBox()
         vbox.set_border_width(5)
-        samba_image_filename = os.path.join(sys.path[0],"..", 'images',
+        samba_image_filename = os.path.join(sys.path[0], 'images',
                 'samba-logo-vertical.png')
         samba_image = gtk.Image()
         samba_image.set_from_file(samba_image_filename)
@@ -635,7 +612,7 @@ class DeleteDialog(gtk.Dialog):
         self.icon_name = ["network-folder","network-printer",
                             "network","network-pipe"][self.stype]
         self.icon_filename = \
-        os.path.join(sys.path[0],"..", "images",''.join([self.icon_name,'.png']))
+        os.path.join(sys.path[0], "images",''.join([self.icon_name,'.png']))
         self.set_icon_from_file(self.icon_filename)
         self.vbox.set_spacing(3)
         self.set_border_width(5)
@@ -669,7 +646,7 @@ class DeleteDialog(gtk.Dialog):
         #vertical logo
         vbox = gtk.VBox()
         vbox.set_border_width(5)
-        samba_image_filename = os.path.join(sys.path[0], "..",'images',
+        samba_image_filename = os.path.join(sys.path[0], 'images',
                 'samba-logo-vertical.png')
         samba_image = gtk.Image()
         samba_image.set_from_file(samba_image_filename)
