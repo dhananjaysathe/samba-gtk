@@ -47,6 +47,7 @@ class srvsvcConnectDialog(gtk.Dialog):
         password='',
         ):
         super(srvsvcConnectDialog, self).__init__()
+        
 
         self.server_address = server
         self.username = username
@@ -55,6 +56,7 @@ class srvsvcConnectDialog(gtk.Dialog):
 
         self.create()
         self.set_position(gtk.WIN_POS_CENTER)
+        self.set_modal(True)
 
         self.update_sensitivity()
 
@@ -235,6 +237,7 @@ class ShareAddEditDialog(gtk.Dialog):
         self.create()
         self.set_position(gtk.WIN_POS_CENTER)
         self.set_window_mode()
+        self.set_modal(True)
 
 
 
@@ -339,7 +342,7 @@ class ShareAddEditDialog(gtk.Dialog):
         if self.sflag_hidden_check_button.get_active():
             self.flags[1] = True
         if self.islocal :
-            self.path =  self.entry_button.get_filename()
+            self.path =  self.file_button.get_filename()
         else:
             self.path = self.path_entry.get_text()
         self.max_users = self.max_users_spinbox.get_value_as_int()
@@ -611,6 +614,7 @@ class DeleteDialog(gtk.Dialog):
         """ Class initialiser """
         super(DeleteDialog, self).__init__()
         self.pipe = pipe_manager
+        self.set_modal(True)
 
 
         if share is None :
