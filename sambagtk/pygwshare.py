@@ -202,9 +202,11 @@ class srvsvcPipeManager(object):
   To be used for distktree (Files not IPC etc) type shares.
   Usage :
   S.fix_path_format(path= "") -> path
-
+  
   """
         if self.islocal :
+            if path.startswith('C:'):
+                path = path[2:].replace('\\','/')
             if os.path.exists(path):
                 path = os.path.realpath(path)  # gets canonical path
             else:
@@ -214,10 +216,7 @@ class srvsvcPipeManager(object):
                 path = path.replace('/', '\\')
                 path = ''.join(['C:',path])
                 path = unicode(path)
-            elif path.startswith('C:'):
-                path = unicode(path)
-            else:
-                raise TypeError('Invalid path Argument')
+            
         return path
 
 
@@ -385,9 +384,8 @@ class srvsvcPipeManager(object):
   S.delete_share (self,name= "") -> Boolean indicating success or faliure ,[error object]
   """
 
-        reserved = None
         name = unicode(name)
-        self.pipe.NetShareDel(self.server_unc, name, reserved)
+        self.pipe.NetShareDel(self.server_unc, name, 0)
 
 
 
@@ -418,7 +416,7 @@ class srvsvcPipeManager(object):
             if name is i:
                 stype = share_types_list[i.index()]
             else:
-                raise KeyError
+                raise KeyError("Share Does no exist")
         return stype
 
 
@@ -527,16 +525,16 @@ class srvsvcPipeManager(object):
 
 
 
-    def  name_validate(self,name,flags):
+    def  name_validate(self,name):
         """ Validate a Given Share Name .
         Returns True for a given share name and false for a invalid one .
         It does so gracefully without raising a exception. Thus validating  name cleanly
  .....
   Usage :
-  S.name_validate(name,flags) -> Boolean Indicating Validity
+  S.name_validate(name) -> Boolean Indicating Validity
   """
         try:
-            self.pipe.NetNameValidate(self.server_unc, name, 9, flags)
+            self.pipe.NetNameValidate(self.server_unc, name, 9, 0)
             return True
         except:
             return False
@@ -569,7 +567,7 @@ class ShareWindow(gtk.Window):
     """ Share management interface window """
 
     def __init__ (self, info_callback=None, server="", username="", password="",
-            transport_type=0,connect_now=False):# TODO testpipe to be removed post testing
+            transport_type=0,connect_now=False):
         super(ShareWindow, self).__init__()
 
         # It's nice to have this info saved when a user wants to reconnect
@@ -577,14 +575,9 @@ class ShareWindow(gtk.Window):
         self.username = username
         self.transport_type = transport_type
 
-
-        #self.pipe_manager = testpipe
         self.active_page_index = 0
         self.server_info = None
-
-
-
-
+        
         self.create()
         self.fill_active_pane()
         self.fill_server_info()
@@ -638,7 +631,7 @@ class ShareWindow(gtk.Window):
             if self.pipe_manager is not None:
                 self.pipe_manager.get_shares_list()
 
-                self.set_status("Connected to %s/%s." % (
+                self.set_status("Connected to Server: IP=%s NETBios Name=%s." % (
                     self.server_address,self.pipe_manager.server_info.server_name))
 
         except RuntimeError, re:
@@ -656,7 +649,7 @@ class ShareWindow(gtk.Window):
             self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
 
         self.refresh_shares_view()
-        #self.update_sensitivity()
+        self.update_sensitivity()
         self.fill_server_info()
 
 
@@ -731,12 +724,16 @@ class ShareWindow(gtk.Window):
         return pipe_manager
 
 
+    def on_switch_fill_active_pane(self,widget):
+        """ Function doc """
+        self.fill_active_pane()
+        
     def on_update_sensitivity(self, widget):
         self.update_sensitivity()
 
 
     def fill_server_info (self):
-        """ Gracious fill of server info """
+        """ Gracious fill out server info """
         try:
             self.server_info = self.pipe_manager.server_info
         except:
@@ -896,7 +893,7 @@ class ShareWindow(gtk.Window):
                 else:
                     dialog.fields_to_share()
 
-                    if apply_callback is not None: #seems like there's only a callback when a share is modified, never when creating a new user.
+                    if apply_callback is not None:
                         apply_callback(dialog.share)
                         dialog.share_to_fields()
                         dialog.fields_to_gui()
@@ -911,8 +908,31 @@ class ShareWindow(gtk.Window):
 
         return dialog.share
 
-    def update_sensitivity():
-        pass
+    def update_sensitivity(self):
+        
+        connected = (self.pipe_manager is not None)
+        share_page_active = not self.active_page_index
+        selected = (self.get_selected_share() is not None) and share_page_active  
+        
+        self.connect_item.set_sensitive(not connected)
+        self.disconnect_item.set_sensitive(connected)
+        self.refresh_item.set_sensitive(connected)
+        self.new_item.set_sensitive(connected and share_page_active)
+        
+        self.delete_item.set_sensitive(connected and selected)
+        self.edit_item.set_sensitive(connected and selected)
+
+        self.connect_button.set_sensitive(not connected)
+        self.disconnect_button.set_sensitive(connected)
+        
+        self.new_button.set_sensitive(connected and share_page_active)
+        self.delete_button.set_sensitive(connected and selected)
+        self.edit_button.set_sensitive(connected and selected)
+        
+        self.active_frame_new_button.set_sensitive(connected and share_page_active)
+        self.active_frame_delete_button.set_sensitive(connected and selected)
+        self.active_frame_edit_button.set_sensitive(connected and selected)
+        
 
     def on_disconnect_item_activate(self, widget):
         if self.pipe_manager is not None:
@@ -1044,7 +1064,7 @@ class ShareWindow(gtk.Window):
 
 
     def on_notebook_switch_page(self, widget, page, page_num):
-        self.active_page_index = page_num # workaround - the signal is emitted before the actual change
+        self.active_page_index = page_num 
         self.update_sensitivity()
 
     def update_share_callback(self, share):
@@ -1133,8 +1153,12 @@ class ShareWindow(gtk.Window):
 
 
 
-    def fill_active_pane(self,share=None):
+    def fill_active_pane(self):
         """ Fills sthe active left pane """
+        try:
+            share = self.get_selected_share()
+        except:
+            share = None
         if share is None:
             self.active_pane_frame_label.set_markup('<b>No Share Selected</b>')
             self.active_window_name_label.set_text("-NA-")
@@ -1167,7 +1191,7 @@ class ShareWindow(gtk.Window):
 
     def create(self):
         # main window
-        self.set_title("Share Management Interface")
+        self.set_title("Samba-Gtk Share Management Interface")
         self.set_default_size(800, 600)
         self.icon_filename = os.path.join(sys.path[0],"..", "images", "network.png")
         self.share_icon_filename = os.path.join(sys.path[0],"..", "images", "network.png")
@@ -1388,14 +1412,17 @@ class ShareWindow(gtk.Window):
         table = gtk.Table(3,5,True)
         hbox.pack_start(table,True,True,0)
 
-        button = gtk.Button("New")
-        table.attach(button, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        self.active_frame_new_button = gtk.Button("New")
+        self.active_frame_new_button.set_tooltip_text('Add a New Share')
+        table.attach(self.active_frame_new_button, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        button = gtk.Button("Edit")
-        table.attach(button, 2, 3, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        self.active_frame_edit_button = gtk.Button("Edit")
+        self.active_frame_edit_button.set_tooltip_text('Edit Current Share')
+        table.attach(self.active_frame_edit_button, 2, 3, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-        button = gtk.Button("Delete")
-        table.attach(button, 3, 4, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        self.active_frame_delete_button = gtk.Button("Delete")
+        self.active_frame_delete_button.set_tooltip_text('Delete Current Share')
+        table.attach(self.active_frame_delete_button, 3, 4, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         # shares listing on right side
 
@@ -1464,7 +1491,7 @@ class ShareWindow(gtk.Window):
         rvbox.pack_start(hbox,False,False,0)
 
 
-        self.show_all_share_checkbox = gtk.CheckButton("Show Hiddden Shares")
+        self.show_all_share_checkbox = gtk.CheckButton("Show Hidden Shares")
         hbox.pack_end(self.show_all_share_checkbox,False,False,0)
         self.show_all_share_checkbox.set_tooltip_text('Enable or disable the visiblity of hidden shares')
         self.show_all_share_checkbox.set_active(False)
@@ -1586,6 +1613,41 @@ class ShareWindow(gtk.Window):
         self.statusbar = gtk.Statusbar()
         self.statusbar.set_has_resize_grip(True)
         self.vbox.pack_start(self.statusbar, False, False, 0)
+        
+        # signals/events
+
+        self.connect("delete_event", self.on_self_delete)
+        self.connect("key-press-event", self.on_key_press)
+
+        self.connect_item.connect("activate", self.on_connect_item_activate)
+        self.disconnect_item.connect("activate", self.on_disconnect_item_activate)
+        self.quit_item.connect("activate", self.on_quit_item_activate)
+        self.refresh_item.connect("activate", self.on_refresh_item_activate)
+        self.about_item.connect("activate", self.on_about_item_activate)
+
+        
+        self.new_item.connect("activate", self.on_new_item_activate)
+        self.delete_item.connect("activate", self.on_delete_item_activate)
+        self.edit_item.connect("activate", self.on_edit_item_activate)
+
+        self.connect_button.connect("clicked", self.on_connect_item_activate)
+        self.disconnect_button.connect("clicked", self.on_disconnect_item_activate)
+        
+        self.new_button.connect("clicked", self.on_new_item_activate)
+        self.delete_button.connect("clicked", self.on_delete_item_activate)
+        self.edit_button.connect("clicked", self.on_edit_item_activate)
+        
+        self.active_frame_new_button.connect("clicked", self.on_new_item_activate)
+        self.active_frame_delete_button.connect("clicked", self.on_delete_item_activate)
+        self.active_frame_edit_button.connect("clicked", self.on_edit_item_activate)
+
+        self.shares_tree_view.get_selection().connect("changed", self.on_update_sensitivity)
+        self.shares_tree_view.get_selection().connect("changed", self.on_switch_fill_active_pane)
+        self.shares_tree_view.connect("button_press_event", self.on_shares_tree_view_button_press)
+                
+        self.share_notebook.connect("switch-page", self.on_notebook_switch_page)
+
+        self.add_accel_group(accel_group)
 
 ############################################################################################################
 
@@ -1626,11 +1688,11 @@ def ParseArgs(argv):
 
 
 
-'''if __name__ == "__main__":
+if __name__ == "__main__":
     arguments = ParseArgs(sys.argv[1:]) #the [1:] ignores the first argument, which is the path to our utility
 
     main_window = ShareWindow(**arguments)
     main_window.show_all()
     gtk.main()
-'''
+
 

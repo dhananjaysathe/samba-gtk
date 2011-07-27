@@ -184,6 +184,8 @@ class srvsvcConnectDialog(gtk.Dialog):
                 self.on_radio_button_toggled)
 
     def get_server_address(self):
+            if self.get_transport_type() is 2:
+                return '127.0.0.1'
             return self.server_address_entry.get_text().strip()
 
     def get_username(self):
@@ -264,11 +266,14 @@ class ShareAddEditDialog(gtk.Dialog):
 
 
 
-    def field_validate(self):
+    def validate_fields(self):
 
         if len(self.share_name_entry.get_text()) == 0:
             return "Share name may not be empty!"
 
+        if not self.pipe.name_validate(self.sname):
+            return "Invalid Share name"
+            
         if (not self.edit_mode):
             for share in self.pipe.share_list:
                 if share.name == self.share_name_entry.get_text():
@@ -303,17 +308,13 @@ class ShareAddEditDialog(gtk.Dialog):
         self.share_name_entry.set_text(self.sname)
         self.share_comment_entry.set_text(self.comment)
         self.share_password_entry.set_text(self.password)
-        if  self.stype == srvsvc.STYPE_DISKTREE:
-            self.stype_disktree_radio_button.set_active()
-        elif self.stype == srvsvc.STYPE_PRINTQ :
-            self.stype_printq_radio_button.set_active()
-        else:
-            self.stype_ipc_radio_button.set_active()
         
-        if self.flags[0]:
-            self.sflag_temp_check_button.set_active()
-        if self.flags[1]:
-            self.sflag_hidden_check_button.set_active()
+        self.stype_disktree_radio_button.set_active(self.stype == srvsvc.STYPE_DISKTREE)
+        self.stype_printq_radio_button.set_active(self.stype == srvsvc.STYPE_PRINTQ )
+        self.stype_ipc_radio_button.set_active(self.stype == srvsvc.STYPE_IPC)
+        
+        self.sflag_temp_check_button.set_active(self.flags[0])
+        self.sflag_hidden_check_button.set_active(self.flags[1])
         
         if self.islocal:
             self.file_button.set_current_folder(self.path)
@@ -342,15 +343,17 @@ class ShareAddEditDialog(gtk.Dialog):
         if self.sflag_hidden_check_button.get_active():
             self.flags[1] = True
         if self.islocal :
-            self.path =  self.file_button.get_filename()
+            self.path = self.file_button.get_filename()
+            self.path = self.pipe.fix_path_format(self.path)
         else:
             self.path = self.path_entry.get_text()
+            self.path = self.pipe.fix_path_format(self.path)
         self.max_users = self.max_users_spinbox.get_value_as_int()
 
 
 
     def  fields_to_share(self):
-        """ Create a share type 502 object from the fields collected """
+        """ Modify a share type 502 object from the fields collected """
         self.collect_fields()
         self.share.name= self.sname
         self.share.type= self.get_stype_final()
@@ -551,7 +554,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
         if self.islocal :
             self.file_button = gtk.FileChooserButton('Browse')
-            self.file_button.set_current_folder('/home')
+            self.file_button.set_current_folder(self.path)
             self.file_button.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
             self.file_button.set_tooltip_text('Select the folder to share')
             table.attach(self.file_button, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
