@@ -505,7 +505,7 @@ class srvsvcPipeManager(object):
         max_users=0xFFFFFFFF,
         password= '',
         path= '',
-        #permissions= None,
+        #permissions= None, it's a reserved section , pointless passing a value.
         sd_buf= None
         ):
         """ Gets a 502 type share object.
@@ -772,7 +772,7 @@ class ShareWindow(gtk.Window):
             self.srvinfo_tos_label.set_text(label_data)
             srv_type_genstr = self.pipe_manager.get_platform_info(
                                         self.server_info.platform_id,'typestring')
-            self.srvinfo_name_label.set_text(self.server_info.server_name)
+            self.srvinfo_name_label.set_text('\\'+self.server_info.server_name)
             self.srvinfo_hidden_label.set_text(str(bool(self.server_info.hidden)))
             self.srvinfo_comment_label.set_text(self.server_info.comment)
             label_data = '.'.join([str(self.server_info.version_major),str(self.server_info.version_minor)])
@@ -1162,18 +1162,26 @@ class ShareWindow(gtk.Window):
                 self.shareinfo_frame.remove(widget_to_delete)
         
         if share is None:
-            table = gtk.Table(1,1)
+            table = gtk.Table(1,2)
             table.set_border_width(5)
+            self.active_pane_frame_label.set_markup('<b> No Share Selected </b>')
+
     
-            label = gtk.Label("Please Slect a Share First" )
+            label = gtk.Label("Please Select a Share First")
             label.set_alignment(1, 0.5)
             table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+            
+            label = gtk.Label(" "*55 )
+            label.set_alignment(1, 0.5)
+            table.attach(label, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
             
         else:
             stype = share.type
             flag_set = self.pipe_manager.get_share_type_info(stype,'flags')
             
-            rows_required = 10 -int(share.password is "") -int(share.max_users == 0xFFFFFFFF) -int(not flag_set[1])
+            rows_required = (8 -int(share.password is "") -int(share.max_users == 0xFFFFFFFF) 
+                            -int(not flag_set[1]) + ((len(share.path)/35)+1) 
+                            +((len(share.comment)/35)+1))
             
             table = gtk.Table(rows_required,2)
             table.set_border_width(5)
@@ -1198,27 +1206,47 @@ class ShareWindow(gtk.Window):
             label.set_alignment(1, 0.5)
             table.attach(label, 0, 1, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
-            label = gtk.Label(share.comment)
-            label.set_alignment(0, 0.5)
-            table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-            row_index+=1
+            if len(share.comment)>35:
+                for i in range((len(share.comment)/35)+1) :
+                    label = gtk.Label(share.comment[i*35:i*35+35])
+                    label.set_alignment(0, 0.5)
+                    table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+                    row_index+=1
+            else :
+                padding = (35 - len(share.comment))*" "
+                label = gtk.Label("".join([share.comment,padding]))
+                label.set_alignment(0, 0.5)
+                table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+                row_index+=1
 
             label = gtk.Label(' Path  : ')
             label.set_alignment(1, 0.5)
             table.attach(label, 0, 1, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-
-            label = gtk.Label(share.path)
-            label.set_line_wrap(True)
-            label.set_alignment(0, 0.5)
-            table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-            row_index+=1
+            
+            if len(share.path)>35:
+                for i in range((len(share.path)/35)+1) :
+                    label = gtk.Label(share.path[i*35:i*35+35])
+                    label.set_alignment(0, 0.5)
+                    table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+                    row_index+=1
+            else :
+                if share.path == "":
+                    padding = 41*" "
+                else:
+                    padding = (35 - len(share.path))*" "
+                label = gtk.Label("".join([share.path,padding]))
+                label.set_alignment(0, 0.5)
+                table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+                row_index+=1
+                    
+                
 
             if share.password :
                 label = gtk.Label(' Password  : ')
                 label.set_alignment(1, 0.5)
-                table.attach(label, 0, 1, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+                table.attach(label, 0, 1, row_index, row_index+1, gtk.SHRINK,gtk.FILL | gtk.EXPAND, 0, 0)
 
-                label = gtk.Label(share.password)
+                label = gtk.Label("Protection Enabled")
                 label.set_alignment(0, 0.5)
                 table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
                 row_index+=1
@@ -1246,7 +1274,9 @@ class ShareWindow(gtk.Window):
             table.attach(label, 0, 1, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
             row_index+=1
 
+            flags_present = False
             if flag_set[0]:
+                flags_present = True
                 label = gtk.Label(' Temporary  : ')
                 label.set_alignment(1, 0.5)
                 table.attach(label, 0, 1, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
@@ -1255,18 +1285,20 @@ class ShareWindow(gtk.Window):
                 label.set_alignment(0, 0.5)
                 table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
                 row_index+=1
-            else:
-                label = gtk.Label("No Special Flags")
-                label.set_alignment(0, 0.5)
-                table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-                row_index+=1
-
+            
             if flag_set[1]:
+                flags_present = True
                 label = gtk.Label(' Hidden  : ')
                 label.set_alignment(1, 0.5)
                 table.attach(label, 0, 1, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
                 label = gtk.Label(str(flag_set[1]))
+                label.set_alignment(0, 0.5)
+                table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+                row_index+=1
+            
+            if not (flags_present) :
+                label = gtk.Label("No Special Flags")
                 label.set_alignment(0, 0.5)
                 table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
                 row_index+=1
@@ -1477,16 +1509,18 @@ class ShareWindow(gtk.Window):
         ### right active widget :
         vbox = gtk.VBox()
         main_hbox.pack_start(vbox,False,False,0)
+        
+        
 
         self.shareinfo_frame = gtk.Frame()
         self.active_pane_frame_label = gtk.Label()
         self.active_pane_frame_label.set_use_markup(True)
-        self.active_pane_frame_label.set_markup('<b> </b>')
+        self.active_pane_frame_label.set_markup('<b> No Share Selected </b>')
         self.shareinfo_frame.set_label_widget(self.active_pane_frame_label)
         vbox.pack_start(self.shareinfo_frame, False, True, 0)
         self.shareinfo_frame.set_border_width(5)
 
-        table = gtk.Table(1,1)
+        table = gtk.Table(1,2)
         table.set_border_width(5)
         table.set_row_spacings(2)
         table.set_col_spacings(6)
@@ -1496,24 +1530,28 @@ class ShareWindow(gtk.Window):
         label = gtk.Label("Please Slect a Share First" )
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        
+        label = gtk.Label(" "*55 )
+        label.set_alignment(1, 0.5)
+        table.attach(label, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         hbox = gtk.HBox()
-        vbox.pack_start(hbox,True,False,0)
+        vbox.pack_end(hbox,False,False,0)
 
-        table = gtk.Table(3,5,True)
-        hbox.pack_end(table,False,True,0)
+        table = gtk.Table(3,6,True)
+        hbox.pack_start(table,False,True,0)
 
         self.active_frame_new_button = gtk.Button("New")
         self.active_frame_new_button.set_tooltip_text('Add a New Share')
-        table.attach(self.active_frame_new_button, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(self.active_frame_new_button, 2, 3, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         self.active_frame_edit_button = gtk.Button("Edit")
         self.active_frame_edit_button.set_tooltip_text('Edit Current Share')
-        table.attach(self.active_frame_edit_button, 2, 3, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(self.active_frame_edit_button, 3, 4, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         self.active_frame_delete_button = gtk.Button("Delete")
         self.active_frame_delete_button.set_tooltip_text('Delete Current Share')
-        table.attach(self.active_frame_delete_button, 3, 4, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(self.active_frame_delete_button, 4, 5, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
 
         # Server Info Page
