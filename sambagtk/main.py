@@ -15,9 +15,11 @@ import pygwsam
 import pygwregedit
 import pygwcrontab
 import pygwsvcctl
+import pygwshare
 
 from sambagtk.dialogs import AboutDialog
 from sambagtk.sam import SAMConnectDialog
+from sambagtk.pysrvsvc import srvsvcConnectDialog
 
 
 class SambaUtilities(object):
@@ -33,6 +35,7 @@ class SambaUtilities(object):
         self.regedit_window = None
         self.svcctl_window = None
         self.crontab_window = None
+        self.srvsvc_window = None
 
         self.connection_args = connection_args
         self.additional_connection_args = {} #arguments not supported by all utilities, such as domain_index
