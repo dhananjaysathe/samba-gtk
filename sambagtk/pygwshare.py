@@ -237,8 +237,9 @@ class srvsvcPipeManager(object):
                                  self.server_info_basic.path,
                                  info_ctr,max_buffer,
                                  self.resume_handle_conn)
-        for i in info_ctr.ctr.array :
-            self.conn_list.append(i)
+        if no_ent !=0 :
+            for i in info_ctr.ctr.array :
+                self.conn_list.append(i)
 
 
 
@@ -519,8 +520,8 @@ class srvsvcPipeManager(object):
         share.current_users = 0x00000000
         share.max_users= max_users
         share.password = password
-        share.path = path # As a result path validation needs to be done separately while insertion
-        share.permissions = 0 #None
+        share.path = path 
+        share.permissions = 0 
         share.sd_buf =  security.sec_desc_buf()
 
         return share
@@ -558,9 +559,10 @@ class srvsvcPipeManager(object):
         (disk_info, totalentries, self.resume_handle) = \
             self.pipe.NetDiskEnum(self.server_unc, 0x00000000,
                                   disk_info, 26, self.resume_handle)
-        for i in disk_info.disks:
-            if i.disk != '':  # disk lists returns a blank entry not of consequence to the program
-                self.disks_list.append(i.disk)
+        if totalentries != 0 :
+            for i in disk_info.disks:
+                if i.disk != '':  # disk lists returns a blank entry not of consequence to the program
+                    self.disks_list.append(i.disk)
 
 
 
