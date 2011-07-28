@@ -294,10 +294,11 @@ class srvsvcPipeManager(object):
             self.pipe.NetShareEnum(self.server_unc, info_ctr,
                                    self.max_buffer,
                                    self.resume_handle_share)
-        self.share_list = info_ctr.ctr.array
-        for i in self.share_list:
-            self.share_names_list.append(i.name)
-            self.share_types_list.append(i.type)
+        if totalentries != 0:
+            self.share_list = info_ctr.ctr.array
+            for i in self.share_list:
+                self.share_names_list.append(i.name)
+                self.share_types_list.append(i.type)
 
 
 
@@ -315,10 +316,11 @@ class srvsvcPipeManager(object):
         (info_ctr, totalentries, self.resume_handle_share) = \
             self.pipe.NetShareEnumAll(self.server_unc, info_ctr,
                 self.max_buffer, self.resume_handle_share)
-        self.share_list = info_ctr.ctr.array
-        for i in self.share_list:
-            self.share_names_list.append(i.name)
-            self.share_types_list.append(i.type)
+        if totalentries != 0:
+            self.share_list = info_ctr.ctr.array
+            for i in self.share_list:
+                self.share_names_list.append(i.name)
+                self.share_types_list.append(i.type)
 
 
 
@@ -746,7 +748,6 @@ class ShareWindow(gtk.Window):
                     
         if self.server_info is None:
             self.srvinfo_tos_label.set_text('-NA-')
-            self.srvinfo_pid_label.set_text('-NA-')
             self.srvinfo_name_label.set_text('-NA-')
             self.srvinfo_hidden_label.set_text('-NA-')
             self.srvinfo_comment_label.set_text('-NA-')
@@ -769,8 +770,6 @@ class ShareWindow(gtk.Window):
             self.srvinfo_tos_label.set_text(label_data)
             srv_type_genstr = self.pipe_manager.get_platform_info(
                                         self.server_info.platform_id,'typestring')
-            label_data='/'.join([str(self.server_info.platform_id),srv_type_genstr])
-            self.srvinfo_pid_label.set_text(label_data)
             self.srvinfo_name_label.set_text(self.server_info.server_name)
             self.srvinfo_hidden_label.set_text(str(bool(self.server_info.hidden)))
             self.srvinfo_comment_label.set_text(self.server_info.comment)
@@ -1207,6 +1206,7 @@ class ShareWindow(gtk.Window):
             table.attach(label, 0, 1, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
             label = gtk.Label(share.path)
+            label.set_line_wrap(True)
             label.set_alignment(0, 0.5)
             table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
             row_index+=1
@@ -1536,19 +1536,11 @@ class ShareWindow(gtk.Window):
 
         label = gtk.Label(' Target Platform OS  : ')
         label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         self.srvinfo_tos_label = gtk.Label()
         self.srvinfo_tos_label.set_alignment(0, 0.5)
-        table.attach(self.srvinfo_tos_label, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-
-        label = gtk.Label(' Platform Id  : ')
-        label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-
-        self.srvinfo_pid_label = gtk.Label()
-        self.srvinfo_pid_label.set_alignment(0, 0.5)
-        table.attach(self.srvinfo_pid_label, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+        table.attach(self.srvinfo_tos_label, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
 
         label = gtk.Label(' NetBIOS Name : ')
         label.set_alignment(1, 0.5)
