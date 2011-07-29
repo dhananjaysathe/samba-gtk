@@ -583,11 +583,11 @@ class ShareWindow(gtk.Window):
         self.server_info = None
 
         self.create()
-        self.fill_active_pane()
-        self.fill_server_info()
         self.set_status("Disconnected.")
         self.on_connect_item_activate(None, server, transport_type, username, password, connect_now)
         self.show_all()
+        self.fill_active_pane()
+        self.fill_server_info()
 
          # for easier further use
 
@@ -634,6 +634,7 @@ class ShareWindow(gtk.Window):
                 transport_type, username, password, connect_now)
             if self.pipe_manager is not None:
                 self.pipe_manager.get_shares_list()
+                self.server_info = self.pipe_manager.server_info
 
                 self.set_status("Connected to Server: IP=%s NETBios Name=%s." % (
                     self.server_address,self.pipe_manager.server_info.server_name))
@@ -652,6 +653,7 @@ class ShareWindow(gtk.Window):
             traceback.print_exc()
             self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
 
+        
         self.refresh_shares_view()
         self.update_sensitivity()
         self.fill_server_info()
@@ -738,26 +740,18 @@ class ShareWindow(gtk.Window):
 
     def fill_server_info (self):
         """ Gracious fill out server info """
-        try:
-            self.server_info = self.pipe_manager.server_info
-        except:
-            self.server_info = None
-        
-        #clear previous contents of sd_frame first
-        for widget_to_delete in self.sd_frame.get_children():
-            if type(widget_to_delete) is gtk.Table:
-                self.sd_frame.remove(widget_to_delete)
+        for widget in self.sd_frame.get_children() :     
+	        if type(widget) is gtk.Table:
+				self.sd_frame.remove(widget)
                     
         if self.server_info is None:
-            self.srvinfo_tos_label.set_text('-NA-')
-            self.srvinfo_name_label.set_text('-NA-')
-            self.srvinfo_hidden_label.set_text('-NA-')
-            self.srvinfo_comment_label.set_text('-NA-')
-            self.srvinfo_version_label.set_text('-NA-')
-            self.srvinfo_type_label.set_text('-NA-')
-            self.srvinfo_upath_label.set_text('-NA-')
-            self.srvinfo_to_label.set_text('-NA-')
-            self.srvinfo_aa_label.set_text('-NA-')
+            self.srv_info_label.set_markup('<b>Server Disconnected</b>')
+            
+            
+            my_lables = self.srvinfo_frame.get_children()[0].get_children()
+            for label in my_lables :
+                label.set_sensitive(False)
+            
             #handle the disk data
             table = gtk.Table(2,2,True)
             table.set_border_width(5)
@@ -767,6 +761,12 @@ class ShareWindow(gtk.Window):
             table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
                                
         else:
+            self.srv_info_label.set_markup('<b>Share Server Details</b>')
+                        
+            my_lables = self.srvinfo_frame.get_children()[0].get_children()
+            for label in my_lables :
+                label.set_sensitive(True)
+                
             label_data = self.pipe_manager.get_platform_info(
                                         self.server_info.platform_id,'desc')
             self.srvinfo_tos_label.set_text(label_data)
@@ -859,6 +859,7 @@ class ShareWindow(gtk.Window):
             "A tool to manage user shares on a SRVS Share server.\n"
             "Based on Jelmer Vernooij's original Samba-GTK",
             self.icon_pixbuf)
+        dialog.set_copyright("Copyright \xc2\xa9 2011 Dhananjay Sathe <dhananjaysathe@gmail.com>")
         dialog.run()
         dialog.hide()
 
@@ -1157,9 +1158,8 @@ class ShareWindow(gtk.Window):
         except:
             share = None
         
-        for widget_to_delete in self.shareinfo_frame.get_children():
-            if type(widget_to_delete) is gtk.Table:
-                self.shareinfo_frame.remove(widget_to_delete)
+        widget_to_delete = self.shareinfo_frame.get_children()[0]
+        self.shareinfo_frame.remove(widget_to_delete)
         
         if share is None:
             table = gtk.Table(1,2)
@@ -1324,7 +1324,8 @@ class ShareWindow(gtk.Window):
         self.set_default_size(800, 600)
         self.icon_filename = os.path.join(sys.path[0],"..", "images", "network.png")
         self.share_icon_filename = os.path.join(sys.path[0],"..", "images", "network.png")
-        self.set_icon_from_file(self.icon_filename)
+        self.icon_pixbuf = gtk.gdk.pixbuf_new_from_file(self.icon_filename)
+        self.set_icon(self.icon_pixbuf)
         self.set_position(gtk.WIN_POS_CENTER)
 
         accel_group = gtk.AccelGroup()
@@ -1560,18 +1561,18 @@ class ShareWindow(gtk.Window):
 
         vbox = gtk.VBox()
         hbox.pack_start(vbox, True, True, 0)
-        frame =  gtk.Frame()
-        label = gtk.Label('<b>Share Server Details</b>')
-        label.set_use_markup(True)
-        frame.set_label_widget(label)
-        vbox.pack_start(frame, False, True, 0)
-        frame.set_border_width(5)
+        self.srvinfo_frame =  gtk.Frame()
+        self.srv_info_label = gtk.Label('<b>Share Server Details</b>')
+        self.srv_info_label.set_use_markup(True)
+        self.srvinfo_frame.set_label_widget(self.srv_info_label)
+        vbox.pack_start(self.srvinfo_frame, False, True, 0)
+        self.srvinfo_frame.set_border_width(5)
 
         table = gtk.Table(10,2)
         table.set_border_width(5)
         table.set_row_spacings(3)
         table.set_col_spacings(6)
-        frame.add(table)
+        self.srvinfo_frame.add(table)
 
 
         label = gtk.Label(' Target Platform OS  : ')
