@@ -45,6 +45,7 @@ from pysrvsvc import (
     DeleteDialog,
     ShareAddEditDialog,
     srvsvcConnectDialog,
+    ShareWizardDialog
     )
 
 
@@ -361,7 +362,7 @@ class srvsvcPipeManager(object):
         """ Gets share info for a share with a particular name from the rpc server.
 
   Usage:
-  S.get_share_info_local(self,name= \"\") -> sahre_info (502 type)
+  S.get_share_info_local(self,name= "") -> sahre_info (502 type)
   """
         name = unicode(name)
         info = self.pipe.NetShareGetInfo(self.server_unc, name, 502)
@@ -520,8 +521,8 @@ class srvsvcPipeManager(object):
         share.current_users = 0x00000000
         share.max_users= max_users
         share.password = password
-        share.path = path 
-        share.permissions = 0 
+        share.path = path
+        share.permissions = 0
         share.sd_buf =  security.sec_desc_buf()
 
         return share
@@ -653,7 +654,7 @@ class ShareWindow(gtk.Window):
             traceback.print_exc()
             self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
 
-        
+
         self.refresh_shares_view()
         self.update_sensitivity()
         self.fill_server_info()
@@ -740,18 +741,18 @@ class ShareWindow(gtk.Window):
 
     def fill_server_info (self):
         """ Gracious fill out server info """
-        for widget in self.sd_frame.get_children() :     
-	        if type(widget) is gtk.Table:
-				self.sd_frame.remove(widget)
-                    
+        for widget in self.sd_frame.get_children() :
+            if type(widget) is gtk.Table:
+                self.sd_frame.remove(widget)
+
         if self.server_info is None:
             self.srv_info_label.set_markup('<b>Server Disconnected</b>')
-            
-            
+
+
             my_lables = self.srvinfo_frame.get_children()[0].get_children()
             for label in my_lables :
                 label.set_sensitive(False)
-            
+
             #handle the disk data
             table = gtk.Table(2,2,True)
             table.set_border_width(5)
@@ -759,14 +760,14 @@ class ShareWindow(gtk.Window):
             label = gtk.Label('Not connected to share server.')
             label.set_alignment(1, 0.5)
             table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-                               
+
         else:
             self.srv_info_label.set_markup('<b>Share Server Details</b>')
-                        
+
             my_lables = self.srvinfo_frame.get_children()[0].get_children()
             for label in my_lables :
                 label.set_sensitive(True)
-                
+
             label_data = self.pipe_manager.get_platform_info(
                                         self.server_info.platform_id,'desc')
             self.srvinfo_tos_label.set_text(label_data)
@@ -830,7 +831,7 @@ class ShareWindow(gtk.Window):
                 attach_index =  self.pipe_manager.disks_list.index(i) + 2
                 #Note : attcah ofsets for uniformity of gui , no other practical reason
                 table.attach(label, 0, 1, attach_index, attach_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-            
+
         self.sd_frame.add(table)
         self.sd_frame.show_all()
 
@@ -1152,37 +1153,37 @@ class ShareWindow(gtk.Window):
 
     def fill_active_pane(self):
         """ Fills sthe active left pane """
-        
+
         try:
             share = self.get_selected_share()
         except:
             share = None
-        
+
         widget_to_delete = self.shareinfo_frame.get_children()[0]
         self.shareinfo_frame.remove(widget_to_delete)
-        
+
         if share is None:
             table = gtk.Table(1,2)
             table.set_border_width(5)
             self.active_pane_frame_label.set_markup('<b> No Share Selected </b>')
 
-    
+
             label = gtk.Label("Please Select a Share First")
             label.set_alignment(1, 0.5)
             table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-            
+
             label = gtk.Label(" "*55 )
             label.set_alignment(1, 0.5)
             table.attach(label, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-            
+
         else:
             stype = share.type
             flag_set = self.pipe_manager.get_share_type_info(stype,'flags')
-            
-            rows_required = (8 -int(share.password is "") -int(share.max_users == 0xFFFFFFFF) 
-                            -int(not flag_set[1]) + ((len(share.path)/35)+1) 
+
+            rows_required = (8 -int(share.password is "") -int(share.max_users == 0xFFFFFFFF)
+                            -int(not flag_set[1]) + ((len(share.path)/35)+1)
                             +((len(share.comment)/35)+1))
-            
+
             table = gtk.Table(rows_required,2)
             table.set_border_width(5)
             table.set_row_spacings(2)
@@ -1191,8 +1192,8 @@ class ShareWindow(gtk.Window):
             row_index = 0
 
             self.active_pane_frame_label.set_markup('<b>Selected Share Details</b>')
-            
-            
+
+
             label = gtk.Label(' Share Name  : ')
             label.set_alignment(1, 0.5)
             table.attach(label, 0, 1, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
@@ -1222,7 +1223,7 @@ class ShareWindow(gtk.Window):
             label = gtk.Label(' Path  : ')
             label.set_alignment(1, 0.5)
             table.attach(label, 0, 1, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-            
+
             if len(share.path)>35:
                 for i in range((len(share.path)/35)+1) :
                     label = gtk.Label(share.path[i*35:i*35+35])
@@ -1238,8 +1239,8 @@ class ShareWindow(gtk.Window):
                 label.set_alignment(0, 0.5)
                 table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
                 row_index+=1
-                    
-                
+
+
 
             if share.password :
                 label = gtk.Label(' Password  : ')
@@ -1285,7 +1286,7 @@ class ShareWindow(gtk.Window):
                 label.set_alignment(0, 0.5)
                 table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
                 row_index+=1
-            
+
             if flag_set[1]:
                 flags_present = True
                 label = gtk.Label(' Hidden  : ')
@@ -1296,7 +1297,7 @@ class ShareWindow(gtk.Window):
                 label.set_alignment(0, 0.5)
                 table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
                 row_index+=1
-            
+
             if not (flags_present) :
                 label = gtk.Label("No Special Flags")
                 label.set_alignment(0, 0.5)
@@ -1312,9 +1313,9 @@ class ShareWindow(gtk.Window):
                 label.set_alignment(0, 0.5)
                 table.attach(label, 1, 2, row_index, row_index+1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
                 row_index+=1
-            
+
         self.shareinfo_frame.add(table)
-        self.shareinfo_frame.show_all()    
+        self.shareinfo_frame.show_all()
 
 
 
@@ -1504,14 +1505,14 @@ class ShareWindow(gtk.Window):
         self.show_all_share_checkbox.set_tooltip_text('Enable or disable the visiblity of hidden shares')
         self.show_all_share_checkbox.set_active(False)
         self.show_all_share_checkbox.connect("toggled",self.toggle_share_view_visiblity,None)
-        
-        
-        
+
+
+
         ### right active widget :
         vbox = gtk.VBox()
         main_hbox.pack_start(vbox,False,False,0)
-        
-        
+
+
 
         self.shareinfo_frame = gtk.Frame()
         self.active_pane_frame_label = gtk.Label()
@@ -1531,7 +1532,7 @@ class ShareWindow(gtk.Window):
         label = gtk.Label("Please Slect a Share First" )
         label.set_alignment(1, 0.5)
         table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-        
+
         label = gtk.Label(" "*55 )
         label.set_alignment(1, 0.5)
         table.attach(label, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
@@ -1656,7 +1657,7 @@ class ShareWindow(gtk.Window):
         label.set_use_markup(True)
         self.sd_frame.set_label_widget(label)
         vbox.pack_start(self.sd_frame, False, False, 0)
-        
+
 
         # status bar
 
@@ -1736,13 +1737,13 @@ def ParseArgs(argv):
             arguments.update({"connect_now":True})
     return (arguments)
 
-
-
+"""
 if __name__ == "__main__":
     arguments = ParseArgs(sys.argv[1:]) #the [1:] ignores the first argument, which is the path to our utility
 
     main_window = ShareWindow(**arguments)
     main_window.show_all()
     gtk.main()
-
+"""
+test = srvsvcPipeManager('127.0.0.1',0,"Administrator","Pass#2011")
 

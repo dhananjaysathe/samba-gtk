@@ -32,6 +32,8 @@ import gtk
 import gobject
 import os
 import sys
+
+
 from samba.dcerpc import srvsvc
 
 
@@ -47,7 +49,7 @@ class srvsvcConnectDialog(gtk.Dialog):
         password='',
         ):
         super(srvsvcConnectDialog, self).__init__()
-        
+
 
         self.server_address = server
         self.username = username
@@ -252,7 +254,7 @@ class ShareAddEditDialog(gtk.Dialog):
             self.stype_ipc_radio_button.set_sensitive(False)
             self.sflag_temp_check_button.set_sensitive(False)
             self.sflag_hidden_check_button.set_sensitive(False)
-            self.apply_button.set_sensitive(True)
+
 
 
     def  get_stype_final(self):
@@ -273,7 +275,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
         if not self.pipe.name_validate(self.sname):
             return "Invalid Share name"
-            
+
         if (not self.edit_mode):
             for share in self.pipe.share_list:
                 if share.name == self.share_name_entry.get_text():
@@ -308,21 +310,21 @@ class ShareAddEditDialog(gtk.Dialog):
         self.share_name_entry.set_text(self.sname)
         self.share_comment_entry.set_text(self.comment)
         self.share_password_entry.set_text(self.password)
-        
+
         self.stype_disktree_radio_button.set_active(self.stype == srvsvc.STYPE_DISKTREE)
         self.stype_printq_radio_button.set_active(self.stype == srvsvc.STYPE_PRINTQ )
         self.stype_ipc_radio_button.set_active(self.stype == srvsvc.STYPE_IPC)
-        
+
         self.sflag_temp_check_button.set_active(self.flags[0])
         self.sflag_hidden_check_button.set_active(self.flags[1])
-        
+
         if self.islocal:
             self.file_button.set_current_folder(self.path)
         else:
             self.file_entry.set_text(self.path)
         self.max_users_spinbox.set_value(self.max_users)
-            
-        
+
+
 
     def collect_fields(self):
         """ Collects fields from the GUI and saves in class variables """
@@ -559,7 +561,7 @@ class ShareAddEditDialog(gtk.Dialog):
             self.file_button.set_tooltip_text('Select the folder to share')
             table.attach(self.file_button, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
         else:
-            self.file_button = gtk.Entry()
+            self.file_entry = gtk.Entry()
             self.file_entry.set_text(self.path)
             self.file_entry.set_tooltip_text('Path to the folder to share')
             table.attach(self.file_entry, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
@@ -607,6 +609,7 @@ class ShareAddEditDialog(gtk.Dialog):
         self.add_action_widget(self.ok_button, gtk.RESPONSE_OK)
 
         self.set_default_response(gtk.RESPONSE_OK)
+
 
 
 
@@ -816,4 +819,284 @@ class DeleteDialog(gtk.Dialog):
 
         self.set_default_response(gtk.RESPONSE_OK)
 
+class ShareWizardDialog(ShareAddEditDialog):
 
+    def create(self):
+
+        self.page = 0
+        self.set_default_size(400, 275)
+
+        self.main_box  = gtk.VBox()
+        self.vbox.pack_start(self.main_box,True,True,0)
+
+        vbox = gtk.VBox()
+        vbox.set_border_width(5)
+        samba_image_filename = os.path.join(sys.path[0],"..", 'images',
+                'samba-logo-small.png')
+        samba_image = gtk.Image()
+        samba_image.set_from_file(samba_image_filename)
+        vbox.pack_end(samba_image, False, True, 0)
+        self.main_box.pack_start(vbox, False, True, 0)
+
+        vbox = gtk.VBox()
+        self.main_box.pack_start(vbox,True,True,0)
+
+        frame = gtk.Frame()
+        frame.set_border_width(10)
+        vbox.pack_start(frame, True, True, 0)
+
+        self.data_box = gtk.VBox()
+        self.data_box.set_border_width(5)
+        frame.add(self.data_box)
+
+        self.title_label = gtk.Label()
+        self.title_label.set_alignment(0.05,0.5)
+        self.data_box.pack_start(self.title_label,False,True,1)
+
+        self.info_label = gtk.Label()
+        self.info_label.set_alignment(.15,0.5)
+        self.data_box.pack_start(self.info_label,False,True,0)
+
+        self.fields_box = gtk.VBox()
+        self.data_box.pack_start(self.fields_box,True,True,3)
+
+
+        # create all entities do not attach them so as to that they are refrenced
+        #name
+        self.share_name_entry = gtk.Entry()
+        self.share_name_entry.set_tooltip_text('Enter the Share Name')
+        self.share_name_entry.set_text(self.sname)
+
+        # dcesrv_srvsvc name check does this but just to reduce chances of an error limit max length
+        if self.flags[1]:
+            self.share_name_entry.set_max_length(12)
+        else:
+            self.share_name_entry.set_max_length(80)
+
+        #comment
+        self.share_comment_entry = gtk.Entry()
+        self.share_comment_entry.set_max_length(48) # max allowed is 48 MS-SRVS
+        self.share_comment_entry.set_activates_default(True)
+        self.share_comment_entry.set_text(self.comment)
+        self.share_comment_entry.set_tooltip_text('Add a Comment or Description of the Share, Will default to share_type description')
+
+        #password
+        self.share_password_entry = gtk.Entry()
+        self.share_password_entry.set_activates_default(True)
+        self.share_password_entry.set_text(self.password)
+        self.share_password_entry.set_visibility(False)
+        self.share_password_entry.set_tooltip_text('Set a Share Password')
+        #pwd toggle button
+        self.set_pw_visiblity = gtk.CheckButton("Visible")
+        self.set_pw_visiblity.set_tooltip_text('Enable or disable the password visiblity')
+        self.set_pw_visiblity.set_active(False)
+        self.set_pw_visiblity.connect("toggled",self.toggle_pwd_visiblity,None)
+
+        # Radio buttons
+        self.stype_disktree_radio_button = gtk.RadioButton(None,'Disktree')
+        self.stype_disktree_radio_button.set_tooltip_text('Disktree (folder) type Share. Default')
+        self.stype_disktree_radio_button.set_active(self.stype == srvsvc.STYPE_DISKTREE)
+
+        self.stype_printq_radio_button = gtk.RadioButton(self.stype_disktree_radio_button,'Print Queue')
+        self.stype_printq_radio_button.set_tooltip_text('Shared Print Queue')
+        self.stype_printq_radio_button.set_active(self.stype == srvsvc.STYPE_PRINTQ)
+
+        self.stype_ipc_radio_button = gtk.RadioButton(self.stype_printq_radio_button,'IPC ')
+        self.stype_ipc_radio_button.set_tooltip_text('Shared Interprocess Communication Pipe (IPC).')
+        self.stype_ipc_radio_button.set_active(self.stype == srvsvc.STYPE_IPC)
+
+        # Check buttons
+        self.sflag_temp_check_button = gtk.CheckButton('Temporary')
+        self.sflag_temp_check_button.set_tooltip_text('Make share Temporary')
+        self.sflag_temp_check_button.set_active(self.flags[0])
+
+        self.sflag_hidden_check_button = gtk.CheckButton('Hidden ')
+        self.sflag_hidden_check_button.set_tooltip_text('Make share hidden.')
+        self.sflag_hidden_check_button.set_active(self.flags[1])
+
+        #path
+        if self.islocal:
+            self.file_button = gtk.FileChooserButton('Browse')
+            self.file_button.set_current_folder(self.path)
+            self.file_button.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+            self.file_button.set_tooltip_text('Select the folder to share')
+        else:
+            self.file_entry = gtk.Entry()
+            self.file_entry.set_text(self.path)
+            self.file_entry.set_tooltip_text('Path to the folder to share')
+
+        #max_users
+        self.max_users_adjustment = gtk.Adjustment(self.max_users,1,0xFFFFFFFF,1,5)
+
+        self.max_users_spinbox = gtk.SpinButton(self.max_users_adjustment)
+        self.max_users_spinbox.set_numeric(True)
+        self.max_users_spinbox.set_tooltip_text('Max Users for the Share')
+
+
+        self.action_area.set_layout(gtk.BUTTONBOX_CENTER)
+        
+
+        self.cancel_button = gtk.Button("Cancel", gtk.STOCK_CANCEL)
+        self.cancel_button.set_flags(gtk.CAN_DEFAULT)
+        self.add_action_widget(self.cancel_button, gtk.RESPONSE_CANCEL)
+        
+        self.prev_button = gtk.Button(stock=gtk.STOCK_GO_BACK)
+        self.prev_button.connect("clicked",self.update_fields,-1)
+        self.action_area.pack_start(self.prev_button, False, False, 10)
+        
+        self.next_button = gtk.Button(stock=gtk.STOCK_GO_FORWARD)
+        self.next_button.connect("clicked", self.update_fields,+1)
+        self.action_area.pack_start(self.next_button, False, False, 0)
+
+        self.ok_button = gtk.Button("OK", gtk.STOCK_OK)
+        self.ok_button.set_flags(gtk.CAN_DEFAULT)
+        self.add_action_widget(self.ok_button, gtk.RESPONSE_OK)
+
+        self.set_default_response(gtk.RESPONSE_OK)
+        self.update_fields(None,0)
+
+
+    def update_fields(self,widget,change):
+        self.page+=change
+        if self.page == 0 :
+            self.title_label.set_markup('<b>Welcome to the New Share Wizard</b>')
+            self.info_label.set_text(' ')
+            for widget in self.fields_box.get_children():
+                self.fields_box.remove(widget)
+                
+            label =gtk.Label('Please press next to continue.')
+            label.set_alignment(0,0.5)
+            self.fields_box.pack_start(label,False,True,0)
+            self.fields_box.show_all()
+            self.prev_button.set_sensitive(False)
+            self.next_button.set_sensitive(True)
+            self.ok_button.set_sensitive(False)
+            
+            
+            
+            self.fields_box.show_all()
+
+
+        if self.page == 1:
+            self.title_label.set_markup('<b>Name and Password</b>')
+            self.info_label.set_text('Please enter a valid name and password (optional) for your share.')
+            self.prev_button.set_sensitive(True)
+            self.next_button.set_sensitive(True)
+            self.ok_button.set_sensitive(False)
+
+            for widget in self.fields_box.get_children():
+                self.fields_box.remove(widget)
+
+            table = gtk.Table(2,2,True)
+            table.set_border_width(5)
+            table.set_row_spacings(2)
+            table.set_col_spacings(6)
+
+            label = gtk.Label("* Share Name : ")
+            label.set_alignment(1,0.5)
+
+            table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+            table.attach(self.share_name_entry, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+            label = gtk.Label("  Share Password : ")
+            label.set_alignment(1,0.5)
+            table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+            table.attach(self.share_password_entry, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+            
+   
+            self.fields_box.pack_start(table,False,True,0)
+            self.fields_box.show_all()
+
+
+        if self.page == 2:
+            self.title_label.set_markup('<b>Comment and Max Users </b>')
+            self.info_label.set_text('Please enter a  comment(optional) and select max users')
+            self.prev_button.set_sensitive(True)
+            self.next_button.set_sensitive(True)
+            self.ok_button.set_sensitive(False)
+
+            for widget in self.fields_box.get_children():
+                self.fields_box.remove(widget)
+
+            table = gtk.Table(2,2,True)
+            table.set_border_width(5)
+            table.set_row_spacings(2)
+            table.set_col_spacings(6)
+
+            label = gtk.Label("  Share Comment :")
+            label.set_alignment(1,0.5)
+            table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+            table.attach(self.share_comment_entry, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+            label = gtk.Label("  Max Users : ")
+            label.set_alignment(1,0.5)
+            table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+            table.attach(self.max_users_spinbox, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+
+            self.fields_box.pack_start(table,False,True,0)
+            self.fields_box.show_all()
+
+        if self.page == 3:
+            self.title_label.set_markup('<b>Share Type Options</b>')
+            self.info_label.set_text('Please select your share type options.')
+            self.prev_button.set_sensitive(True)
+            self.next_button.set_sensitive(True)
+            self.ok_button.set_sensitive(False)
+
+            for widget in self.fields_box.get_children():
+                self.fields_box.remove(widget)
+
+            hbox = gtk.HBox(True,10)           
+            
+            vbox = gtk.VBox()
+            vbox.set_border_width(5)
+            
+            vbox.pack_start(self.stype_disktree_radio_button,True,True,3)
+            vbox.pack_start(self.stype_printq_radio_button,True,True,3)
+            vbox.pack_start(self.stype_ipc_radio_button,True,True,3)
+            hbox.pack_start(vbox,True,True,0)
+            
+            vbox = gtk.VBox()
+            vbox.set_border_width(5)
+           
+            vbox.pack_start(self.sflag_temp_check_button,True,True,3)
+            vbox.pack_start(self.sflag_hidden_check_button,True,True,3)
+            
+            hbox.pack_start(vbox,True,True,0)
+            
+            
+            
+            self.fields_box.pack_start(hbox,True,True,0)
+            self.fields_box.show_all()
+
+
+
+        if self.page == 4:
+            self.title_label.set_markup('<b>Path</b>')
+            if self.islocal:
+                self.info_label.set_text('Please select a valid path.')
+            else:
+                self.info_label.set_text('Please enter valid path.')
+            self.prev_button.set_sensitive(True)
+            self.next_button.set_sensitive(False)
+            self.ok_button.set_sensitive(True)
+
+            for widget in self.fields_box.get_children():
+                self.fields_box.remove(widget)
+
+            table = gtk.Table(1,2,True)
+            table.set_border_width(5)
+            table.set_row_spacings(2)
+            table.set_col_spacings(6)
+
+
+            label = gtk.Label('  Path     : ')
+            label.set_alignment(1,0.5)
+            table.attach(label, 0, 1, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+            if self.islocal :
+                table.attach(self.file_button, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+            else:
+                table.attach(self.file_entry, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
+            
+            self.fields_box.pack_start(table,False,True,0)
+            self.fields_box.show_all()
