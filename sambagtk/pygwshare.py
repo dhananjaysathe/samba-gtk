@@ -874,8 +874,12 @@ class ShareWindow(gtk.Window):
 
 
 
-    def run_share_add_edit_dialog(self, share= None, apply_callback= None):
-        dialog = ShareAddEditDialog(self.pipe_manager, share)
+    def run_share_add_edit_dialog(self, share= None, apply_callback= None,wizard_mode=False):
+        
+        if wizard_mode:
+            dialog = ShareWizardDialog(self.pipe_manager, None) # wizard only for a new share
+        else:
+            dialog = ShareAddEditDialog(self.pipe_manager, share)
         dialog.show_all()
 
         # loop to handle the applies
@@ -915,10 +919,11 @@ class ShareWindow(gtk.Window):
         self.connect_item.set_sensitive(not connected)
         self.disconnect_item.set_sensitive(connected)
         self.refresh_item.set_sensitive(connected)
+        
         self.new_item.set_sensitive(connected and share_page_active)
-
         self.delete_item.set_sensitive(connected and selected)
         self.edit_item.set_sensitive(connected and selected)
+        self.new_share_wizard_item.set_sensitive(connected and share_page_active)
 
         self.connect_button.set_sensitive(not connected)
         self.disconnect_button.set_sensitive(connected)
@@ -926,6 +931,7 @@ class ShareWindow(gtk.Window):
         self.new_button.set_sensitive(connected and share_page_active)
         self.delete_button.set_sensitive(connected and selected)
         self.edit_button.set_sensitive(connected and selected)
+        self.new_share_wizard_button.set_sensitive(connected and share_page_active)
 
         self.active_frame_new_button.set_sensitive(connected and share_page_active)
         self.active_frame_delete_button.set_sensitive(connected and selected)
@@ -976,9 +982,9 @@ class ShareWindow(gtk.Window):
 
 
 
-    def on_new_item_activate(self, widget):
+    def on_new_item_activate(self, widget,wizard_mode=False):
 
-        share = self.run_share_add_edit_dialog()
+        share = self.run_share_add_edit_dialog(wizard_mode=wizard_mode)
         if share is None:
             self.set_status("Share creation canceled.")
             return
@@ -1384,6 +1390,15 @@ class ShareWindow(gtk.Window):
         self.edit_item = gtk.ImageMenuItem(gtk.STOCK_EDIT, accel_group)
         self.edit_item.set_sensitive(False)
         share_menu.add(self.edit_item)
+        
+        self.wizard_item = gtk.MenuItem("_Wizard")
+        self.menubar.add(self.wizard_item)
+
+        wizard_menu = gtk.Menu()
+        self.wizard_item.set_submenu(wizard_menu)
+        
+        self.new_share_wizard_item = gtk.MenuItem(label="New Share Wizard")
+        wizard_menu.add(self.new_share_wizard_item)
 
         self.help_item = gtk.MenuItem("_Help")
         self.menubar.add(self.help_item)
@@ -1422,10 +1437,20 @@ class ShareWindow(gtk.Window):
         self.delete_button = gtk.ToolButton(gtk.STOCK_DELETE)
         self.delete_button.set_is_important(True)
         self.toolbar.insert(self.delete_button, 5)
+        
+        sep = gtk.SeparatorToolItem()
+        self.toolbar.insert(sep, 6)
+        
+        image = gtk.Image()
+        image.set_from_stock(gtk.STOCK_EXECUTE, 48)
+        self.new_share_wizard_button = gtk.ToolButton(image,"New Share Wizard")
+        self.new_share_wizard_button.set_is_important(True)
+        self.toolbar.insert(self.new_share_wizard_button, 7)
 
         self.new_button.set_tooltip_text("Add a new Share")
         self.edit_button.set_tooltip_text("Edit a Share")
         self.delete_button.set_tooltip_text("Delete a Share")
+        
         #share-page
         self.share_notebook = gtk.Notebook()
         self.vbox.pack_start(self.share_notebook, True, True, 0)
@@ -1680,6 +1705,7 @@ class ShareWindow(gtk.Window):
         self.new_item.connect("activate", self.on_new_item_activate)
         self.delete_item.connect("activate", self.on_delete_item_activate)
         self.edit_item.connect("activate", self.on_edit_item_activate)
+        self.new_share_wizard_item.connect("activate", self.on_new_item_activate,True)
 
         self.connect_button.connect("clicked", self.on_connect_item_activate)
         self.disconnect_button.connect("clicked", self.on_disconnect_item_activate)
@@ -1687,6 +1713,7 @@ class ShareWindow(gtk.Window):
         self.new_button.connect("clicked", self.on_new_item_activate)
         self.delete_button.connect("clicked", self.on_delete_item_activate)
         self.edit_button.connect("clicked", self.on_edit_item_activate)
+        self.new_share_wizard_button.connect("clicked", self.on_new_item_activate,True)
 
         self.active_frame_new_button.connect("clicked", self.on_new_item_activate)
         self.active_frame_delete_button.connect("clicked", self.on_delete_item_activate)
@@ -1737,13 +1764,12 @@ def ParseArgs(argv):
             arguments.update({"connect_now":True})
     return (arguments)
 
-"""
+
 if __name__ == "__main__":
     arguments = ParseArgs(sys.argv[1:]) #the [1:] ignores the first argument, which is the path to our utility
 
     main_window = ShareWindow(**arguments)
     main_window.show_all()
     gtk.main()
-"""
-test = srvsvcPipeManager('127.0.0.1',0,"Administrator","Pass#2011")
+
 
