@@ -984,7 +984,7 @@ class ShareWindow(gtk.Window):
     def on_new_item_activate(self, widget,wizard_mode=False):
 
         share = self.run_share_add_edit_dialog(wizard_mode=wizard_mode)
-        print share.type
+        #print share.type TODO cleanup post debug
         if share is None:
             self.set_status("Share creation canceled.")
             return
@@ -1772,4 +1772,5 @@ if __name__ == "__main__":
     main_window.show_all()
     gtk.main()
 
-test = srvsvcPipeManager('127.0.0.1',0,'Administrator','Pass#2011')
+#debug test pipe : TODO (remove later)
+# test = srvsvcPipeManager('127.0.0.1',0,'Administrator','Pass#2011')
