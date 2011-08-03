@@ -211,12 +211,12 @@ class srvsvcPipeManager(object):
             if os.path.exists(path):
                 path = os.path.realpath(path)  # gets canonical path
             else:
-                raise OSError
+                raise OSError("Path does not exist !")
 
-            if path.startswith('/'):
-                path = path.replace('/', '\\')
-                path = ''.join(['C:',path])
-                path = unicode(path)
+        if path.startswith('/'):
+            path = path.replace('/', '\\')
+            path = ''.join(['C:',path])
+            path = unicode(path)
 
         return path
 

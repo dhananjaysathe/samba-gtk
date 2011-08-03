@@ -270,15 +270,20 @@ class ShareAddEditDialog(gtk.Dialog):
 
     def validate_fields(self):
 
-        if len(self.sname) == 0:
+        if type(self) is ShareAddEditDialog :
+            name = self.share_name_entry.get_text()
+        elif type(self) is ShareWizardDialog :
+            name = self.sname
+
+        if len(name) == 0:
             return "Share name may not be empty!"
 
-        if not self.pipe.name_validate(self.sname):
+        if not self.pipe.name_validate(name):
             return "Invalid Share name"
 
         if (not self.edit_mode):
             for share in self.pipe.share_list:
-                if share.name == self.share_name_entry.get_text():
+                if share.name == name:
                     return ' '.join(["A Share with the name : ", share.name ,"already exists!"])
 
         return None
