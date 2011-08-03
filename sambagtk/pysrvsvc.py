@@ -339,17 +339,15 @@ class ShareAddEditDialog(gtk.Dialog):
         else:
             self.stype = srvsvc.STYPE_IPC
         # check flags
-        self.flags = (False,False)
+        self.flags = [False,False]
         if self.sflag_temp_check_button.get_active():
             self.flags[0] = True
         if self.sflag_hidden_check_button.get_active():
             self.flags[1] = True
         if self.islocal :
             self.path = self.file_button.get_filename()
-            self.path = self.pipe.fix_path_format(self.path)
         else:
             self.path = self.path_entry.get_text()
-            self.path = self.pipe.fix_path_format(self.path)
         self.max_users = self.max_users_spinbox.get_value_as_int()
 
 
@@ -362,7 +360,8 @@ class ShareAddEditDialog(gtk.Dialog):
         self.share.comment= self.comment
         self.share.max_users= self.max_users
         self.share.password= self.password
-        self.share.path = self.path
+        self.share.path = self.pipe.fix_path_format(self.path)
+
 
 
 
@@ -886,44 +885,22 @@ class ShareWizardDialog(ShareAddEditDialog):
         self.share_password_entry.set_text(self.password)
         self.share_password_entry.set_visibility(False)
         self.share_password_entry.set_tooltip_text('Set a Share Password')
-        #pwd toggle button
-        self.set_pw_visiblity = gtk.CheckButton("Visible")
-        self.set_pw_visiblity.set_tooltip_text('Enable or disable the password visiblity')
-        self.set_pw_visiblity.set_active(False)
-        self.set_pw_visiblity.connect("toggled",self.toggle_pwd_visiblity,None)
 
+        # For radio buttons we define other fields on the fly as these
+        # are lost on parent removal , and cause errors on draw .
         # Radio buttons
         self.stype_disktree_radio_button = gtk.RadioButton(None,'Disktree')
-        self.stype_disktree_radio_button.set_tooltip_text('Disktree (folder) type Share. Default')
-        self.stype_disktree_radio_button.set_active(self.stype == srvsvc.STYPE_DISKTREE)
-
         self.stype_printq_radio_button = gtk.RadioButton(self.stype_disktree_radio_button,'Print Queue')
-        self.stype_printq_radio_button.set_tooltip_text('Shared Print Queue')
-        self.stype_printq_radio_button.set_active(self.stype == srvsvc.STYPE_PRINTQ)
-
         self.stype_ipc_radio_button = gtk.RadioButton(self.stype_printq_radio_button,'IPC ')
-        self.stype_ipc_radio_button.set_tooltip_text('Shared Interprocess Communication Pipe (IPC).')
-        self.stype_ipc_radio_button.set_active(self.stype == srvsvc.STYPE_IPC)
 
-        # Check buttons
         self.sflag_temp_check_button = gtk.CheckButton('Temporary')
-        self.sflag_temp_check_button.set_tooltip_text('Make share Temporary')
-        self.sflag_temp_check_button.set_active(self.flags[0])
-
         self.sflag_hidden_check_button = gtk.CheckButton('Hidden ')
-        self.sflag_hidden_check_button.set_tooltip_text('Make share hidden.')
-        self.sflag_hidden_check_button.set_active(self.flags[1])
 
         #path
         if self.islocal:
             self.file_button = gtk.FileChooserButton('Browse')
-            self.file_button.set_current_folder(self.path)
-            self.file_button.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
-            self.file_button.set_tooltip_text('Select the folder to share')
         else:
             self.file_entry = gtk.Entry()
-            self.file_entry.set_text(self.path)
-            self.file_entry.set_tooltip_text('Path to the folder to share')
 
         #max_users
         self.max_users_adjustment = gtk.Adjustment(self.max_users,1,0xFFFFFFFF,1,5)
@@ -934,16 +911,16 @@ class ShareWizardDialog(ShareAddEditDialog):
 
 
         self.action_area.set_layout(gtk.BUTTONBOX_CENTER)
-        
+
 
         self.cancel_button = gtk.Button("Cancel", gtk.STOCK_CANCEL)
         self.cancel_button.set_flags(gtk.CAN_DEFAULT)
         self.add_action_widget(self.cancel_button, gtk.RESPONSE_CANCEL)
-        
+
         self.prev_button = gtk.Button(stock=gtk.STOCK_GO_BACK)
         self.prev_button.connect("clicked",self.update_fields,-1)
         self.action_area.pack_start(self.prev_button, False, False, 10)
-        
+
         self.next_button = gtk.Button(stock=gtk.STOCK_GO_FORWARD)
         self.next_button.connect("clicked", self.update_fields,+1)
         self.action_area.pack_start(self.next_button, False, False, 0)
@@ -957,13 +934,15 @@ class ShareWizardDialog(ShareAddEditDialog):
 
 
     def update_fields(self,widget,change):
+        self.collect_fields()
         self.page+=change
+        for widget in self.fields_box.get_children():
+            self.fields_box.remove(widget)
+
         if self.page == 0 :
             self.title_label.set_markup('<b>Welcome to the New Share Wizard</b>')
             self.info_label.set_text(' ')
-            for widget in self.fields_box.get_children():
-                self.fields_box.remove(widget)
-                
+
             label =gtk.Label('Please press next to continue.')
             label.set_alignment(0,0.5)
             self.fields_box.pack_start(label,False,True,0)
@@ -971,9 +950,9 @@ class ShareWizardDialog(ShareAddEditDialog):
             self.prev_button.set_sensitive(False)
             self.next_button.set_sensitive(True)
             self.ok_button.set_sensitive(False)
-            
-            
-            
+
+
+
             self.fields_box.show_all()
 
 
@@ -983,9 +962,10 @@ class ShareWizardDialog(ShareAddEditDialog):
             self.prev_button.set_sensitive(True)
             self.next_button.set_sensitive(True)
             self.ok_button.set_sensitive(False)
-
-            for widget in self.fields_box.get_children():
-                self.fields_box.remove(widget)
+            if self.name is not None:
+                self.share_name_entry.set_text(self.name)
+            if self.password is not None:
+                self.share_comment_entry.set_text(self.password)
 
             table = gtk.Table(2,2,True)
             table.set_border_width(5)
@@ -1002,8 +982,8 @@ class ShareWizardDialog(ShareAddEditDialog):
             label.set_alignment(1,0.5)
             table.attach(label, 0, 1, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
             table.attach(self.share_password_entry, 1, 2, 1, 2, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-            
-   
+
+
             self.fields_box.pack_start(table,False,True,0)
             self.fields_box.show_all()
 
@@ -1014,9 +994,10 @@ class ShareWizardDialog(ShareAddEditDialog):
             self.prev_button.set_sensitive(True)
             self.next_button.set_sensitive(True)
             self.ok_button.set_sensitive(False)
+            if self.comment is not None:
+                self.share_comment_entry.set_text(self.comment)
+            self.max_users_spinbox.set_value(self.max_users)
 
-            for widget in self.fields_box.get_children():
-                self.fields_box.remove(widget)
 
             table = gtk.Table(2,2,True)
             table.set_border_width(5)
@@ -1043,29 +1024,48 @@ class ShareWizardDialog(ShareAddEditDialog):
             self.next_button.set_sensitive(True)
             self.ok_button.set_sensitive(False)
 
-            for widget in self.fields_box.get_children():
-                self.fields_box.remove(widget)
+            # Radio buttons
+            self.stype_disktree_radio_button = gtk.RadioButton(None,'Disktree')
+            self.stype_disktree_radio_button.set_tooltip_text('Disktree (folder) type Share. Default')
+            self.stype_disktree_radio_button.set_active(self.stype == srvsvc.STYPE_DISKTREE)
 
-            hbox = gtk.HBox(True,10)           
-            
+            self.stype_printq_radio_button = gtk.RadioButton(self.stype_disktree_radio_button,'Print Queue')
+            self.stype_printq_radio_button.set_tooltip_text('Shared Print Queue')
+            self.stype_printq_radio_button.set_active(self.stype == srvsvc.STYPE_PRINTQ)
+
+            self.stype_ipc_radio_button = gtk.RadioButton(self.stype_printq_radio_button,'IPC ')
+            self.stype_ipc_radio_button.set_tooltip_text('Shared Interprocess Communication Pipe (IPC).')
+            self.stype_ipc_radio_button.set_active(self.stype == srvsvc.STYPE_IPC)
+
+            # Check buttons
+            self.sflag_temp_check_button = gtk.CheckButton('Temporary')
+            self.sflag_temp_check_button.set_tooltip_text('Make share Temporary')
+            self.sflag_temp_check_button.set_active(self.flags[0])
+
+            self.sflag_hidden_check_button = gtk.CheckButton('Hidden ')
+            self.sflag_hidden_check_button.set_tooltip_text('Make share hidden.')
+            self.sflag_hidden_check_button.set_active(self.flags[1])
+
+            hbox = gtk.HBox(True,10)
+
             vbox = gtk.VBox()
             vbox.set_border_width(5)
-            
+
             vbox.pack_start(self.stype_disktree_radio_button,True,True,3)
             vbox.pack_start(self.stype_printq_radio_button,True,True,3)
             vbox.pack_start(self.stype_ipc_radio_button,True,True,3)
             hbox.pack_start(vbox,True,True,0)
-            
+
             vbox = gtk.VBox()
             vbox.set_border_width(5)
-           
+
             vbox.pack_start(self.sflag_temp_check_button,True,True,3)
             vbox.pack_start(self.sflag_hidden_check_button,True,True,3)
-            
+
             hbox.pack_start(vbox,True,True,0)
-            
-            
-            
+
+
+
             self.fields_box.pack_start(hbox,True,True,0)
             self.fields_box.show_all()
 
@@ -1081,8 +1081,22 @@ class ShareWizardDialog(ShareAddEditDialog):
             self.next_button.set_sensitive(False)
             self.ok_button.set_sensitive(True)
 
-            for widget in self.fields_box.get_children():
-                self.fields_box.remove(widget)
+            #path
+            if self.islocal:
+                self.file_button = gtk.FileChooserButton('Browse')
+                if self.path is not None:
+                    self.file_button.set_current_folder(self.path)
+                else:
+                    self.file_button.set_current_folder(".")
+                self.file_button.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+                self.file_button.set_tooltip_text('Select the folder to share')
+            else:
+                self.file_entry = gtk.Entry()
+                if self.path is not None:
+                    self.file_entry.set_text(self.path)
+                else:
+                    self.file_entry.set_text("")
+                self.file_entry.set_tooltip_text('Path to the folder to share')
 
             table = gtk.Table(1,2,True)
             table.set_border_width(5)
@@ -1097,6 +1111,6 @@ class ShareWizardDialog(ShareAddEditDialog):
                 table.attach(self.file_button, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
             else:
                 table.attach(self.file_entry, 1, 2, 0, 1, gtk.FILL,gtk.FILL | gtk.EXPAND, 0, 0)
-            
+
             self.fields_box.pack_start(table,False,True,0)
             self.fields_box.show_all()

@@ -188,7 +188,7 @@ class srvsvcPipeManager(object):
         stype_info_dict = {'typestring':stype_typestring,
                             'desc':stype_desc,
                             'base_type':stype_base,
-                            'flags':(flag_temp,flag_hidden)
+                            'flags':[flag_temp,flag_hidden]
                             }
 
         return stype_info_dict.get(field)
@@ -875,7 +875,7 @@ class ShareWindow(gtk.Window):
 
 
     def run_share_add_edit_dialog(self, share= None, apply_callback= None,wizard_mode=False):
-        
+
         if wizard_mode:
             dialog = ShareWizardDialog(self.pipe_manager, None) # wizard only for a new share
         else:
@@ -887,8 +887,7 @@ class ShareWindow(gtk.Window):
             response_id = dialog.run()
 
             if response_id in [gtk.RESPONSE_OK, gtk.RESPONSE_APPLY]:
-                problem_msg = None # TODO temporary need to fix
-                #problem_msg = dialog.check_for_problems()
+                problem_msg = dialog.validate_fields()
 
                 if problem_msg is not None:
                     self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, problem_msg, dialog)
@@ -919,7 +918,7 @@ class ShareWindow(gtk.Window):
         self.connect_item.set_sensitive(not connected)
         self.disconnect_item.set_sensitive(connected)
         self.refresh_item.set_sensitive(connected)
-        
+
         self.new_item.set_sensitive(connected and share_page_active)
         self.delete_item.set_sensitive(connected and selected)
         self.edit_item.set_sensitive(connected and selected)
@@ -985,6 +984,7 @@ class ShareWindow(gtk.Window):
     def on_new_item_activate(self, widget,wizard_mode=False):
 
         share = self.run_share_add_edit_dialog(wizard_mode=wizard_mode)
+        print share.type
         if share is None:
             self.set_status("Share creation canceled.")
             return
@@ -1390,13 +1390,13 @@ class ShareWindow(gtk.Window):
         self.edit_item = gtk.ImageMenuItem(gtk.STOCK_EDIT, accel_group)
         self.edit_item.set_sensitive(False)
         share_menu.add(self.edit_item)
-        
+
         self.wizard_item = gtk.MenuItem("_Wizard")
         self.menubar.add(self.wizard_item)
 
         wizard_menu = gtk.Menu()
         self.wizard_item.set_submenu(wizard_menu)
-        
+
         self.new_share_wizard_item = gtk.MenuItem(label="New Share Wizard")
         wizard_menu.add(self.new_share_wizard_item)
 
@@ -1437,10 +1437,10 @@ class ShareWindow(gtk.Window):
         self.delete_button = gtk.ToolButton(gtk.STOCK_DELETE)
         self.delete_button.set_is_important(True)
         self.toolbar.insert(self.delete_button, 5)
-        
+
         sep = gtk.SeparatorToolItem()
         self.toolbar.insert(sep, 6)
-        
+
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_EXECUTE, 48)
         self.new_share_wizard_button = gtk.ToolButton(image,"New Share Wizard")
@@ -1450,7 +1450,7 @@ class ShareWindow(gtk.Window):
         self.new_button.set_tooltip_text("Add a new Share")
         self.edit_button.set_tooltip_text("Edit a Share")
         self.delete_button.set_tooltip_text("Delete a Share")
-        
+
         #share-page
         self.share_notebook = gtk.Notebook()
         self.vbox.pack_start(self.share_notebook, True, True, 0)
@@ -1772,4 +1772,4 @@ if __name__ == "__main__":
     main_window.show_all()
     gtk.main()
 
-
+test = srvsvcPipeManager('127.0.0.1',0,'Administrator','Pass#2011')
