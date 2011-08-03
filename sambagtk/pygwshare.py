@@ -984,7 +984,8 @@ class ShareWindow(gtk.Window):
     def on_new_item_activate(self, widget,wizard_mode=False):
 
         share = self.run_share_add_edit_dialog(wizard_mode=wizard_mode)
-        #print share.type TODO cleanup post debug
+        #TODO cleanup Debug
+        #print share.name,share.comment,share.password,str(share.type),str(share.max_users),share.path
         if share is None:
             self.set_status("Share creation canceled.")
             return

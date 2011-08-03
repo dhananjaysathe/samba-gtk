@@ -270,7 +270,7 @@ class ShareAddEditDialog(gtk.Dialog):
 
     def validate_fields(self):
 
-        if len(self.share_name_entry.get_text()) == 0:
+        if len(self.sname) == 0:
             return "Share name may not be empty!"
 
         if not self.pipe.name_validate(self.sname):
@@ -962,8 +962,8 @@ class ShareWizardDialog(ShareAddEditDialog):
             self.prev_button.set_sensitive(True)
             self.next_button.set_sensitive(True)
             self.ok_button.set_sensitive(False)
-            if self.name is not None:
-                self.share_name_entry.set_text(self.name)
+            if self.sname is not None:
+                self.share_name_entry.set_text(self.sname)
             if self.password is not None:
                 self.share_comment_entry.set_text(self.password)
 
@@ -1114,3 +1114,40 @@ class ShareWizardDialog(ShareAddEditDialog):
 
             self.fields_box.pack_start(table,False,True,0)
             self.fields_box.show_all()
+
+    def collect_fields (self):
+        """ Custom collect fields from the GUI and saves in class variables which is page specific. """
+        if self.page == 0:
+            pass
+
+        elif self.page == 1 :
+            self.sname = self.share_name_entry.get_text()
+            self.password = self.share_password_entry.get_text()
+
+
+        elif self.page == 2:
+            self.comment = self.share_comment_entry.get_text()
+            self.max_users = self.max_users_spinbox.get_value_as_int()
+
+        elif self.page ==3 :
+            # Now to handle the share type resolution
+            if self.stype_disktree_radio_button.get_active() :
+                self.stype = srvsvc.STYPE_DISKTREE
+            elif self.stype_printq_radio_button.get_active() :
+                self.stype = srvsvc.STYPE_PRINTQ
+            else:
+                self.stype = srvsvc.STYPE_IPC
+            # check flags
+            self.flags = [False,False]
+            if self.sflag_temp_check_button.get_active():
+                self.flags[0] = True
+            if self.sflag_hidden_check_button.get_active():
+                self.flags[1] = True
+
+        else :
+            if self.islocal :
+                self.path = self.file_button.get_filename()
+            else:
+                self.path = self.path_entry.get_text()
+
+
