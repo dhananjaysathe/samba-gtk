@@ -860,7 +860,7 @@ class ShareWindow(gtk.Window):
             "A tool to manage user shares on a SRVS Share server.\n"
             "Based on Jelmer Vernooij's original Samba-GTK",
             self.icon_pixbuf)
-        dialog.set_copyright("Copyright \xc2\xa9 2011 Dhananjay Sathe <dhananjaysathe@gmail.com>")
+        #dialog.set_copyright("Copyright \xc2\xa9 2011 Dhananjay Sathe <dhananjaysathe@gmail.com>")
         dialog.run()
         dialog.hide()
 
@@ -1334,15 +1334,14 @@ class ShareWindow(gtk.Window):
         self.share_icon_filename = os.path.join(sys.path[0],"..", "images", "network.png")
         self.icon_pixbuf = gtk.gdk.pixbuf_new_from_file(self.icon_filename)
         self.set_icon(self.icon_pixbuf)
-        self.set_position(gtk.WIN_POS_CENTER)
 
         accel_group = gtk.AccelGroup()
-        self.vbox = gtk.VBox(False, 0)
-        self.add(self.vbox)
+        vbox = gtk.VBox(False, 0)
+        self.add(vbox)
 
         # menu
         self.menubar = gtk.MenuBar()
-        self.vbox.pack_start(self.menubar, False, False, 0)
+        vbox.pack_start(self.menubar, False, False, 0)
 
         self.file_item = gtk.MenuItem("_File")
         self.menubar.add(self.file_item)
@@ -1412,7 +1411,7 @@ class ShareWindow(gtk.Window):
 
         # toolbar
         self.toolbar = gtk.Toolbar()
-        self.vbox.pack_start(self.toolbar, False, False, 0)
+        vbox.pack_start(self.toolbar, False, False, 0)
 
         self.connect_button = gtk.ToolButton(gtk.STOCK_CONNECT)
         self.connect_button.set_is_important(True)
@@ -1454,7 +1453,7 @@ class ShareWindow(gtk.Window):
 
         #share-page
         self.share_notebook = gtk.Notebook()
-        self.vbox.pack_start(self.share_notebook, True, True, 0)
+        vbox.pack_start(self.share_notebook, True, True, 0)
 
         main_hbox = gtk.HBox()
         self.share_notebook.append_page(main_hbox, gtk.Label("Share Management"))
@@ -1689,7 +1688,7 @@ class ShareWindow(gtk.Window):
 
         self.statusbar = gtk.Statusbar()
         self.statusbar.set_has_resize_grip(True)
-        self.vbox.pack_start(self.statusbar, False, False, 0)
+        vbox.pack_start(self.statusbar, False, False, 0)
 
         # signals/events
 

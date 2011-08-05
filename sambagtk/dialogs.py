@@ -2,6 +2,7 @@
 # 
 # Copyright (C) 2010 Sergio Martins <sergio97@gmail.com>
 # Copyright (C) 2011 Jelmer Vernooij <jelmer@samba.org>
+# Copyright (C) 2011 Dhananjay Sathe <dhananjaysathe@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +33,7 @@ class AboutDialog(gtk.AboutDialog):
         self.set_name(name)
         self.set_version(samba.version)
         self.set_logo(icon)
-        self.set_copyright("Copyright \xc2\xa9 2010 Sergio Martins <Sergio97@gmail.com>")
+        self.set_copyright("Copyright \xc2\xa9 2010 Sergio Martins <Sergio97@gmail.com> Copyright \xc2\xa9 2011 Dhananjay Sathe <dhananjaysathe@gmail.com>")
         self.set_authors(["Sergio Martins <Sergio97@gmail.com>", "Calin Crisan <ccrisan@gmail.com>", "Dhananjay Sathe <dhananajaysathe@gmail.com>","Jelmer Vernooij <jelmer@samba.org>"])
         self.set_comments(description)
         self.set_wrap_license(True)

@@ -961,7 +961,7 @@ class ShareWizardDialog(ShareAddEditDialog):
             self.fields_box.show_all()
 
 
-        if self.page == 1:
+        elif self.page == 1:
             self.title_label.set_markup('<b>Name and Password</b>')
             self.info_label.set_text('Please enter a valid name and password (optional) for your share.')
             self.prev_button.set_sensitive(True)
@@ -993,7 +993,7 @@ class ShareWizardDialog(ShareAddEditDialog):
             self.fields_box.show_all()
 
 
-        if self.page == 2:
+        elif self.page == 2:
             self.title_label.set_markup('<b>Comment and Max Users </b>')
             self.info_label.set_text('Please enter a  comment(optional) and select max users')
             self.prev_button.set_sensitive(True)
@@ -1022,7 +1022,7 @@ class ShareWizardDialog(ShareAddEditDialog):
             self.fields_box.pack_start(table,False,True,0)
             self.fields_box.show_all()
 
-        if self.page == 3:
+        elif self.page == 3:
             self.title_label.set_markup('<b>Share Type Options</b>')
             self.info_label.set_text('Please select your share type options.')
             self.prev_button.set_sensitive(True)
@@ -1076,7 +1076,7 @@ class ShareWizardDialog(ShareAddEditDialog):
 
 
 
-        if self.page == 4:
+        else :
             self.title_label.set_markup('<b>Path</b>')
             if self.islocal:
                 self.info_label.set_text('Please select a valid path.')
