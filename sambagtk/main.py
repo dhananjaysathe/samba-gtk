@@ -39,6 +39,7 @@ class SambaUtilities(object):
         self.svcctl_window = None
         self.crontab_window = None
         self.srvsvc_window = None
+        self.srvsvc_init= False
 
         self.connection_args = connection_args
         self.additional_connection_args = {} #arguments not supported by all utilities, such as domain_index
@@ -128,7 +129,7 @@ class SambaUtilities(object):
 
         self.set_status("User tab initialized.")
         self.update_sensitivity()
-        
+
     def init_srvsvc_page(self):
 
         args = self.connection_args.copy()
@@ -140,8 +141,8 @@ class SambaUtilities(object):
         self.srvsvc_viewport.show_all() #unhide all widgets
 
         #We'll be displaying this later. We need to unparent it before attaching it to another container
-        #self.srvsvc_window.menubar.unparent()
-        #self.srvsvc_window.toolbar.unparent()
+
+        self.srvsvc_window.toolbar.unparent()
         self.srvsvc_window.statusbar = self.statusbar #we simply tell the utility to use our status bar instead
 
         self.set_status("Share Manager tab initialized.")
@@ -199,10 +200,10 @@ class SambaUtilities(object):
 
     def regedit_initialized(self):
         return self.regedit_window is not None
-    
+
     def srvsvc_initialized (self):
         return self.srvsvc_window is not None
-        
+
     def svcctl_initialized(self):
         return self.svcctl_window is not None
 
@@ -379,19 +380,22 @@ class SambaUtilities(object):
             #Menubar
             children = self.menubar_viewport.get_children()
             self.menubar_viewport.remove(children[0])
-            self.srvsvc_window.menubar.reparent(self.menubar_viewport)
-            #self.menubar_viewport.add(self.srvsvc_window.menubar)
+            if self.srvsvc_init is False:
+                self.srvsvc_window.menubar.reparent(self.menubar_viewport)
+                self.srvsvc_init = True
+            else:
+                self.menubar_viewport.add(self.srvsvc_window.menubar)
             self.menubar_viewport.show_all()
 
             #Toolbar
-            children = self.toolbar_viewport.get_children() 
+            children = self.toolbar_viewport.get_children()
             self.toolbar_viewport.remove(children[0])
             self.srvsvc_window.toolbar.unparent()
             self.toolbar_viewport.add(self.srvsvc_window.toolbar)
             self.toolbar_viewport.show_all()
-            
+
             self.srvsvc_window.hide()
-            
+
         elif page_num == 3: #Regedit page
             if self.regedit_viewport.child == None:
                 self.init_regedit_page()
@@ -450,7 +454,7 @@ class SambaUtilities(object):
                     self.sam_window.on_connect_item_activate(None, **self.connection_args)
             else:
                 self.init_sam_page()
-            
+
             if self.srvsvc_initialized():
                 if not self.srvsvc_window.connected():
                     self.srvsvc_window.on_connect_item_activate(None, **self.connection_args)

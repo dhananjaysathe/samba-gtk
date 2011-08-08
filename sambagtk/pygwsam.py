@@ -131,7 +131,7 @@ class SAMPipeManager(object):
 
     def update_user(self, user):
         """Submit any changes to 'user' to the server.
-        
+
         The User's RID must be correct for this to work.
         This function will call update_user_security() to update user security
         options.
@@ -300,7 +300,7 @@ class SAMPipeManager(object):
 
     def info_to_user(self, query_info, user=None):
         """Converts 'query_info' information into a user type.
-        
+
         Values in 'user' will be overwriten by this function. If called with 'None' then a new User structure will be created
 
         returns 'user
