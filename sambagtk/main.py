@@ -550,11 +550,11 @@ def ParseArgs(argv):
             arguments.update({"connect_now":True})
     return (arguments)
 
-"""
+
 if __name__ == "__main__":
     arguments = ParseArgs(sys.argv[1:])
     gtk.gdk.threads_init()
     main_window = SambaUtilities(arguments)
     sys.stdout = main_window #redirect print statements to the write() function of this class
     gtk.main()
-"""
+

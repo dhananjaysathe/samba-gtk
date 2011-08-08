@@ -808,7 +808,7 @@ class ShareWindow(gtk.Window):
                     0x04000000:('SV_TYPE_CLUSTER_VS_NT','Virtual Server Cluster')
                     }
 
-            label_data = server_typedict.get(self.server_info.server_type,('','Unknown'))[1]
+            label_data = server_typedict.get(self.server_info.server_type,('','Multiple Capablities'))[1]
             self.srvinfo_type_label.set_text(label_data)
             self.srvinfo_upath_label.set_text(self.server_info.userpath.upper())
             self.srvinfo_to_label.set_text(str(self.server_info.disc))
@@ -1330,8 +1330,8 @@ class ShareWindow(gtk.Window):
         # main window
         self.set_title("Samba-Gtk Share Management Interface")
         self.set_default_size(800, 600)
-        self.icon_filename = os.path.join(sys.path[0],"..", "images", "network.png")
-        self.share_icon_filename = os.path.join(sys.path[0],"..", "images", "network.png")
+        self.icon_filename = os.path.join(sys.path[0], "images", "network.png")
+        self.share_icon_filename = os.path.join(sys.path[0], "images", "network.png")
         self.icon_pixbuf = gtk.gdk.pixbuf_new_from_file(self.icon_filename)
         self.set_icon(self.icon_pixbuf)
 

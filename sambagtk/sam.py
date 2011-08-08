@@ -534,10 +534,31 @@ class SAMConnectDialog(gtk.Dialog):
         self.set_border_width(5)
         self.set_icon_name(gtk.STOCK_CONNECT)
         self.set_resizable(False)
+        self.set_decorated(True)
 
         # server frame
 
         self.vbox.set_spacing(5)
+
+        self.artwork = gtk.VBox()
+
+        self.samba_image_filename = os.path.join(sys.path[0],"..", 'images',
+                'samba-logo-small.png')
+        self.samba_image = gtk.Image()
+        self.samba_image.set_from_file(self.samba_image_filename)
+        self.artwork.pack_start(self.samba_image, True, True, 0)
+
+        label = gtk.Label('Opening Windows to A Wider World')
+        box = gtk.HBox()
+        box.pack_start(label, True, True, 0)
+        self.artwork.pack_start(box, True, True, 0)
+
+        label = gtk.Label('Samba Control Center')
+        box = gtk.HBox()
+        box.pack_start(label, True, True, 0)
+        self.artwork.pack_start(box, True, True, 0)
+
+        self.vbox.pack_start(self.artwork, False, True, 0)
 
         self.server_frame = gtk.Frame("Server")
         self.vbox.pack_start(self.server_frame, False, True, 0)

@@ -75,7 +75,7 @@ class srvsvcConnectDialog(gtk.Dialog):
 
         self.artwork = gtk.VBox()
 
-        self.samba_image_filename = os.path.join(sys.path[0],"..", 'images',
+        self.samba_image_filename = os.path.join(sys.path[0],'images',
                 'samba-logo-small.png')
         self.samba_image = gtk.Image()
         self.samba_image.set_from_file(self.samba_image_filename)
@@ -378,7 +378,7 @@ class ShareAddEditDialog(gtk.Dialog):
         self.icon_name = ["network-folder","network-printer",
                             "network","network-pipe"][self.stype]
         self.icon_filename = \
-        os.path.join(sys.path[0], "..","images",''.join([self.icon_name,'.png']))
+        os.path.join(sys.path[0],"images",''.join([self.icon_name,'.png']))
         self.set_icon_from_file(self.icon_filename)
         self.vbox.set_spacing(3)
         self.set_border_width(5)
@@ -416,7 +416,7 @@ class ShareAddEditDialog(gtk.Dialog):
         #vertical logo
         vbox = gtk.VBox()
         vbox.set_border_width(5)
-        samba_image_filename = os.path.join(sys.path[0],"..", 'images',
+        samba_image_filename = os.path.join(sys.path[0],'images',
                 'samba-logo-vertical.png')
         samba_image = gtk.Image()
         samba_image.set_from_file(samba_image_filename)
@@ -649,7 +649,7 @@ class DeleteDialog(gtk.Dialog):
         self.icon_name = ["network-folder","network-printer",
                             "network","network-pipe"][self.stype]
         self.icon_filename = \
-        os.path.join(sys.path[0],"..", "images",''.join([self.icon_name,'.png']))
+        os.path.join(sys.path[0],"images",''.join([self.icon_name,'.png']))
         self.set_icon_from_file(self.icon_filename)
         self.vbox.set_spacing(3)
         self.set_border_width(5)
@@ -683,7 +683,7 @@ class DeleteDialog(gtk.Dialog):
         #vertical logo
         vbox = gtk.VBox()
         vbox.set_border_width(5)
-        samba_image_filename = os.path.join(sys.path[0], "..",'images',
+        samba_image_filename = os.path.join(sys.path[0],'images',
                 'samba-logo-vertical.png')
         samba_image = gtk.Image()
         samba_image.set_from_file(samba_image_filename)
@@ -835,7 +835,7 @@ class ShareWizardDialog(ShareAddEditDialog):
 
         vbox = gtk.VBox()
         vbox.set_border_width(5)
-        samba_image_filename = os.path.join(sys.path[0],"..", 'images',
+        samba_image_filename = os.path.join(sys.path[0],'images',
                 'samba-logo-small.png')
         samba_image = gtk.Image()
         samba_image.set_from_file(samba_image_filename)
