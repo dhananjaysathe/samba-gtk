@@ -542,7 +542,7 @@ class SAMConnectDialog(gtk.Dialog):
 
         self.artwork = gtk.VBox()
 
-        self.samba_image_filename = os.path.join(sys.path[0],"..", 'images',
+        self.samba_image_filename = os.path.join(sys.path[0],'images',
                 'samba-logo-small.png')
         self.samba_image = gtk.Image()
         self.samba_image.set_from_file(self.samba_image_filename)
