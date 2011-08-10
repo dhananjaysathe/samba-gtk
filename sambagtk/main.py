@@ -11,7 +11,9 @@ import gtk.glade
 import os.path
 import getopt
 
-sys.path.append('/usr/local/samba/lib/python2.7/site-packages/')
+#sys.path.append('/usr/local/samba/lib/python2.7/site-packages/')
+# for use against the default binaries from default .configure.developer for use on python 2.7
+# Uncomment the above line if it is yor your config , else edit it as required
 
 
 import pygwsam

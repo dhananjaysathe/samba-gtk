@@ -414,15 +414,15 @@ class ShareAddEditDialog(gtk.Dialog):
         self.vbox.pack_start(self.main_box,True,True,0)
 
         #vertical logo
-        vbox = gtk.VBox()
-        vbox.set_border_width(5)
-        samba_image_filename = os.path.join(sys.path[0],'images',
-                'samba-logo-vertical.png')
-        samba_image = gtk.Image()
-        samba_image.set_from_file(samba_image_filename)
-        vbox.pack_end(samba_image, False, True, 0)
+        #vbox = gtk.VBox()
+        #vbox.set_border_width(5)
+        #samba_image_filename = os.path.join(sys.path[0],'images',
+        #        'samba-logo-vertical.png')
+        #samba_image = gtk.Image()
+        #samba_image.set_from_file(samba_image_filename)
+        #vbox.pack_end(samba_image, False, True, 0)
 
-        self.main_box.pack_start(vbox, False, True, 0)
+        #self.main_box.pack_start(vbox, False, True, 0)
 
         # the main form
 
@@ -515,12 +515,14 @@ class ShareAddEditDialog(gtk.Dialog):
         self.stype_printq_radio_button = gtk.RadioButton(self.stype_disktree_radio_button,'Print Queue')
         self.stype_printq_radio_button.set_tooltip_text('Shared Print Queue')
         self.stype_printq_radio_button.set_active(self.stype == srvsvc.STYPE_PRINTQ)
-        vbox.pack_start(self.stype_printq_radio_button)
+        #vbox.pack_start(self.stype_printq_radio_button)
+        #deactivating this option until samba4 is fixed TODO activate once base is fixed
 
         self.stype_ipc_radio_button = gtk.RadioButton(self.stype_printq_radio_button,'IPC ')
         self.stype_ipc_radio_button.set_tooltip_text('Shared Interprocess Communication Pipe (IPC).')
         self.stype_ipc_radio_button.set_active(self.stype == srvsvc.STYPE_IPC)
-        vbox.pack_start(self.stype_ipc_radio_button)
+        #vbox.pack_start(self.stype_ipc_radio_button)
+        #deactivating this option until samba4 is fixed TODO activate once base is fixed
 
         # Special Share Flags
         vbox = gtk.VBox()
@@ -681,15 +683,15 @@ class DeleteDialog(gtk.Dialog):
         self.vbox.pack_start(self.main_box,True,True,0)
 
         #vertical logo
-        vbox = gtk.VBox()
-        vbox.set_border_width(5)
-        samba_image_filename = os.path.join(sys.path[0],'images',
-                'samba-logo-vertical.png')
-        samba_image = gtk.Image()
-        samba_image.set_from_file(samba_image_filename)
-        vbox.pack_end(samba_image, False, True, 0)
+        #vbox = gtk.VBox()
+        #vbox.set_border_width(5)
+        #samba_image_filename = os.path.join(sys.path[0],'images',
+        #        'samba-logo-vertical.png')
+        #samba_image = gtk.Image()
+        #samba_image.set_from_file(samba_image_filename)
+        #vbox.pack_end(samba_image, False, True, 0)
 
-        self.main_box.pack_start(vbox, False, True, 0)
+        #self.main_box.pack_start(vbox, False, True, 0)
 
         # the main form
 

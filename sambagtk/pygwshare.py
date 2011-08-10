@@ -31,9 +31,9 @@ import getopt
 import gobject
 import gtk
 
-sys.path.append('/usr/local/samba/lib/python2.7/site-packages/')
+#sys.path.append('/usr/local/samba/lib/python2.7/site-packages/')
 #for use against the default binaries from default .configure.developer for use on python 2.7
-#TODO remove these entries
+# Unhash the above line if it is yor your config , else edit it as required
 
 from samba import credentials
 from samba.dcerpc import (
@@ -1772,5 +1772,3 @@ if __name__ == "__main__":
     main_window.show_all()
     gtk.main()
 
-#debug test pipe : TODO (remove later)
-# test = srvsvcPipeManager('127.0.0.1',0,'Administrator','Pass#2011')
