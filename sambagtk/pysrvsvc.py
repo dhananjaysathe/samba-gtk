@@ -71,7 +71,7 @@ class srvsvcConnectDialog(gtk.Dialog):
 
         self.vbox.set_spacing(5)
 
-        # artwork
+        # artwork TODO remove post decession
 
         self.artwork = gtk.VBox()
 
@@ -92,6 +92,8 @@ class srvsvcConnectDialog(gtk.Dialog):
         self.artwork.pack_start(box, True, True, 0)
 
         self.vbox.pack_start(self.artwork, False, True, 0)
+        
+        ########################### end of artwork TODO :
 
         # server frame
 
@@ -408,26 +410,10 @@ class ShareAddEditDialog(gtk.Dialog):
         hbox.pack_start(label, True, True, 0)
         self.desc_box.pack_start(hbox,True, True, 0)
 
-        # main box
-
-        self.main_box  = gtk.HBox()
-        self.vbox.pack_start(self.main_box,True,True,0)
-
-        #vertical logo
-        #vbox = gtk.VBox()
-        #vbox.set_border_width(5)
-        #samba_image_filename = os.path.join(sys.path[0],'images',
-        #        'samba-logo-vertical.png')
-        #samba_image = gtk.Image()
-        #samba_image.set_from_file(samba_image_filename)
-        #vbox.pack_end(samba_image, False, True, 0)
-
-        #self.main_box.pack_start(vbox, False, True, 0)
-
         # the main form
 
         self.form_box = gtk.VBox()
-        self.main_box.pack_start(self.form_box, True, True, 0)
+        self.vbox.pack_start(self.form_box, True, True, 0)
 
         # Name , password and comment (npc) frame
         frame = gtk.Frame()
@@ -677,26 +663,10 @@ class DeleteDialog(gtk.Dialog):
         hbox.pack_start(label, True, True, 0)
         self.desc_box.pack_start(hbox,True, True, 0)
 
-        # main box
-
-        self.main_box  = gtk.HBox()
-        self.vbox.pack_start(self.main_box,True,True,0)
-
-        #vertical logo
-        #vbox = gtk.VBox()
-        #vbox.set_border_width(5)
-        #samba_image_filename = os.path.join(sys.path[0],'images',
-        #        'samba-logo-vertical.png')
-        #samba_image = gtk.Image()
-        #samba_image.set_from_file(samba_image_filename)
-        #vbox.pack_end(samba_image, False, True, 0)
-
-        #self.main_box.pack_start(vbox, False, True, 0)
-
         # the main form
 
         self.form_box = gtk.VBox()
-        self.main_box.pack_start(self.form_box, True, True, 0)
+        self.vbox.pack_start(self.form_box, True, True, 0)
 
         frame = gtk.Frame()
         label = gtk.Label('<b> Share Details</b>')
