@@ -23,6 +23,7 @@
 #       MA 02110-1301, USA.
 #
 #
+__docformat__ = 'restructuredtext'
 
 import sys
 import os.path
@@ -45,13 +46,8 @@ from pysrvsvc import DeleteDialog, ShareAddEditDialog, \
 
 class srvsvcPipeManager(object):
 
-    def __init__(
-        self,
-        server_address,
-        transport_type,
-        username,
-        password,
-        ):
+    def __init__(self, server_address, transport_type, username,
+                    password):
         """ Initialize the pipe object handling the srvsvc calls """
 
         creds = credentials.Credentials()
@@ -123,16 +119,19 @@ class srvsvcPipeManager(object):
 
     @staticmethod
     def get_share_type_info(stype, field):
-        """ Return the desired info about a share type
-        Retrievable types :
-        'typestring' -> The generic name of the share type
-        'desc' -> Description of the type
-        'base_type' -> Base share type
-        'flags' -> special flags (Boolean temporary, Boolean hidden)
- ..........
-  Usage :
-  S.get_share_type_info(stype, field) -> desired information
-  """
+        """
+        Return the desired info about a share type
+        S.get_share_type_info(stype,field) -> desired information
+
+        Parameters:
+        'field' : can be one of the below :
+        -`typestring`: The generic name of the share type
+        -`desc`: Description of the type
+        -`base_type`: Base share type
+        -`flags`: special flags (Boolean temporary,Boolean hidden)
+
+
+        """
 
         base_dict = {
             srvsvc.STYPE_DISKTREE: {'typestring': 'STYPE_DISKTREE',
@@ -192,15 +191,15 @@ class srvsvcPipeManager(object):
         return stype_info_dict.get(field)
 
     def fix_path_format(self, path=''):
-        """ Fixes and checks the given path and convets it to the required format
+        """
+        Fixes and checks the given path to make it in tthe correct format
 
-  Convert the unix path to relavant Info Struct path for samba share object
-  It also checks for validity of path if it is local.
-  To be used for distktree (Files not IPC etc) type shares.
-  Usage :
-  S.fix_path_format(path= "") -> path
-
-  """
+        Convert the unix path to relavant Info Struct path for samba
+        share object.It also checks for validity of path if it is local.
+        To be used for distktree (Files not IPC etc) type shares.
+        `Usage` :
+        S.fix_path_format(path= "") -> path
+        """
 
         if self.islocal:
             if path.startswith('C:'):
@@ -219,8 +218,7 @@ class srvsvcPipeManager(object):
 
     # NOT supported yet
     def get_connections(self, level=1, max_buffer=-1):
-        """ DO NOT USE : UNSUPPORTED BY SAMBA-4 YET
-  """
+        """ DO NOT USE : UNSUPPORTED BY SAMBA-4 YET """
 
         self.conn_list = []
         info_ctr = srvsvc.NetConnInfoCtr()
@@ -237,10 +235,9 @@ class srvsvcPipeManager(object):
     def modify_share(self, share=None):
         """ Modifies share 502 object.
 
-  Usage:
-  S.modify_share(self,share)-> parm_error
-
-  """
+        Usage:
+        S.modify_share(self,share)-> parm_error
+        """
 
         if share is None:
             raise KeyError('Non existant Share cannot be modified')
@@ -252,11 +249,14 @@ class srvsvcPipeManager(object):
         return parm_error
 
     def get_shares_list(self):
-        """ Updates the share list of the pipe object .
-  If show_all_shares is set to flase Hidden shares are set to
-  false and not returned It first tries to list all shares if
-  that fails it falls back to list standard shares and sets the
-  show_all_shares boolean accordingly"""
+        """
+        Updates the share list of the pipe object .
+
+        If show_all_shares is set to flase Hidden shares are set to
+        false and not returned .It first tries to list all shares if
+        that fails it falls back to list standard shares and sets the
+        show_all_shares boolean accordingly
+        """
 
         if self.show_all_shares is False:
             self.list_shares()
@@ -264,19 +264,19 @@ class srvsvcPipeManager(object):
             try:
                 self.list_shares_all()
                 self.show_all_shares = True
-            except:
+            except RuntimeError:
                 self.list_shares()
                 self.show_all_shares = False
 
     def list_shares(self):
-        """ Gets a list of all (not hidden/special)active shares
-        and update the share and share_name list.
+        """
+        Gets a list of all (not hidden/special)active shares and update
+        the share and share_name list.
 
-  Usage:
-  Recomended do not USE , use get_shares_list
-  S.list_shares() -> None
-  """
-
+        `Usage`:
+        Recomended do not USE , use get_shares_list
+        S.list_shares() -> None
+        """
         self.share_list = []
         self.share_names_list = []
         self.share_types_list = []
@@ -293,11 +293,13 @@ class srvsvcPipeManager(object):
                 self.share_types_list.append(i.type)
 
     def list_shares_all(self):
-        """ Gets a list of all (including hiden/special)active shares and update the share and share_name list.
+        """
+        Gets a list of all (including hiden/special)active shares and
+        update the share and share_name list.
 
-  Usage:
-  S.list_shares() -> None
-  """
+        `Usage`:
+        S.list_shares() -> None
+        """
 
         self.share_list = []
         self.share_names_list = []
@@ -314,14 +316,14 @@ class srvsvcPipeManager(object):
                 self.share_types_list.append(i.type)
 
     def add_share(self, share=None):
-        """Adds a share with a given name and type
-  This uses a share info 502 object.
-  Should be followed by modify_share to complete the addition of the share.
+        """
+        Adds a share with a given name and type
+        This uses a share info 502 object.
+        Should be followed by modify_share to complete the addition of the share.
 
-  Usage :
-  S.add_share(self, share=None) -> parm_error
-
-  """
+        `Usage` :
+        S.add_share(self,share=None) -> parm_error
+        """
 
         if share is None:
             raise KeyError('Illegal to add an Empty Share ')
@@ -333,11 +335,12 @@ class srvsvcPipeManager(object):
         return parm_error
 
     def get_share_info_local(self, name=''):
-        """ Gets share info for a share with a particular name from local cache lists.
+        """
+        Gets share info for a share with a particular name from local cache lists.
 
-  Usage:
-  S.get_share_info_local(self, name=  "") -> sahre_info (502 type)
-  """
+        `Usage`:
+        S.get_share_info_local(self,name= "") -> sahre_info (502 type)
+        """
 
         name = unicode(name)
         for i in self.share_names_list:
@@ -345,55 +348,55 @@ class srvsvcPipeManager(object):
                 return share_list[i.index()]
 
     def get_share_info_rpc(self, name=''):
-        """ Gets share info for a share with a particular name from the rpc server.
+        """
+        Gets share info for a share with a particular name from the rpc server.
 
-  Usage:
-  S.get_share_info_local(self, name= "") -> sahre_info (502 type)
-  """
+        `Usage`:
+        S.get_share_info_local(self,name= "") -> sahre_info (502 type)
+        """
 
         name = unicode(name)
         info = self.pipe.NetShareGetInfo(self.server_unc, name, 502)
         return info
 
     def get_server_info(self):
-        """ Gets type 102 server info .
+        """
+        Gets type 102 server info .
 
- Usage:
- S.get_server_info() -> server_info
- """
+        `Usage`:
+        S.get_server_info() -> server_info
+        """
 
         server_info = self.pipe.NetSrvGetInfo(self.server_unc, 102)
         return server_info
 
     def delete_share(self, name=''):
-        """ Delete a share with the given name.
+        """
+        Delete a share with the given name.
 
-  Usage:
-  S.delete_share (self,name=  "") -> Boolean indicating success or faliure ,[error object]
-  """
+        `Usage`:
+        S.delete_share (self,name= "") -> Boolean indicating success or faliure ,[error object]
+        """
 
         name = unicode(name)
         self.pipe.NetShareDel(self.server_unc, name, 0)
 
     # NOT supported yet
     def remove_persistance(self, name=''):
-        """ Removes persistance of a share .
-
-  Usage: UNSUPPORTED YET
-  ........
-  """
+        """ Removes persistance of a share """
 
         reserved = None
         name = unicode(name)
         self.pipe.NetShareDelSticky(self.server_unc, name, reserved)
 
     def get_share_type(self, name=''):
-        """ Returns type of share code
-  uses local cache for now as the rpc server in samba4 does not support it yet
-  ........
-  Usage:
-  S.update_tod()
-  """
+        """
+        Returns type of share code
+
+        uses local cache for now as the rpc server in samba4 does not support it yet
+        `Usage`:
+        S.update_tod()
+        """
 
         name = unicode(name)
         for i in self.share_names_list:
@@ -403,18 +406,14 @@ class srvsvcPipeManager(object):
                 raise KeyError('Share Does no exist')
         return stype
 
-    def get_file_security(
-        self,
-        secdesc,
-        filename='',
-        filepath='',
-        ):
-        """ Returns a security descriptor buffer of a file .
-  Filepath must be full path relative to basepath of share's path.
+    def get_file_security(self, secdesc, filename='', filepath=''):
+        """
+        Returns a security descriptor buffer of a file .
+        Filepath must be full path relative to basepath of share's path.
 
-  Usage:
-  s.get_file_security(self,secdesc,sharename= " ",filepath=  "")-> sd_buf
-  """
+        `Usage`:
+        S.get_file_security(self,secdesc,sharename="",filepath= "")-> sd_buf
+        """
 
         filename = unicode(filename)
         sd_buf = self.pipe.NetGetFileSecurity(self.server_unc, share,
@@ -422,28 +421,26 @@ class srvsvcPipeManager(object):
         return sd_buf
 
     def get_tod(self):
-        """ Updates Time and date (TOD) Info of the pipe object.
-  ........
-  Usage:
-  update_tod() -> tod info object
-  """
+        """
+        Updates Time and date (TOD) Info of the pipe object.
+
+        `Usage`:
+        update_tod() -> tod info object
+        """
 
         tod_info = self.pipe.NetRemoteTOD(self.server_unc)
         return tod_info
 
-    def set_file_security(
-        self,
-        secdesc,
-        sd_buf,
-        sharename='',
-        filepath='',
-        ):
-        """ Sets the security  of a file .
-  Filepath must be full path relative to basepath of share's path.
+    def set_file_security(self, secdesc, sd_buf, sharename='',
+                        filepath=''):
+        """
+        Sets the security  of a file .
 
-  Usage:
-  S.set_file_security (self,secdesc,sd_buf,sharename= "",filepath= "") -> Boolean succes,[error]
-  """
+        Filepath must be full path relative to basepath of share's path.
+
+        `Usage`:
+        S.set_file_security (self,secdesc,sd_buf,sharename= "",filepath= "") -> Boolean succes,[error]
+        """
 
         sharename = unicode(sharename)
         self.pipe.NetSetFileSecurity(self.server_unc, share, filename,
@@ -452,13 +449,15 @@ class srvsvcPipeManager(object):
     @staticmethod
     def get_platform_info(platform_id, field):
         """ Return the desired field.
-        Retrievable types :
-        'typestring' : The generic name of the platform type
-        'desc' : Description of the type
 
-  Usage:
-  S.get_platform_string(platform_id,field)-> desired_field
-  """
+        Parameters:
+        `field` can be any of the below'
+        `typestring` : The generic name of the platform type
+        `desc` : Description of the type
+
+        `Usage`:
+        S.get_platform_string(platform_id,field)-> desired_field
+        """
 
         os_dict = {
             srvsvc.PLATFORM_ID_DOS: {'typestring': 'PLATFORM_ID_DOS',
@@ -474,20 +473,14 @@ class srvsvcPipeManager(object):
             }
         return os_dict.get(platform_id).get(field)
 
-    def get_share_object(
-        self,
-        name='',
-        stype=0,
-        comment='',
-        max_users=0xFFFFFFFF,
-        password='',
-        path='',
-        #permissions= None, it's a reserved section (MS-SRVS)
-        ):
-        """ Gets a 502 type share object.
-  Usage:
-  S.get_share_object(self,name= "",comment= "",max_users= 0xFFFFFFFF,password= "",path= "",permissions= None,sd_buf=None) -> share (502 type share object)
-  """
+    def get_share_object(self, name='', stype=0, comment='',
+                    max_users=0xFFFFFFFF, password='', path=''):
+        """
+        Gets a 502 type share object.
+
+        Usage:
+        S.get_share_object(self,name= "",comment= "",max_users= 0xFFFFFFFF,password= "",path= "",permissions= None,sd_buf=None) -> share (502 type share object)
+        """
 
         share = srvsvc.NetShareInfo502()
 
@@ -504,29 +497,30 @@ class srvsvcPipeManager(object):
         return share
 
     def name_validate(self, name):
-        """ Validate a Given Share Name .
+        """
+        Validate a Given Share Name .
         Returns True for a given share name and false for a invalid one .
         It does so gracefully without raising a exception. Thus validating  name cleanly
- .....
-  Usage :
-  S.name_validate(name) -> Boolean Indicating Validity
-  """
+        `Usage` :
+        S.name_validate(name) -> Boolean Indicating Validity
+        """
 
         try:
             self.pipe.NetNameValidate(self.server_unc, name, 9,
                     0)
             return True
-        except:
+        except RuntimeError:
             return False
 
     def get_list_disks(self):
-        """ Returns a list of disk names on the system.
-  In samaba rpc server these are hard coded .
-  Refreshes Disk list of the pipe object.
-............
-  Usage:
-  S.get_list_disks()-> None
-  """
+        """
+        Returns a list of disk names on the system.
+        In samaba rpc server these are hard coded .
+        Refreshes Disk list of the pipe object.
+
+        `Usage`:
+        S.get_list_disks()-> None
+        """
 
         disk_info = srvsvc.NetDiskInfo()
         self.disks_list = []
@@ -543,15 +537,8 @@ class ShareWindow(gtk.Window):
 
     """ Share management interface window """
 
-    def __init__(
-        self,
-        info_callback=None,
-        server='',
-        username='',
-        password='',
-        transport_type=0,
-        connect_now=False,
-        ):
+    def __init__(self, info_callback=None, server='', username='',
+                 password='', transport_type=0, connect_now=False):
         super(ShareWindow, self).__init__()
 
         # It's nice to have this info saved when a user wants to reconnect
@@ -564,14 +551,8 @@ class ShareWindow(gtk.Window):
 
         self.create()
         self.set_status('Disconnected.')
-        self.on_connect_item_activate(
-            None,
-            server,
-            transport_type,
-            username,
-            password,
-            connect_now,
-            )
+        self.on_connect_item_activate(None, server, transport_type,
+                                        username, password, connect_now)
         self.show_all()
         self.fill_active_pane()
         self.fill_server_info()
@@ -590,13 +571,7 @@ class ShareWindow(gtk.Window):
         self.statusbar.pop(0)
         self.statusbar.push(0, message)
 
-    def run_message_dialog(
-        self,
-        type,
-        buttons,
-        message,
-        parent=None,
-        ):
+    def run_message_dialog(self, type, buttons, message, parent=None):
         if parent is None:
             parent = self
 
@@ -607,15 +582,10 @@ class ShareWindow(gtk.Window):
 
         return response
 
-    def on_connect_item_activate(
-        self,
-        widget,
-        server='',
-        transport_type=0,
-        username='',
-        password='',
-        connect_now=False,
-        ):
+    def on_connect_item_activate(self, widget, server='',
+                            transport_type=0, username='', password='',
+                            connect_now=False):
+
         transport_type = transport_type or self.transport_type
         if transport_type is 2:
             server = '127.0.0.1'
@@ -624,14 +594,8 @@ class ShareWindow(gtk.Window):
         username = username or self.username
 
         try:
-            self.pipe_manager = self.run_connect_dialog(
-                None,
-                server,
-                transport_type,
-                username,
-                password,
-                connect_now,
-                )
+            self.pipe_manager = self.run_connect_dialog(None, server,
+                    transport_type, username, password, connect_now)
             if self.pipe_manager is not None:
                 self.pipe_manager.get_shares_list()
                 self.server_info = self.pipe_manager.server_info
@@ -661,15 +625,8 @@ class ShareWindow(gtk.Window):
         self.update_sensitivity()
         self.fill_server_info()
 
-    def run_connect_dialog(
-        self,
-        pipe_manager,
-        server_address,
-        transport_type,
-        username,
-        password='',
-        connect_now=False,
-        ):
+    def run_connect_dialog(self, pipe_manager, server_address,
+            transport_type, username, password='', connect_now=False):
 
         dialog = srvsvcConnectDialog(server_address, transport_type,
                 username, password)
@@ -886,9 +843,8 @@ Please check your network connection.''',
                 label.set_alignment(1, 0.5)
                 attach_index = self.pipe_manager.disks_list.index(i)+2
 
-                table.attach(label, 0, 1, attach_index,
-                                attach_index + 1, gtk.FILL,
-                                gtk.FILL | gtk.EXPAND, 0, 0)
+                table.attach(label, 0, 1, attach_index,attach_index + 1,
+                                gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
 
         self.sd_frame.add(table)
         self.sd_frame.show_all()
@@ -927,12 +883,8 @@ Please check your network connection.''',
         dialog.hide()
         return response_id
 
-    def run_share_add_edit_dialog(
-        self,
-        share=None,
-        apply_callback=None,
-        wizard_mode=False,
-        ):
+    def run_share_add_edit_dialog(self, share=None, apply_callback=None,
+                                  wizard_mode=False):
 
         if wizard_mode: # wizard only for a new share
             dialog = ShareWizardDialog(self.pipe_manager, None)
@@ -1126,12 +1078,7 @@ Please check your network connection.''',
 
             self.refresh_shares_view()
 
-    def on_notebook_switch_page(
-        self,
-        widget,
-        page,
-        page_num,
-        ):
+    def on_notebook_switch_page(self, widget, page, page_num):
         self.active_page_index = page_num
         self.update_sensitivity()
 
@@ -1223,10 +1170,8 @@ Please check your network connection.''',
     def fill_active_pane(self):
         """ Fills sthe active left pane """
 
-        try:
-            share = self.get_selected_share()
-        except:
-            share = None
+        share = self.get_selected_share()
+
 
         widget_to_delete = \
             self.shareinfo_frame.get_children()[0]
@@ -1413,8 +1358,8 @@ Please check your network connection.''',
         self.shareinfo_frame.show_all()
 
     def create(self):
-		
-		# main window
+
+        # main window
         self.set_title('Samba-Gtk Share Management Interface')
         self.set_default_size(800, 600)
         self.icon_filename = os.path.join(sys.path[0], 'images'
@@ -1428,7 +1373,7 @@ Please check your network connection.''',
         accel_group = gtk.AccelGroup()
         toplevel_vbox = gtk.VBox(False, 0)
         self.add(toplevel_vbox)
-        
+
         # menu
         self.menubar = gtk.MenuBar()
         toplevel_vbox.pack_start(self.menubar, False, False, 0)
@@ -1556,7 +1501,7 @@ Please check your network connection.''',
         main_hbox = gtk.HBox()
         self.share_notebook.append_page(main_hbox,
                 gtk.Label('Share Management'))
-        
+
         # Share listing on left side
         rvbox = gtk.VBox()
         main_hbox.pack_start(rvbox, True, True, 0)
@@ -1638,7 +1583,7 @@ Please check your network connection.''',
                 self.toggle_share_view_visiblity, None)
 
         ### Right active widget :
-        
+
         vbox = gtk.VBox()
         main_hbox.pack_start(vbox, False, False, 0)
 
@@ -1816,13 +1761,13 @@ Please check your network connection.''',
         label.set_use_markup(True)
         self.sd_frame.set_label_widget(label)
         vbox.pack_start(self.sd_frame, False, False, 0)
-        
+
         # status bar
 
         self.statusbar = gtk.Statusbar()
         self.statusbar.set_has_resize_grip(True)
         toplevel_vbox.pack_end(self.statusbar, False, False, 0)
-        
+
         # signals/events
 
         self.connect('delete_event', self.on_self_delete)
@@ -1896,14 +1841,9 @@ def ParseArgs(argv):
     arguments = {}
 
     try:  # get arguments into a nicer format
-        (opts, args) = getopt.getopt(argv, 'chu:s:p:t:', [
-            'help',
-            'user=',
-            'server=',
-            'password=',
-            'connect-now',
-            'transport=',
-            ])
+        (opts, args) = getopt.getopt(argv, 'chu:s:p:t:', ['help',
+                        'user=', 'server=', 'password=', 'connect-now',
+                        'transport='])
     except getopt.GetoptError:
         PrintUsage()
         sys.exit(2)
