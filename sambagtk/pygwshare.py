@@ -1,5 +1,28 @@
-    #!/usr/bin/python
+#!/usr/bin/python2.6
 # -*- coding: utf-8 -*-
+
+#       pygwshare.py
+#       Frontends to Samba-Gtk Share Management
+#
+#       Copyright 2011 Dhananjay Sathe <dhananjaysathe@gmail.com>
+#       Copyright 2011 Jelmer Vernooij <jelmer@samba.org>
+#
+#       This program is free software; you can redistribute it and/or modify
+#       it under the terms of the GNU General Public License as published by
+#       the Free Software Foundation; either version 3 of the License, or
+#       (at your option) any later version.
+#
+#       This program is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#       GNU General Public License for more details.
+#
+#       You should have received a copy of the GNU General Public License
+#       along with this program; if not, write to the Free Software
+#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#       MA 02110-1301, USA.
+#
+#
 
 import sys
 import os.path
@@ -8,7 +31,7 @@ import getopt
 import gobject
 import gtk
 
-sys.path.append('/usr/local/samba/lib/python2.7/site-packages/')
+# sys.path.append('/usr/local/samba/lib/python2.7/site-packages/')
 # default for ./configure.developer for use on python 2.7
 # Unhash the above line if it is yor your config , else edit it as req
 
