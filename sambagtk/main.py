@@ -11,7 +11,7 @@ import gtk.glade
 import os.path
 import getopt
 
-#sys.path.append('/usr/local/samba/lib/python2.7/site-packages/')
+sys.path.append('/usr/local/samba/lib/python2.7/site-packages/')
 # for use against the default binaries from default .configure.developer for use on python 2.7
 # Uncomment the above line if it is yor your config , else edit it as required
 
@@ -24,7 +24,6 @@ import pygwshare
 
 from sambagtk.dialogs import AboutDialog
 from sambagtk.sam import SAMConnectDialog
-from sambagtk.pysrvsvc import srvsvcConnectDialog
 
 
 class SambaUtilities(object):
@@ -144,6 +143,7 @@ class SambaUtilities(object):
 
         #We'll be displaying this later. We need to unparent it before attaching it to another container
 
+        self.srvsvc_window.menubar.unparent()
         self.srvsvc_window.toolbar.unparent()
         self.srvsvc_window.statusbar = self.statusbar #we simply tell the utility to use our status bar instead
 
@@ -382,17 +382,12 @@ class SambaUtilities(object):
             #Menubar
             children = self.menubar_viewport.get_children()
             self.menubar_viewport.remove(children[0])
-            if self.srvsvc_init is False:
-                self.srvsvc_window.menubar.reparent(self.menubar_viewport)
-                self.srvsvc_init = True
-            else:
-                self.menubar_viewport.add(self.srvsvc_window.menubar)
+            self.menubar_viewport.add(self.srvsvc_window.menubar)
             self.menubar_viewport.show_all()
 
             #Toolbar
             children = self.toolbar_viewport.get_children()
             self.toolbar_viewport.remove(children[0])
-            self.srvsvc_window.toolbar.unparent()
             self.toolbar_viewport.add(self.srvsvc_window.toolbar)
             self.toolbar_viewport.show_all()
 

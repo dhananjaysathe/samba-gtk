@@ -32,7 +32,7 @@ import getopt
 import gobject
 import gtk
 
-# sys.path.append('/usr/local/samba/lib/python2.7/site-packages/')
+sys.path.append('/usr/local/samba/lib/python2.7/site-packages/')
 # default for ./configure.developer for use on python 2.7
 # Unhash the above line if it is yor your config , else edit it as req
 
@@ -224,7 +224,7 @@ class srvsvcPipeManager(object):
         info_ctr = srvsvc.NetConnInfoCtr()
         info_ctr.level = level  #
         (no_ent, info_ctr, resume_handle) = \
-            self.pipe.NetConnEnum(server_unc,
+            self.pipe.NetConnEnum(self.server_unc,
                                   self.server_info_basic.path,
                                   info_ctr, max_buffer,
                                   self.resume_handle_conn)
@@ -345,7 +345,7 @@ class srvsvcPipeManager(object):
         name = unicode(name)
         for i in self.share_names_list:
             if name is i:
-                return share_list[i.index()]
+                return self.share_list[i.index()]
 
     def get_share_info_rpc(self, name=''):
         """
@@ -401,12 +401,12 @@ class srvsvcPipeManager(object):
         name = unicode(name)
         for i in self.share_names_list:
             if name is i:
-                stype = share_types_list[i.index()]
+                stype = self.share_types_list[i.index()]
             else:
                 raise KeyError('Share Does no exist')
         return stype
 
-    def get_file_security(self, secdesc, filename='', filepath=''):
+    def get_file_security(self, secdesc, filename='', filepath='', share=None):
         """
         Returns a security descriptor buffer of a file .
         Filepath must be full path relative to basepath of share's path.
@@ -432,7 +432,7 @@ class srvsvcPipeManager(object):
         return tod_info
 
     def set_file_security(self, secdesc, sd_buf, sharename='',
-                        filepath=''):
+                        filepath='', share=None):
         """
         Sets the security  of a file .
 
@@ -443,7 +443,7 @@ class srvsvcPipeManager(object):
         """
 
         sharename = unicode(sharename)
-        self.pipe.NetSetFileSecurity(self.server_unc, share, filename,
+        self.pipe.NetSetFileSecurity(self.server_unc, share, filepath,
                 secdesc, sd_buf)
 
     @staticmethod
@@ -757,10 +757,7 @@ Please check your network connection.''',
             label_data = \
                 self.pipe_manager.get_platform_info(
                                    self.server_info.platform_id, 'desc')
-            self.srvinfo_tos_label.set_text(label_data)
-            srv_type_genstr = \
-                self.pipe_manager.get_platform_info(
-                            self.server_info.platform_id, 'typestring')
+            self.srvinfo_tos_label.set_text(label_data)            
             self.srvinfo_name_label.set_text('\\'
                      + self.server_info.server_name)
             self.srvinfo_hidden_label.set_text(
