@@ -29,10 +29,12 @@ import sys
 import os.path
 import traceback
 import getopt
-import gobject
-import gtk
+from gi.repository import GObject
+from gi.repository import Gtk
+from gi.repository import GdkPixbuf
+from gi.repository import Gdk
 
-sys.path.append('/usr/local/samba/lib/python2.7/site-packages/')
+# sys.path.append('/usr/local/samba/lib/python2.7/site-packages/')
 # default for ./configure.developer for use on python 2.7
 # Unhash the above line if it is yor your config , else edit it as req
 
@@ -43,6 +45,7 @@ from sambagtk.dialogs import AboutDialog
 from pysrvsvc import DeleteDialog, ShareAddEditDialog, \
     srvsvcConnectDialog, ShareWizardDialog
 
+blank_label=Gtk.Label("")
 
 class srvsvcPipeManager(object):
 
@@ -533,7 +536,7 @@ class srvsvcPipeManager(object):
                     self.disks_list.append(i.disk)
 
 
-class ShareWindow(gtk.Window):
+class ShareWindow(Gtk.Window):
 
     """ Share management interface window """
 
@@ -575,8 +578,8 @@ class ShareWindow(gtk.Window):
         if parent is None:
             parent = self
 
-        message_box = gtk.MessageDialog(parent, gtk.DIALOG_MODAL, type,
-                buttons, message)
+        message_box = Gtk.MessageDialog(parent, Gtk.DialogFlags.MODAL
+                , type, buttons, message)
         response = message_box.run()
         message_box.hide()
 
@@ -610,16 +613,16 @@ class ShareWindow(gtk.Window):
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                    msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                Gtk.ButtonsType.OK, msg)
         except Exception, ex:
 
             msg = 'Failed to connect: %s.' % str(ex)
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                    msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                    Gtk.ButtonsType.OK, msg)
 
         self.refresh_shares_view()
         self.update_sensitivity()
@@ -635,11 +638,11 @@ class ShareWindow(gtk.Window):
         while True:
             if connect_now:
                 connect_now = False
-                response_id = gtk.RESPONSE_OK
+                response_id = Gtk.ResponseType.OK
             else:
                 response_id = dialog.run()
 
-            if response_id != gtk.RESPONSE_OK:
+            if response_id != Gtk.ResponseType.OK:
                 dialog.hide()
                 return None
             else:
@@ -658,8 +661,8 @@ class ShareWindow(gtk.Window):
                 except RuntimeError, re:
 
                     if re.args[1] == 'Logon failure':  # user got the password wrong
-                        self.run_message_dialog(gtk.MESSAGE_ERROR,
-                                gtk.BUTTONS_OK,
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                Gtk.ButtonsType.OK,
                                 'Failed to connect: Invalid username or password.'
                                 , dialog)
                         dialog.password_entry.grab_focus()
@@ -667,8 +670,8 @@ class ShareWindow(gtk.Window):
                                 -1)  # select all the text in the password box
                     elif re.args[0] == 5 or re.args[1]\
                          == 'Access denied':
-                        self.run_message_dialog(gtk.MESSAGE_ERROR,
-                                gtk.BUTTONS_OK,
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                Gtk.ButtonsType.OK,
                                 'Failed to connect: Access Denied.',
                                 dialog)
                         dialog.username_entry.grab_focus()
@@ -676,8 +679,8 @@ class ShareWindow(gtk.Window):
                                 -1)
                     elif re.args[1]\
                          == 'NT_STATUS_HOST_UNREACHABLE':
-                        self.run_message_dialog(gtk.MESSAGE_ERROR,
-                                gtk.BUTTONS_OK,
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                Gtk.ButtonsType.OK,
                                 'Failed to connect: Could not contact the server'
                                 , dialog)
                         dialog.server_address_entry.grab_focus()
@@ -685,8 +688,8 @@ class ShareWindow(gtk.Window):
                                 -1)
                     elif re.args[1]\
                          == 'NT_STATUS_NETWORK_UNREACHABLE':
-                        self.run_message_dialog(gtk.MESSAGE_ERROR,
-                                gtk.BUTTONS_OK,
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                Gtk.ButtonsType.OK,
                                 '''Failed to connect: The network is unreachable.
 
 Please check your network connection.''',
@@ -696,20 +699,20 @@ Please check your network connection.''',
                              % re.args[1]
                         print msg
                         traceback.print_exc()
-                        self.run_message_dialog(gtk.MESSAGE_ERROR,
-                                gtk.BUTTONS_OK, msg, dialog)
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                Gtk.ButtonsType.OK, msg, dialog)
                 except Exception, ex:
 
                     msg = 'Failed to connect: %s.' % str(ex)
                     print msg
                     traceback.print_exc()
-                    self.run_message_dialog(gtk.MESSAGE_ERROR,
-                            gtk.BUTTONS_OK, msg, dialog)
+                    self.run_message_dialog(Gtk.MessageType.ERROR,
+                                Gtk.ButtonsType.OK, msg, dialog)
 
-        response_id = gtk.RESPONSE_OK or dialog.run()
+        response_id = Gtk.ResponseType.OK or dialog.run()
         dialog.hide()
 
-        if response_id != gtk.RESPONSE_OK:
+        if response_id != Gtk.ResponseType.OK:
             return None
 
         return pipe_manager
@@ -726,7 +729,7 @@ Please check your network connection.''',
         """ Gracious fill out server info """
 
         for widget in self.sd_frame.get_children():
-            if type(widget) is gtk.Table:
+            if type(widget) is Gtk.Grid:
                 self.sd_frame.remove(widget)
 
         if self.server_info is None:
@@ -737,15 +740,13 @@ Please check your network connection.''',
             for label in my_lables:
                 label.set_sensitive(False)
 
-            table = gtk.Table(2, 2, True)
-            table.set_border_width(5)
-            table.set_row_spacings(4)
-            label = gtk.Label('Not connected to share server.')
-            label.set_alignment(1, 0.5)
-            table.attach(label, 0, 1, 1, 2, gtk.FILL,
-                            gtk.FILL | gtk.EXPAND, 0, 0)
-        else:
+            grid = Gtk.Grid()
+            grid.set_properties("border-width",5,"row-spacings",4)
+            label = Gtk.Label('Not connected to share server.',
+                                                xalign=1,yalign=0.5)
+            grid.add(label)
 
+        else:
             self.srv_info_label.set_markup('<b>Share Server Details</b>'
                     )
 
@@ -757,7 +758,7 @@ Please check your network connection.''',
             label_data = \
                 self.pipe_manager.get_platform_info(
                                    self.server_info.platform_id, 'desc')
-            self.srvinfo_tos_label.set_text(label_data)            
+            self.srvinfo_tos_label.set_text(label_data)
             self.srvinfo_name_label.set_text('\\'
                      + self.server_info.server_name)
             self.srvinfo_hidden_label.set_text(
@@ -826,24 +827,27 @@ Please check your network connection.''',
             self.srvinfo_aa_label.set_text(label_data)
 
             num_disks = len(self.pipe_manager.disks_list)
-            table = gtk.Table(num_disks + 2, 2, True)
-            table.set_border_width(5)
-            table.set_row_spacings(4)
-            label = gtk.Label('<b> Disks </b>')
-            label.set_use_markup(True)
-            label.set_alignment(1, 0.5)
-            table.attach(label, 0, 1, 1, 2, gtk.FILL,
-                            gtk.FILL | gtk.EXPAND, 0, 0)
+            
+            #table = gtk.Table(num_disks + 2, 2, True)
+            grid = Gtk.Grid()
+            grid.set_properties("border-width",5,"row-spacing"4)
+            label = Gtk.Label('<b> Disks </b>',xalign=1,yalign=0.5)
+            label.set_property("use-markup",True)
+
+            grid.attach(label, 0, 0, 1, 1)
+            filler = Gtk.Label("")
+            grid.attach_next_to(filler,label,
+                                Gtk.PositionType.BOTTOM, 1, 1)
+            #variable holding the immediate upper grid location , swap each time
+            tmp = filler
 
             for i in self.pipe_manager.disks_list:
-                label = gtk.Label(i)
-                label.set_alignment(1, 0.5)
-                attach_index = self.pipe_manager.disks_list.index(i)+2
+                label = Gtk.Label(i,xalign=1,yalign=0.5)
+                grid.attach_next_to(tmp,label,
+                                Gtk.PositionType.BOTTOM, 1, 1)
+                tmp = label
 
-                table.attach(label, 0, 1, attach_index,attach_index + 1,
-                                gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
-
-        self.sd_frame.add(table)
+        self.sd_frame.add(grid)
         self.sd_frame.show_all()
 
     def get_selected_share(self):
@@ -892,12 +896,13 @@ Please check your network connection.''',
         while True:
             response_id = dialog.run()
 
-            if response_id in [gtk.RESPONSE_OK, gtk.RESPONSE_APPLY]:
+            if response_id in [Gtk.ResponseType.OK, 
+                               Gtk.ResponseType.APPLY]:
                 problem_msg = dialog.validate_fields()
 
                 if problem_msg is not None:
-                    self.run_message_dialog(gtk.MESSAGE_ERROR,
-                            gtk.BUTTONS_OK, problem_msg, dialog)
+                    self.run_message_dialog(Gtk.MessageType.ERROR,
+                            Gtk.ButtonsType.OK, problem_msg, dialog)
                 else:
                     dialog.fields_to_share()
 
@@ -906,7 +911,7 @@ Please check your network connection.''',
                         dialog.share_to_fields()
                         dialog.fields_to_gui()
 
-                    if response_id == gtk.RESPONSE_OK:
+                    if response_id == Gtk.ResponseType.OK:
                         dialog.hide()
                         break
             else:
@@ -975,12 +980,12 @@ Please check your network connection.''',
         self.refresh_shares_view()
 
     def on_key_press(self, widget, event):
-        if event.keyval == gtk.keysyms.F5:
+        if event.keyval == Gdk.KEY_F5:
             self.on_refresh_item_activate(None)
-        elif event.keyval == gtk.keysyms.Delete:
+        elif event.keyval == Gdk.KEY_Delete:
             self.on_delete_item_activate(None)
-        elif event.keyval == gtk.keysyms.Return:
-            myev = gtk.gdk.Event(gtk.gdk._2BUTTON_PRESS)
+        elif event.keyval == Gdk.KEY_Return:
+            myev = Gdk.Event(Gdk.EventType._2BUTTON_PRESS)
             # emulates a double-click
             if self.active_page_index == 0:
                 self.on_shares_tree_view_button_press(None, myev)
@@ -1005,15 +1010,15 @@ Please check your network connection.''',
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                    msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR, 
+                                        Gtk.ButtonsType.OK, msg)
         except Exception, ex:
             msg = 'Failed to ad share: %s.' % str(ex)
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                    msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR, 
+                                        Gtk.ButtonsType.OK, msg)
 
         self.refresh_shares_view()
 
@@ -1034,15 +1039,15 @@ Please check your network connection.''',
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                    msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR, 
+                                        Gtk.ButtonsType.OK, msg)
         except Exception, ex:
             msg = 'Failed to ad share: %s.' % str(ex)
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                    msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR, 
+                                        Gtk.ButtonsType.OK, msg)
 
         self.refresh_shares_view()
 
@@ -1050,7 +1055,7 @@ Please check your network connection.''',
         share = self.get_selected_share()
 
         response = self.run_delete_dialog(share)
-        if response in [gtk.RESPONSE_OK, gtk.RESPONSE_APPLY]:
+        if response in [Gtk.ResponseType.OK, Gtk.ResponseType.APPLY]:
 
             try:
                 self.pipe_manager.delete_share(share.name)
@@ -1063,15 +1068,15 @@ Please check your network connection.''',
                 self.set_status(msg)
                 print msg
                 traceback.print_exc()
-                self.run_message_dialog(gtk.MESSAGE_ERROR,
-                        gtk.BUTTONS_OK, msg)
+                self.run_message_dialog(Gtk.MessageType.ERROR, 
+                                        Gtk.ButtonsType.OK, msg)
             except Exception, ex:
                 msg = 'Failed to delete share: %s.' % str(ex)
                 self.set_status(msg)
                 print msg
                 traceback.print_exc()
-                self.run_message_dialog(gtk.MESSAGE_ERROR,
-                        gtk.BUTTONS_OK, msg)
+                self.run_message_dialog(Gtk.MessageType.ERROR, 
+                                            Gtk.ButtonsType.OK, msg)
 
             self.refresh_shares_view()
 
@@ -1088,16 +1093,16 @@ Please check your network connection.''',
             print msg
             self.set_status(msg)
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                    msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR, 
+                                        Gtk.ButtonsType.OK, msg)
         except Exception, ex:
 
             msg = 'Failed to Modify Share: %s.' % str(ex)
             print msg
             self.set_status(msg)
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                    msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR, 
+                                        Gtk.ButtonsType.OK, msg)
         finally:
             self.refresh_shares_view()
 
@@ -1110,15 +1115,15 @@ Please check your network connection.''',
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                    msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR, 
+                                        Gtk.ButtonsType.OK, msg)
         except Exception, ex:
             msg = 'Failed to Refresh SRV Info: %s.' % str(ex)
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                    msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR, 
+                                        Gtk.ButtonsType.OK, msg)
 
         self.refresh_shares_view()
         self.set_status('Successfully Refreshed Shares List.')
@@ -1134,14 +1139,14 @@ Please check your network connection.''',
         if self.get_selected_share() is None:
             return
 
-        if event.type == gtk.gdk._2BUTTON_PRESS:
+        if event.type == Gdk.EventType._2BUTTON_PRESS:
             self.on_edit_item_activate(self.edit_item)
 
     def on_self_delete(self, widget, event):
         if self.pipe_manager is not None:
             self.on_disconnect_item_activate(self.disconnect_item)
 
-        gtk.main_quit()
+        Gtk.main_quit()
         return False
 
     def refresh_shares_view(self):
@@ -1175,20 +1180,17 @@ Please check your network connection.''',
         self.shareinfo_frame.remove(widget_to_delete)
 
         if share is None:
-            table = gtk.Table(1, 2)
-            table.set_border_width(5)
+            grid = Gtk.Grid()
+            grid.set_border_width(5)
             self.active_pane_frame_label.set_markup(
                                         '<b> No Share Selected </b>')
 
-            label = gtk.Label('Please Select a Share First')
-            label.set_alignment(1, 0.5)
-            table.attach(label, 0, 1, 0, 1, gtk.FILL,
-                            gtk.FILL | gtk.EXPAND, 0, 0)
+            label = Gtk.Label('Please Select a Share First',
+                                            xalign=1, yalign=0.5)
+            grid.attach(label, 0, 0, 1, 1)
 
-            label = gtk.Label(' ' * 55)
-            label.set_alignment(1, 0.5)
-            table.attach(label, 1, 2, 0, 1, gtk.FILL,
-                            gtk.FILL | gtk.EXPAND, 0, 0)
+            label = Gtk.Label(' ' * 55, xalign=1, yalign=0.5)
+            grid.attach(label, 1, 0, 1, 1)
 
         else:
 
@@ -1196,162 +1198,124 @@ Please check your network connection.''',
             flag_set = self.pipe_manager.get_share_type_info(stype,
                     'flags')
 
-            rows_required = ((8 - int(share.password is ''))
-                              - int(share.max_users == 0xFFFFFFFF))\
-                 - int(not flag_set[1]) + len(share.path) / 35\
-                 + 1 + len(share.comment) / 35 + 1
-
-            table = gtk.Table(rows_required, 2)
-            table.set_border_width(5)
-            table.set_row_spacings(2)
-            table.set_col_spacings(6)
+            grid = Gtk.Grid()
+            grid.set_properties("border-width",5,"row-spacing",2
+                                "coulmn-spacing",6)
 
             row_index = 0
 
             self.active_pane_frame_label.set_markup(
                                     '<b>Selected Share Details</b>')
 
-            label = gtk.Label(' Share Name  : ')
-            label.set_alignment(1, 0.5)
-            table.attach(label, 0, 1, row_index, row_index + 1,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+            label = Gtk.Label(' Share Name  : ',xalign=1, yalign=0.5 )
+            grid.attach(label, 0, row_index, 1, 1)
 
-
-            label = gtk.Label(share.name)
-            label.set_alignment(0, 0.5)
-            table.attach(label, 1, 2, row_index, row_index + 1,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+            label = Gtk.Label(share.name ,xalign=0, yalign=0.5)
+            grid.attach(label, 1, row_index, 1, 1)
             row_index += 1
 
-            label = gtk.Label(' Comment  : ')
-            label.set_alignment(1, 0.5)
-            table.attach(label, 0, 1, row_index, row_index + 1,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+            label = Gtk.Label(' Comment  : ',xalign=1, yalign=0.5 )
+            grid.attach(label, 0, row_index, 1, 1)
 
             if len(share.comment) > 35:
                 for i in range(len(share.comment) / 35 + 1):
-                    label = gtk.Label(share.comment[i * 35:i * 35 + 35])
-                    label.set_alignment(0, 0.5)
-                    table.attach(label, 1, 2, row_index, row_index + 1,
-                                  gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+                    label = Gtk.Label(share.comment[i * 35:i * 35 + 35],
+                                     xalign=0, yalign=0.5)
+                    label.set_properties("wrap",True,"justify",
+                                        Gtk.Justification.FILL)
+                    grid.attach(label, 1, row_index, 1, 1)
                     row_index += 1
             else:
                 padding = (35 - len(share.comment)) * ' '
-                label = gtk.Label(''.join([share.comment, padding]))
-                label.set_alignment(0, 0.5)
-                table.attach(label, 1, 2, row_index, row_index + 1,
-                                gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+                label = Gtk.Label(''.join([share.comment, padding]) ,
+                                xalign=0, yalign=0.5)
+                grid.attach(label, 1, row_index, 1, 1)
                 row_index += 1
 
-            label = gtk.Label(' Path  : ')
-            label.set_alignment(1, 0.5)
-            table.attach(label, 0, 1, row_index, row_index + 1,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+            label = Gtk.Label(' Path  : ',xalign=1, yalign=0.5 )
+            grid.attach(label, 0, row_index, 1, 1)
 
             if len(share.path) > 35:
                 for i in range(len(share.path) / 35 + 1):
-                    label = gtk.Label(share.path[i * 35:i * 35 + 35])
-                    label.set_alignment(0, 0.5)
-                    table.attach(label, 1, 2, row_index, row_index + 1,
-                                 gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+                    label = Gtk.Label(share.path[i * 35:i * 35 + 35] ,
+                                    xalign=0, yalign=0.5)
+                    label.set_properties("wrap",True,"justify",
+                                        Gtk.Justification.FILL)
+                    grid.attach(label, 1, row_index, 1, 1)
                     row_index += 1
             else:
                 if share.path == '':
                     padding = 41 * ' '
                 else:
                     padding = (35 - len(share.path)) * ' '
-                label = gtk.Label(''.join([share.path, padding]))
-                label.set_alignment(0, 0.5)
-                table.attach(label, 1, 2, row_index, row_index + 1,
-                                gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+                label = Gtk.Label(''.join([share.path, padding]) ,
+                                xalign=0, yalign=0.5)
+                grid.attach(label, 1, row_index, 1, 1)
                 row_index += 1
 
             if share.password:
-                label = gtk.Label(' Password  : ')
-                label.set_alignment(1, 0.5)
-                table.attach(label, 0, 1, row_index, row_index + 1,
-                                gtk.SHRINK, gtk.FILL | gtk.EXPAND, 0, 0)
+                label = Gtk.Label(' Password  : ',xalign=1, yalign=0.5 )
+                grid.attach(label, 0, row_index, 1, 1)
 
-                label = gtk.Label('Protection Enabled')
-                label.set_alignment(0, 0.5)
-                table.attach(label, 1, 2, row_index, row_index + 1,
-                                gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+                label = Gtk.Label('Protection Enabled' ,
+                                                xalign=0, yalign=0.5)
+                grid.attach(label, 1, row_index, 1, 1)
                 row_index += 1
 
-            label = gtk.Label('<b> Share Type</b>')
-            label.set_use_markup(True)
-            label.set_alignment(0, 0.5)
-            table.attach(label, 0, 1, row_index, row_index + 1,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+            label = Gtk.Label('<b> Share Type</b>',xalign=0, yalign=0.5)
+            label.set_property("use-markup",True)
+            grid.attach(label, 0, row_index, 1, 1)
             row_index += 1
 
-            label = gtk.Label(' Type Description  : ')
-            label.set_alignment(1, 0.5)
-            table.attach(label, 0, 1, row_index, row_index + 1,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+            label = Gtk.Label(' Type Description  : ',
+                                            xalign=1, yalign=0.5 )
+            grid.attach(label,  0, row_index, 1, 1)
             label_data = self.pipe_manager.get_share_type_info(
                                                     stype, 'desc')
-
-            label = gtk.Label(label_data)
-            label.set_alignment(0, 0.5)
-            table.attach(label, 1, 2, row_index, row_index + 1,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+            label = Gtk.Label(label_data ,xalign=0, yalign=0.5)
+            grid.attach(label, 1, row_index, 1, 1)
             row_index += 1
 
-            label = gtk.Label()
-            label.set_markup('<b> Special Flags </b>')
-            label.set_alignment(0, 0.5)
-            table.attach(label, 0, 1, row_index, row_index + 1,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+            label = Gtk.Label('<b> Special Flags </b>',
+                                                xalign=0, yalign=0.5 )
+            label.set_property("use-markup",True)
+            grid.attach(label,  0, row_index, 1, 1)
             row_index += 1
 
             flags_present = False
             if flag_set[0]:
                 flags_present = True
-                label = gtk.Label(' Temporary  : ')
-                label.set_alignment(1, 0.5)
-                table.attach(label, 0, 1, row_index, row_index + 1,
-                                gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+                label = Gtk.Label(' Temporary  : ',xalign=1, yalign=0.5)
+                grid.attach(label,  0, row_index, 1, 1)
 
-                label = gtk.Label(str(flag_set[0]))
-                label.set_alignment(0, 0.5)
-                table.attach(label, 1, 2, row_index, row_index + 1,
-                                gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+                label = Gtk.Label(str(flag_set[0]),xalign=0, yalign=0.5)
+                grid.attach(label, 1, row_index, 1, 1)
                 row_index += 1
 
             if flag_set[1]:
                 flags_present = True
-                label = gtk.Label(' Hidden  : ')
-                label.set_alignment(1, 0.5)
-                table.attach(label, 0, 1, row_index, row_index + 1,
-                                gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+                label = Gtk.Label(' Hidden  : ',xalign=1, yalign=0.5)
+                grid.attach(label, 0, row_index, 1, 1)
 
-                label = gtk.Label(str(flag_set[1]))
-                label.set_alignment(0, 0.5)
-                table.attach(label, 1, 2, row_index, row_index + 1,
-                                gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+                label = Gtk.Label(str(flag_set[1]),xalign=0, yalign=0.5)
+                grid.attach(label, 1, row_index, 1, 1)
                 row_index += 1
 
             if not flags_present:
-                label = gtk.Label('No Special Flags')
-                label.set_alignment(0, 0.5)
-                table.attach(label, 1, 2, row_index, row_index + 1,
-                                gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+                label = Gtk.Label('No Special Flags',
+                                        xalign=0, yalign=0.5)
+                grid.attach(label, 1, row_index, 1, 1)
                 row_index += 1
 
             if not share.max_users == 0xFFFFFFFF:
-                label = gtk.Label(' Max Users  : ')
-                label.set_alignment(1, 0.5)
-                table.attach(label, 0, 1, row_index, row_index + 1,
-                                 gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+                label = Gtk.Label(' Max Users  : ',xalign=1, yalign=0.5)
+                grid.attach(label, 0, row_index, 1, 1)
 
-                label = gtk.Label(share.max_users)
-                label.set_alignment(0, 0.5)
-                table.attach(label, 1, 2, row_index, row_index + 1,
-                                gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+                label = Gtk.Label(share.max_users ,xalign=0, yalign=0.5)
+                grid.attach(label, 1, row_index, 1, 1)
                 row_index += 1
 
-        self.shareinfo_frame.add(table)
+        self.shareinfo_frame.add(grid)
         self.shareinfo_frame.show_all()
 
     def create(self):
@@ -1364,405 +1328,354 @@ Please check your network connection.''',
         self.share_icon_filename = os.path.join(sys.path[0],
                 'images', 'network.png')
         self.icon_pixbuf = \
-            gtk.gdk.pixbuf_new_from_file(self.icon_filename)
+            GdkPixbuf.Pixbuf.new_from_file(self.icon_filename)
         self.set_icon(self.icon_pixbuf)
 
-        accel_group = gtk.AccelGroup()
-        toplevel_vbox = gtk.VBox(False, 0)
+        accel_group = Gtk.AccelGroup()
+        toplevel_vbox = Gtk.VBox(False, 0)
         self.add(toplevel_vbox)
 
         # menu
-        self.menubar = gtk.MenuBar()
+        self.menubar = Gtk.MenuBar()
         toplevel_vbox.pack_start(self.menubar, False, False, 0)
 
-        self.file_item = gtk.MenuItem('_File')
+        self.file_item = Gtk.MenuItem('_File')
         self.menubar.add(self.file_item)
 
-        file_menu = gtk.Menu()
-        self.file_item.set_submenu(file_menu)
+        file_menu = Gtk.Menu()
+        self.file_item.set_property("submenu",file_menu)
 
-        self.connect_item = gtk.ImageMenuItem(gtk.STOCK_CONNECT,
-                accel_group)
+        self.connect_item = Gtk.ImageMenuItem(Gtk.STOCK_CONNECT)
+        self.connect_item.set_property("accel_group",accel_group)
         file_menu.add(self.connect_item)
 
-        self.disconnect_item = gtk.ImageMenuItem(gtk.STOCK_DISCONNECT,
-                accel_group)
-        self.disconnect_item.set_sensitive(False)
+        self.disconnect_item = Gtk.ImageMenuItem(Gtk.STOCK_DISCONNECT)
+        self.disconnect_item.set_properties("accel_group",accel_group,
+                                            "sensitive",False)
         file_menu.add(self.disconnect_item)
 
-        menu_separator_item = gtk.SeparatorMenuItem()
-        menu_separator_item.set_sensitive(False)
+        menu_separator_item = Gtk.SeparatorMenuItem()
+        menu_separator_item.set_property("sensitive",False)
         file_menu.add(menu_separator_item)
 
-        self.quit_item = gtk.ImageMenuItem(gtk.STOCK_QUIT, accel_group)
+        self.quit_item = Gtk.ImageMenuItem(Gtk.STOCK_QUIT)
+        self.quit_item.set_property("accel_group",accel_group)
         file_menu.add(self.quit_item)
 
-        self.view_item = gtk.MenuItem('_View')
+        self.view_item = Gtk.MenuItem('_View')
         self.menubar.add(self.view_item)
 
-        view_menu = gtk.Menu()
-        self.view_item.set_submenu(view_menu)
+        view_menu = Gtk.Menu()
+        self.view_item.set_property("submenu",view_menu)
 
-        self.refresh_item = gtk.ImageMenuItem(gtk.STOCK_REFRESH,
-                accel_group)
-        self.refresh_item.set_sensitive(False)
+        self.refresh_item = Gtk.ImageMenuItem(Gtk.STOCK_REFRESH)
+        self.new_item.set_properties("accel_group",accel_group,
+                                            "sensitive",False)
         view_menu.add(self.refresh_item)
 
-        self.share_item = gtk.MenuItem('_Share')
+        self.share_item = Gtk.MenuItem('_Share')
         self.menubar.add(self.share_item)
 
-        share_menu = gtk.Menu()
+        share_menu = Gtk.Menu()
         self.share_item.set_submenu(share_menu)
 
-        self.new_item = gtk.ImageMenuItem(gtk.STOCK_NEW, accel_group)
-        self.new_item.set_sensitive(False)
+        self.new_item = Gtk.ImageMenuItem(Gtk.STOCK_NEW)
+        self.new_item.set_properties("accel_group",accel_group,
+                                            "sensitive",False)
         share_menu.add(self.new_item)
 
-        self.delete_item = gtk.ImageMenuItem(gtk.STOCK_DELETE,
-                accel_group)
-        self.delete_item.set_sensitive(False)
+        self.delete_item = Gtk.ImageMenuItem(Gtk.STOCK_DELETE)
+        self.delete_item.set_properties("accel_group",accel_group,
+                                            "sensitive",False)
         share_menu.add(self.delete_item)
 
-        self.edit_item = gtk.ImageMenuItem(gtk.STOCK_EDIT, accel_group)
-        self.edit_item.set_sensitive(False)
+        self.edit_item = Gtk.ImageMenuItem(Gtk.STOCK_EDIT)
+        self.edit_item.set_properties("accel_group",accel_group,
+                                            "sensitive",False)
         share_menu.add(self.edit_item)
 
-        self.wizard_item = gtk.MenuItem('_Wizard')
+        self.wizard_item = Gtk.MenuItem('_Wizard')
         self.menubar.add(self.wizard_item)
 
-        wizard_menu = gtk.Menu()
-        self.wizard_item.set_submenu(wizard_menu)
+        wizard_menu = Gtk.Menu()
+        self.wizard_item.set_property("submenu",wizard_menu)
 
         self.new_share_wizard_item = \
-            gtk.MenuItem(label='New Share Wizard')
+            Gtk.MenuItem(label='New Share Wizard')
         wizard_menu.add(self.new_share_wizard_item)
 
-        self.help_item = gtk.MenuItem('_Help')
+        self.help_item = Gtk.MenuItem('_Help')
         self.menubar.add(self.help_item)
 
-        help_menu = gtk.Menu()
-        self.help_item.set_submenu(help_menu)
+        help_menu = Gtk.Menu()
+        self.help_item.set_property("submenu",help_menu)
 
-        self.about_item = gtk.ImageMenuItem(gtk.STOCK_ABOUT,
-                accel_group)
+        self.about_item = Gtk.ImageMenuItem(Gtk.STOCK_ABOUT)
+        self.about_item.set_property("accel_group",accel_group)
         help_menu.add(self.about_item)
 
         # Toolbar
-        self.toolbar = gtk.Toolbar()
+        self.toolbar = Gtk.Toolbar()
         toplevel_vbox.pack_start(self.toolbar, False, False, 0)
 
-        self.connect_button = gtk.ToolButton(gtk.STOCK_CONNECT)
-        self.connect_button.set_is_important(True)
-        self.connect_button.set_tooltip_text('Connect to a server')
+        self.connect_button = Gtk.ToolButton(Gtk.STOCK_CONNECT)
+        self.connect_button.set_properties("is-important",True,
+                            "tooltip_text",'Connect to a server')
         self.toolbar.insert(self.connect_button, 0)
 
-        self.disconnect_button = gtk.ToolButton(gtk.STOCK_DISCONNECT)
-        self.disconnect_button.set_is_important(True)
-        self.disconnect_button.set_tooltip_text(
-                                        'Disconnect from the server')
+        self.disconnect_button = Gtk.ToolButton(Gtk.STOCK_DISCONNECT)
+        self.disconnect_button.set_properties("is-important",True,
+                            "tooltip_text",'Disconnect from the server')
         self.toolbar.insert(self.disconnect_button, 1)
 
-        sep = gtk.SeparatorToolItem()
+        sep = Gtk.SeparatorToolItem()
         self.toolbar.insert(sep, 2)
 
-        self.new_button = gtk.ToolButton(gtk.STOCK_NEW)
-        self.new_button.set_is_important(True)
+        self.new_button = Gtk.ToolButton(Gtk.STOCK_NEW)
+        self.new_button.set_properties("is-important",True,
+                                "tooltip_text",'Add a new Share')        
         self.toolbar.insert(self.new_button, 3)
 
-        self.edit_button = gtk.ToolButton(gtk.STOCK_EDIT)
-        self.edit_button.set_is_important(True)
+        self.edit_button = Gtk.ToolButton(Gtk.STOCK_EDIT)
+        self.edit_button.set_properties("is-important",True,
+                                "tooltip_text",'Edit a Share')
         self.toolbar.insert(self.edit_button, 4)
 
-        self.delete_button = gtk.ToolButton(gtk.STOCK_DELETE)
-        self.delete_button.set_is_important(True)
+        self.delete_button = Gtk.ToolButton(Gtk.STOCK_DELETE)
+        self.delete_button.set_properties("is-important",True,
+                                "tooltip_text",'Delete a Share')
         self.toolbar.insert(self.delete_button, 5)
 
-        sep = gtk.SeparatorToolItem()
+        sep = Gtk.SeparatorToolItem()
         self.toolbar.insert(sep, 6)
 
-        image = gtk.Image()
-        image.set_from_stock(gtk.STOCK_EXECUTE, 48)
-        self.new_share_wizard_button = gtk.ToolButton(image,
-                'New Share Wizard')
-        self.new_share_wizard_button.set_is_important(True)
+        self.new_share_wizard_button = Gtk.ToolButton(Gtk.STOCK_EXECUTE)
+        self.new_share_wizard_button.set_properties("is-important",True)
         self.toolbar.insert(self.new_share_wizard_button, 7)
 
-        self.new_button.set_tooltip_text('Add a new Share')
-        self.edit_button.set_tooltip_text('Edit a Share')
-        self.delete_button.set_tooltip_text('Delete a Share')
-
         # Share-page
-        self.share_notebook = gtk.Notebook()
+        self.share_notebook = Gtk.Notebook()
         toplevel_vbox.pack_start(self.share_notebook, True, True, 0)
 
-        main_hbox = gtk.HBox()
+        main_hbox = Gtk.HBox()
         self.share_notebook.append_page(main_hbox,
-                gtk.Label('Share Management'))
+                Gtk.Label('Share Management'))
 
         # Share listing on left side
-        rvbox = gtk.VBox()
+        rvbox = Gtk.VBox()
         main_hbox.pack_start(rvbox, True, True, 0)
 
-        scrolledwindow = gtk.ScrolledWindow(None, None)
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC,
-                                        gtk.POLICY_AUTOMATIC)
-        scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
+        scrolledwindow = Gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_property("shadow_type",Gtk.ShadowType.IN)
+        
         rvbox.pack_start(scrolledwindow, True, True, 2)
 
-        self.shares_tree_view = gtk.TreeView()
+        self.shares_tree_view = Gtk.TreeView()
         scrolledwindow.add(self.shares_tree_view)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title('')
-        renderer = gtk.CellRendererPixbuf()
+        renderer = Gtk.CellRendererPixbuf()
         renderer.set_property('pixbuf',
-                              gtk.gdk.pixbuf_new_from_file_at_size(
+                              GdkPixbuf.Pixbuf.new_from_file_at_size(
                               self.share_icon_filename,22, 22))
         column.pack_start(renderer, True)
         self.shares_tree_view.append_column(column)
 
-        column = gtk.TreeViewColumn()
-        column.set_title('Name')
-        column.set_resizable(True)
-        column.set_sort_column_id(0)
-        renderer = gtk.CellRendererText()
+        column = Gtk.TreeViewColumn()
+        column.set_properties("title",'Name',"resizable",True,
+                        "sort-column-id",0)
+        
+        renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.shares_tree_view.append_column(column)
         column.add_attribute(renderer, 'text', 0)
 
-        column = gtk.TreeViewColumn()
-        column.set_title('Share Type')
-        column.set_resizable(True)
-        column.set_expand(True)
-        column.set_sort_column_id(1)
-        renderer = gtk.CellRendererText()
+        column = Gtk.TreeViewColumn()
+        column.set_properties("title",'Share Type',"resizable",True,
+                        ,"expand",True,"sort-column-id",1)
+        renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.shares_tree_view.append_column(column)
         column.add_attribute(renderer, 'text', 1)
 
-        column = gtk.TreeViewColumn()
-        column.set_title('Comment')
-        column.set_resizable(True)
-        column.set_expand(True)
-        column.set_sort_column_id(2)
-        renderer = gtk.CellRendererText()
+        column = Gtk.TreeViewColumn()
+        column.set_properties("title",'Comment',"resizable",True,
+                        ,"expand",True,"sort-column-id",2)
+        renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.shares_tree_view.append_column(column)
         column.add_attribute(renderer, 'text', 2)
 
-        column = gtk.TreeViewColumn()
-        column.set_title('Path')
-        column.set_resizable(True)
-        column.set_sort_column_id(3)
-        renderer = gtk.CellRendererText()
+        column = Gtk.TreeViewColumn()
+        column.set_properties("title",'Path',"resizable",True,
+                        ,"expand",True,"sort-column-id",3)
+        renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.shares_tree_view.append_column(column)
         column.add_attribute(renderer, 'text', 3)
 
-        self.shares_store = gtk.ListStore(gobject.TYPE_STRING,
-                gobject.TYPE_STRING, gobject.TYPE_STRING,
-                gobject.TYPE_STRING)
+        self.shares_store = Gtk.ListStore(GObject.TYPE_STRING,
+                GObject.TYPE_STRING, GObject.TYPE_STRING,
+                GObject.TYPE_STRING)
         self.shares_store.set_sort_column_id(0,
-                gtk.SORT_ASCENDING)
+                Gtk.SortType.ASCENDING)
         self.shares_tree_view.set_model(self.shares_store)
 
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         rvbox.pack_start(hbox, False, False, 0)
 
         self.show_all_share_checkbox = \
-            gtk.CheckButton('Show Hidden Shares')
+            Gtk.CheckButton('Show Hidden Shares')
+        self.show_all_share_checkbox.set_properties("active",False,
+        "tooltip-text",'Enable or disable the visiblity of hidden shares')
         hbox.pack_end(self.show_all_share_checkbox, False, False,
                       0)
-        self.show_all_share_checkbox.set_tooltip_text(
-                    'Enable or disable the visiblity of hidden shares')
-        self.show_all_share_checkbox.set_active(False)
         self.show_all_share_checkbox.connect('toggled',
                 self.toggle_share_view_visiblity, None)
 
         ### Right active widget :
 
-        vbox = gtk.VBox()
+        vbox = Gtk.VBox()
         main_hbox.pack_start(vbox, False, False, 0)
 
-        self.shareinfo_frame = gtk.Frame()
-        self.active_pane_frame_label = gtk.Label()
-        self.active_pane_frame_label.set_use_markup(True)
-        self.active_pane_frame_label.set_markup(
+        self.shareinfo_frame = Gtk.Frame()
+        self.active_pane_frame_label = Gtk.Label(
                                         '<b> No Share Selected </b>')
+        self.active_pane_frame_label.set_property("use-markup",True)
+
         self.shareinfo_frame.set_label_widget(
                                         self.active_pane_frame_label)
         vbox.pack_start(self.shareinfo_frame, False, True, 0)
-        self.shareinfo_frame.set_border_width(5)
+        self.shareinfo_frame.set_property("border_width",5)
 
-        table = gtk.Table(1, 2)
-        table.set_border_width(5)
-        table.set_row_spacings(2)
-        table.set_col_spacings(6)
+        grid = Gtk.Grid()
+        grid.set_properties('border-width',5,'row-spacing'2,
+                                'column-spacing',6)
 
-        self.shareinfo_frame.add(table)
+        self.shareinfo_frame.add(grid)
 
-        label = gtk.Label('Please Slect a Share First')
-        label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 0, 1,gtk.FILL,
-                        gtk.FILL | gtk.EXPAND, 0, 0)
+        label = Gtk.Label('Please Slect a Share First',
+                        xalign=1,yalign=0.5)
+        grid.attach(label, 0, 0, 1, 1)
+  
+        label = Gtk.Label(' '*55,
+                        xalign=1,yalign=0.5)
+        grid.attach(label, 1, 0, 1, 1)
 
-
-        label = gtk.Label(' ' * 55)
-        label.set_alignment(1, 0.5)
-        table.attach(label, 1, 2, 0, 1, gtk.FILL,
-                        gtk.FILL | gtk.EXPAND, 0, 0)
-
-        hbox = gtk.HBox()
         vbox.pack_end(hbox, False, False, 0)
 
-        table = gtk.Table(3, 6, True)
-        hbox.pack_start(table, False, True, 0)
+        #table = gtk.Table(3, 6, True)
+        grid = Gtk.Grid()
+        vbox.pack_end(grid, False, False, 0)
 
-        self.active_frame_new_button = gtk.Button('New')
+        self.active_frame_new_button = Gtk.Button('New')
         self.active_frame_new_button.set_tooltip_text('Add a New Share')
-        table.attach(self.active_frame_new_button, 2, 3, 1, 2,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        grid.attach(self.active_frame_new_button, 0, 1, 1, 1)
 
-        self.active_frame_edit_button = gtk.Button('Edit')
+        self.active_frame_edit_button = Gtk.Button('Edit')
         self.active_frame_edit_button.set_tooltip_text(
                                                 'Edit Current Share')
-        table.attach(self.active_frame_edit_button, 3, 4, 1, 2,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        grid.attach(self.active_frame_edit_button,  3, 1, 1, 1)
 
-        self.active_frame_delete_button = gtk.Button('Delete')
+        self.active_frame_delete_button = Gtk.Button('Delete')
         self.active_frame_delete_button.set_tooltip_text(
                                                 'Delete Current Share')
-        table.attach(self.active_frame_delete_button, 4, 5, 1, 2,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        grid.attach(self.active_frame_delete_button, 4, 1, 1, 1)
 
         # Server Info Page
-        hbox = gtk.HBox(True)
+        hbox = Gtk.HBox(True)
         self.share_notebook.append_page(hbox,
-                gtk.Label('Share Server Info'))
+                Gtk.Label('Share Server Info'))
 
-        vbox = gtk.VBox()
+        vbox = Gtk.VBox()
         hbox.pack_start(vbox, True, True, 0)
-        self.srvinfo_frame = gtk.Frame()
-        self.srv_info_label = gtk.Label('<b>Share Server Details</b>')
-        self.srv_info_label.set_use_markup(True)
-        self.srvinfo_frame.set_label_widget(self.srv_info_label)
+        
+        self.srvinfo_frame = Gtk.Frame()
+        self.srv_info_label = Gtk.Label('<b>Share Server Details</b>')
+        self.srv_info_label.set_property("use-markup",True)
+        self.srvinfo_frame.set_properties("border-width",5
+                                    "label-widget",self.srv_info_label)
         vbox.pack_start(self.srvinfo_frame, False, True, 0)
-        self.srvinfo_frame.set_border_width(5)
 
-        table = gtk.Table(10, 2)
-        table.set_border_width(5)
-        table.set_row_spacings(3)
-        table.set_col_spacings(6)
-        self.srvinfo_frame.add(table)
+        grid = Gtk.Grid()
+        grid.set_properties("border-width",5,"row_spacing",3,
+                                "coulmn_spacing"6)
+        self.srvinfo_frame.add(grid)
 
-        label = gtk.Label(' Target Platform OS  : ')
-        label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 1, 2, gtk.FILL,
-                        gtk.FILL | gtk.EXPAND, 0, 0)
+        label = Gtk.Label(' Target Platform OS  : ',xalign=1,yalign=0.5)
+        grid.add(label, 0, 0, 1, 1)
 
-        self.srvinfo_tos_label = gtk.Label()
-        self.srvinfo_tos_label.set_alignment(0, 0.5)
-        table.attach(self.srvinfo_tos_label, 1, 2, 1, 2,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        self.srvinfo_tos_label = Gtk.Label(xalign=0,yalign=0.5)
+        grid.attach(self.srvinfo_tos_label, 1, 0, 1, 1)
 
-        label = gtk.Label(' NetBIOS Name : ')
-        label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 2, 3, gtk.FILL,
-                        gtk.FILL | gtk.EXPAND, 0, 0)
+        label = Gtk.Label(' NetBIOS Name : ',xalign=1,yalign=0.5)
+        grid.attach(label, 0, 1, 1, 1)
 
-        self.srvinfo_name_label = gtk.Label()
-        self.srvinfo_name_label.set_alignment(0, 0.5)
-        table.attach(self.srvinfo_name_label, 1, 2, 2, 3,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        self.srvinfo_name_label = Gtk.Label(xalign=0,yalign=0.5)
+        grid.attach(self.srvinfo_name_label, 1, 1, 1, 1)
 
-        label = gtk.Label(' Hidden  : ')
-        label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 3, 4, gtk.FILL,
-                        gtk.FILL | gtk.EXPAND, 0, 0)
+        label = Gtk.Label(' Hidden  : ',xalign=1,yalign=0.5)
+        grid.attach(label, 0, 2, 1, 1)
 
-        self.srvinfo_hidden_label = gtk.Label()
-        self.srvinfo_hidden_label.set_alignment(0, 0.5)
-        table.attach(self.srvinfo_hidden_label, 1, 2, 3, 4,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        self.srvinfo_hidden_label = Gtk.Label(xalign=0,yalign=0.5)
+        grid.attach(self.srvinfo_hidden_label, 1, 2, 1, 1)
 
-        label = gtk.Label(' Comment  : ')
-        label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 4, 5, gtk.FILL,
-                        gtk.FILL | gtk.EXPAND, 0, 0)
+        label = Gtk.Label(' Comment  : ',xalign=1,yalign=0.5)
+        grid.attach(label, 0, 3, 1, 1)
 
-        self.srvinfo_comment_label = gtk.Label()
-        self.srvinfo_comment_label.set_alignment(0, 0.5)
-        table.attach(self.srvinfo_comment_label, 1, 2, 4 ,5,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        self.srvinfo_comment_label = Gtk.Label(xalign=0,yalign=0.5)
+        grid.attach(self.srvinfo_comment_label, 1, 3, 1, 1)
 
-        label = gtk.Label(' Version : ')
-        label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 5, 6, gtk.FILL,
-                        gtk.FILL | gtk.EXPAND, 0, 0)
+        label = Gtk.Label(' Version : ',xalign=1,yalign=0.5)
+        grid.attach(label, 0, 4, 1, 1)
 
-        self.srvinfo_version_label = gtk.Label()
-        self.srvinfo_version_label.set_alignment(0, 0.5)
-        table.attach(self.srvinfo_version_label, 1, 2, 5, 6,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        self.srvinfo_version_label = Gtk.Label(xalign=0,yalign=0.5)
+        grid.attach(self.srvinfo_version_label, 1, 4, 1, 1)
 
-        label = gtk.Label(' Server Type  : ')
-        label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 6, 7, gtk.FILL,
-                        gtk.FILL | gtk.EXPAND, 0, 0)
+        label = Gtk.Label(' Server Type  : ',xalign=1,yalign=0.5)
+        grid.attach(label, 0, 5, 1, 1)
 
-        self.srvinfo_type_label = gtk.Label()
-        self.srvinfo_type_label.set_alignment(0, 0.5)
-        table.attach(self.srvinfo_type_label, 1, 2, 6, 7,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        self.srvinfo_type_label = Gtk.Label(xalign=0,yalign=0.5)
+        grid.attach(self.srvinfo_type_label, 1, 5, 1, 1)
 
 
-        label = gtk.Label(' User Path  : ')
-        label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 7, 8, gtk.FILL,
-                        gtk.FILL | gtk.EXPAND, 0, 0)
+        label = Gtk.Label(' User Path  : ',xalign=1,yalign=0.5)
+        grid.attach(label, 0, 6, 1, 1)
 
-        self.srvinfo_upath_label = gtk.Label()
-        self.srvinfo_upath_label.set_alignment(0, 0.5)
-        table.attach(self.srvinfo_upath_label, 1, 2, 7, 8,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        self.srvinfo_upath_label = Gtk.Label(xalign=0,yalign=0.5)
+        grid.attach(self.srvinfo_upath_label, 1, 6, 1, 1)
 
 
-        label = gtk.Label(' Timeout  : ')
-        label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 8, 9, gtk.FILL,
-                        gtk.FILL | gtk.EXPAND, 0, 0)
+        label = Gtk.Label(' Timeout  : ',xalign=1,yalign=0.5)
+        grid.attach(label, 0, 7, 1, 1)
 
-        self.srvinfo_to_label = gtk.Label()
-        self.srvinfo_to_label.set_alignment(0, 0.5)
-        table.attach(self.srvinfo_to_label, 1, 2, 8, 9,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        self.srvinfo_to_label = Gtk.Label(xalign=0,yalign=0.5)
+        grid.attach(self.srvinfo_to_label, 1, 7, 1, 1)
 
 
-        label = gtk.Label(' Announce / Anndelta  : ')
-        label.set_alignment(1, 0.5)
-        table.attach(label, 0, 1, 9, 10, gtk.FILL,
-                        gtk.FILL | gtk.EXPAND, 0, 0)
+        label =Gtk.Label(' Announce / Anndelta  : ',xalign=1,yalign=0.5)
+        grid.attach(label, 0, 8, 1, 1)
 
-        self.srvinfo_aa_label = gtk.Label()
-        self.srvinfo_aa_label.set_alignment(0, 0.5)
-        table.attach(self.srvinfo_aa_label, 1, 2, 9, 10,
-                            gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        self.srvinfo_aa_label = Gtk.Label(xalign=0,yalign=0.5)
+        grid.attach(self.srvinfo_aa_label, 1, 8, 1, 1)
 
 
-        vbox = gtk.VBox()
+        vbox = Gtk.GBox()
         hbox.pack_start(vbox, True, True, 0)
 
-        self.sd_frame = gtk.Frame()
-        self.sd_frame.set_border_width(5)
-        label = gtk.Label('<b> Shared Disks </b>')
-        label.set_use_markup(True)
-        self.sd_frame.set_label_widget(label)
+        self.sd_frame = Gtk.Frame()
+        label = Gtk.Label('<b> Shared Disks </b>')
+        label.set_property("use-markup",True)
+        
+        self.sd_frame.set_properties("label-widget",label,
+                                "border-width",5)
         vbox.pack_start(self.sd_frame, False, False, 0)
 
         # status bar
 
-        self.statusbar = gtk.Statusbar()
-        self.statusbar.set_has_resize_grip(True)
+        self.statusbar = Gtk.Statusbar()
+        #self.statusbar.set_property("has-resize-grip",True)
         toplevel_vbox.pack_end(self.statusbar, False, False, 0)
 
         # signals/events
@@ -1867,5 +1780,5 @@ if __name__ == '__main__':
 
     main_window = ShareWindow(**arguments)
     main_window.show_all()
-    gtk.main()
+    Gtk.main()
 
