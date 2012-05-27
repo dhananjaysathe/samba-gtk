@@ -741,7 +741,8 @@ Please check your network connection.''',
                 label.set_sensitive(False)
 
             grid = Gtk.Grid()
-            grid.set_properties("border-width",5,"row-spacings",4)
+            grid.set_properties("border-width",5,"row-spacings",4,
+                                "row-homogeneous",True)
             label = Gtk.Label('Not connected to share server.',
                                                 xalign=1,yalign=0.5)
             grid.add(label)
@@ -827,10 +828,11 @@ Please check your network connection.''',
             self.srvinfo_aa_label.set_text(label_data)
 
             num_disks = len(self.pipe_manager.disks_list)
-            
+
             #table = gtk.Table(num_disks + 2, 2, True)
             grid = Gtk.Grid()
-            grid.set_properties("border-width",5,"row-spacing"4)
+            grid.set_properties("border-width",5,"row-spacing"4,
+                                "row-homogeneous",True)
             label = Gtk.Label('<b> Disks </b>',xalign=1,yalign=0.5)
             label.set_property("use-markup",True)
 
@@ -896,7 +898,7 @@ Please check your network connection.''',
         while True:
             response_id = dialog.run()
 
-            if response_id in [Gtk.ResponseType.OK, 
+            if response_id in [Gtk.ResponseType.OK,
                                Gtk.ResponseType.APPLY]:
                 problem_msg = dialog.validate_fields()
 
@@ -1010,14 +1012,14 @@ Please check your network connection.''',
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(Gtk.MessageType.ERROR, 
+            self.run_message_dialog(Gtk.MessageType.ERROR,
                                         Gtk.ButtonsType.OK, msg)
         except Exception, ex:
             msg = 'Failed to ad share: %s.' % str(ex)
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(Gtk.MessageType.ERROR, 
+            self.run_message_dialog(Gtk.MessageType.ERROR,
                                         Gtk.ButtonsType.OK, msg)
 
         self.refresh_shares_view()
@@ -1039,14 +1041,14 @@ Please check your network connection.''',
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(Gtk.MessageType.ERROR, 
+            self.run_message_dialog(Gtk.MessageType.ERROR,
                                         Gtk.ButtonsType.OK, msg)
         except Exception, ex:
             msg = 'Failed to ad share: %s.' % str(ex)
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(Gtk.MessageType.ERROR, 
+            self.run_message_dialog(Gtk.MessageType.ERROR,
                                         Gtk.ButtonsType.OK, msg)
 
         self.refresh_shares_view()
@@ -1068,14 +1070,14 @@ Please check your network connection.''',
                 self.set_status(msg)
                 print msg
                 traceback.print_exc()
-                self.run_message_dialog(Gtk.MessageType.ERROR, 
+                self.run_message_dialog(Gtk.MessageType.ERROR,
                                         Gtk.ButtonsType.OK, msg)
             except Exception, ex:
                 msg = 'Failed to delete share: %s.' % str(ex)
                 self.set_status(msg)
                 print msg
                 traceback.print_exc()
-                self.run_message_dialog(Gtk.MessageType.ERROR, 
+                self.run_message_dialog(Gtk.MessageType.ERROR,
                                             Gtk.ButtonsType.OK, msg)
 
             self.refresh_shares_view()
@@ -1093,7 +1095,7 @@ Please check your network connection.''',
             print msg
             self.set_status(msg)
             traceback.print_exc()
-            self.run_message_dialog(Gtk.MessageType.ERROR, 
+            self.run_message_dialog(Gtk.MessageType.ERROR,
                                         Gtk.ButtonsType.OK, msg)
         except Exception, ex:
 
@@ -1101,7 +1103,7 @@ Please check your network connection.''',
             print msg
             self.set_status(msg)
             traceback.print_exc()
-            self.run_message_dialog(Gtk.MessageType.ERROR, 
+            self.run_message_dialog(Gtk.MessageType.ERROR,
                                         Gtk.ButtonsType.OK, msg)
         finally:
             self.refresh_shares_view()
@@ -1115,14 +1117,14 @@ Please check your network connection.''',
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(Gtk.MessageType.ERROR, 
+            self.run_message_dialog(Gtk.MessageType.ERROR,
                                         Gtk.ButtonsType.OK, msg)
         except Exception, ex:
             msg = 'Failed to Refresh SRV Info: %s.' % str(ex)
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(Gtk.MessageType.ERROR, 
+            self.run_message_dialog(Gtk.MessageType.ERROR,
                                         Gtk.ButtonsType.OK, msg)
 
         self.refresh_shares_view()
@@ -1433,7 +1435,7 @@ Please check your network connection.''',
 
         self.new_button = Gtk.ToolButton(Gtk.STOCK_NEW)
         self.new_button.set_properties("is-important",True,
-                                "tooltip_text",'Add a new Share')        
+                                "tooltip_text",'Add a new Share')
         self.toolbar.insert(self.new_button, 3)
 
         self.edit_button = Gtk.ToolButton(Gtk.STOCK_EDIT)
@@ -1467,7 +1469,7 @@ Please check your network connection.''',
 
         scrolledwindow = Gtk.ScrolledWindow(None, None)
         scrolledwindow.set_property("shadow_type",Gtk.ShadowType.IN)
-        
+
         rvbox.pack_start(scrolledwindow, True, True, 2)
 
         self.shares_tree_view = Gtk.TreeView()
@@ -1485,7 +1487,7 @@ Please check your network connection.''',
         column = Gtk.TreeViewColumn()
         column.set_properties("title",'Name',"resizable",True,
                         "sort-column-id",0)
-        
+
         renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.shares_tree_view.append_column(column)
@@ -1558,7 +1560,7 @@ Please check your network connection.''',
         label = Gtk.Label('Please Slect a Share First',
                         xalign=1,yalign=0.5)
         grid.attach(label, 0, 0, 1, 1)
-  
+
         label = Gtk.Label(' '*55,
                         xalign=1,yalign=0.5)
         grid.attach(label, 1, 0, 1, 1)
@@ -1567,6 +1569,7 @@ Please check your network connection.''',
 
         #table = gtk.Table(3, 6, True)
         grid = Gtk.Grid()
+        grid.set_property("row-homogeneous",True)
         vbox.pack_end(grid, False, False, 0)
 
         self.active_frame_new_button = Gtk.Button('New')
@@ -1576,12 +1579,12 @@ Please check your network connection.''',
         self.active_frame_edit_button = Gtk.Button('Edit')
         self.active_frame_edit_button.set_tooltip_text(
                                                 'Edit Current Share')
-        grid.attach(self.active_frame_edit_button,  3, 1, 1, 1)
+        grid.attach(self.active_frame_edit_button,  1, 1, 1, 1)
 
         self.active_frame_delete_button = Gtk.Button('Delete')
         self.active_frame_delete_button.set_tooltip_text(
                                                 'Delete Current Share')
-        grid.attach(self.active_frame_delete_button, 4, 1, 1, 1)
+        grid.attach(self.active_frame_delete_button, 2, 1, 1, 1)
 
         # Server Info Page
         hbox = Gtk.HBox(True)
@@ -1590,7 +1593,7 @@ Please check your network connection.''',
 
         vbox = Gtk.VBox()
         hbox.pack_start(vbox, True, True, 0)
-        
+
         self.srvinfo_frame = Gtk.Frame()
         self.srv_info_label = Gtk.Label('<b>Share Server Details</b>')
         self.srv_info_label.set_property("use-markup",True)
@@ -1667,7 +1670,7 @@ Please check your network connection.''',
         self.sd_frame = Gtk.Frame()
         label = Gtk.Label('<b> Shared Disks </b>')
         label.set_property("use-markup",True)
-        
+
         self.sd_frame.set_properties("label-widget",label,
                                 "border-width",5)
         vbox.pack_start(self.sd_frame, False, False, 0)
