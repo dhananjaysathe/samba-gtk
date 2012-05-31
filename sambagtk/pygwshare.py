@@ -739,8 +739,11 @@ Please check your network connection.''',
                 label.set_sensitive(False)
 
             grid = Gtk.Grid()
-            grid.set_properties("border-width",5,"row-spacings",4,
-                                "row-homogeneous",True,"column-homogeneous",True)
+            grid.set_border_width(5)
+            grid.set_row_spacing(4)
+            grid.set_row_homogeneous(True)
+            grid.set_column_homogeneous(True)
+            
             label = Gtk.Label('Not connected to share server.',
                                                 xalign=1,yalign=0.5)
             grid.add(label)
@@ -829,8 +832,11 @@ Please check your network connection.''',
 
             #table = gtk.Table(num_disks + 2, 2, True)
             grid = Gtk.Grid()
-            grid.set_properties("border-width",5,"row-spacing",4,
-                                "row-homogeneous",True,"column-homogeneous",True)
+            grid.set_border_width(5)
+            grid.set_row_spacing(4)
+            grid.set_row_homogeneous(True)
+            grid.set_column_homogeneous(True)
+            
             label = Gtk.Label('<b> Disks </b>',xalign=1,yalign=0.5)
             label.set_property("use-markup",True)
 
@@ -1199,9 +1205,10 @@ Please check your network connection.''',
                     'flags')
 
             grid = Gtk.Grid()
-            grid.set_properties("border-width",5,"row-spacing",2,
-                                "coulmn-spacing",6)
-
+            grid.set_border_width(5)
+            grid.set_row_spacing(2)
+            grid.set_column_spacing(6)
+           
             row_index = 0
 
             self.active_pane_frame_label.set_markup(
@@ -1221,8 +1228,8 @@ Please check your network connection.''',
                 for i in range(len(share.comment) / 35 + 1):
                     label = Gtk.Label(share.comment[i * 35:i * 35 + 35],
                                      xalign=0, yalign=0.5)
-                    label.set_properties("wrap",True,"justify",
-                                        Gtk.Justification.FILL)
+                    label.set_property("wrap",True)
+                    label.set_justify(Gtk.Justification.FILL)
                     grid.attach(label, 1, row_index, 1, 1)
                     row_index += 1
             else:
@@ -1239,8 +1246,8 @@ Please check your network connection.''',
                 for i in range(len(share.path) / 35 + 1):
                     label = Gtk.Label(share.path[i * 35:i * 35 + 35] ,
                                     xalign=0, yalign=0.5)
-                    label.set_properties("wrap",True,"justify",
-                                        Gtk.Justification.FILL)
+                    label.set_property("wrap",True)
+                    label.set_justify(Gtk.Justification.FILL)
                     grid.attach(label, 1, row_index, 1, 1)
                     row_index += 1
             else:
@@ -1419,38 +1426,39 @@ Please check your network connection.''',
         toplevel_vbox.pack_start(self.toolbar, False, False, 0)
 
         self.connect_button = Gtk.ToolButton(Gtk.STOCK_CONNECT)
-        self.connect_button.set_properties("is-important",True,
-                            "tooltip-text",'Connect to a server')
+        self.connect_button.set_is_important(True)
+        self.connect_button.set_tooltip_text('Connect to a server')
         self.toolbar.insert(self.connect_button, 0)
 
         self.disconnect_button = Gtk.ToolButton(Gtk.STOCK_DISCONNECT)
-        self.disconnect_button.set_properties("is-important",True,
-                            "tooltip-text",'Disconnect from the server')
+        self.disconnect_button.set_is_important(True)
+        self.disconnect_button.set_tooltip_text('Disconnect from the server')
         self.toolbar.insert(self.disconnect_button, 1)
 
         sep = Gtk.SeparatorToolItem()
         self.toolbar.insert(sep, 2)
 
         self.new_button = Gtk.ToolButton(Gtk.STOCK_NEW)
-        self.new_button.set_properties("is-important",True,
-                                "tooltip-text",'Add a new Share')
+        self.new_button.set_is_important(True)
+        self.new_button.set_tooltip_text('Add a new Share')
         self.toolbar.insert(self.new_button, 3)
 
         self.edit_button = Gtk.ToolButton(Gtk.STOCK_EDIT)
-        self.edit_button.set_properties("is-important",True,
-                                "tooltip-text",'Edit a Share')
+        self.edit_button.set_is_important(True)
+        self.edit_button.set_tooltip_text('Edit a Share')
         self.toolbar.insert(self.edit_button, 4)
 
         self.delete_button = Gtk.ToolButton(Gtk.STOCK_DELETE)
-        self.delete_button.set_properties("is-important",True,
-                                "tooltip-text",'Delete a Share')
+        self.delete_button.set_is_important(True)
+        self.delete_button.set_tooltip_text('Delete a Share')
         self.toolbar.insert(self.delete_button, 5)
 
         sep = Gtk.SeparatorToolItem()
         self.toolbar.insert(sep, 6)
 
         self.new_share_wizard_button = Gtk.ToolButton(Gtk.STOCK_EXECUTE)
-        self.new_share_wizard_button.set_properties("is-important",True)
+        self.new_share_wizard_button.set_is_important(True)
+        self.new_share_wizard_button.set_tooltip_text('New Share Wizard')
         self.toolbar.insert(self.new_share_wizard_button, 7)
 
         # Share-page
@@ -1483,8 +1491,9 @@ Please check your network connection.''',
         self.shares_tree_view.append_column(column)
 
         column = Gtk.TreeViewColumn()
-        column.set_properties("title",'Name',"resizable",True,
-                        "sort-column-id",0)
+        column.set_title('Name')
+        column.set_resizable(True)
+        column.set_sort_column_id(0)
 
         renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
@@ -1492,24 +1501,27 @@ Please check your network connection.''',
         column.add_attribute(renderer, 'text', 0)
 
         column = Gtk.TreeViewColumn()
-        column.set_properties("title",'Share Type',"resizable",True,
-                        "expand",True,"sort-column-id",1)
+        column.set_title('Share Type')
+        column.set_resizable(True)
+        column.set_sort_column_id(1)
         renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.shares_tree_view.append_column(column)
         column.add_attribute(renderer, 'text', 1)
 
         column = Gtk.TreeViewColumn()
-        column.set_properties("title",'Comment',"resizable",True,
-                        "expand",True,"sort-column-id",2)
+        column.set_title('Comment')
+        column.set_resizable(True)
+        column.set_sort_column_id(2)
         renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.shares_tree_view.append_column(column)
         column.add_attribute(renderer, 'text', 2)
 
         column = Gtk.TreeViewColumn()
-        column.set_properties("title",'Path',"resizable",True,
-                        "expand",True,"sort-column-id",3)
+        column.set_title('Path')
+        column.set_resizable(True)
+        column.set_sort_column_id(3)
         renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.shares_tree_view.append_column(column)
@@ -1527,8 +1539,9 @@ Please check your network connection.''',
 
         self.show_all_share_checkbox = \
             Gtk.CheckButton('Show Hidden Shares')
-        self.show_all_share_checkbox.set_properties("active",False,
-        "tooltip-text",'Enable or disable the visiblity of hidden shares')
+        self.show_all_share_checkbox.set_active(False)
+        self.show_all_share_checkbox.set_tooltip_text(
+                    'Enable or disable the visiblity of hidden shares')
         hbox.pack_end(self.show_all_share_checkbox, False, False,
                       0)
         self.show_all_share_checkbox.connect('toggled',
@@ -1550,8 +1563,9 @@ Please check your network connection.''',
         self.shareinfo_frame.set_property("border-width",5)
 
         grid = Gtk.Grid()
-        grid.set_properties('border-width',5,'row-spacing',2,
-                                'column-spacing',6)
+        grid.set_border_width(5)
+        grid.set_row_spacing(2)
+        grid.set_column_spacing(6)
 
         self.shareinfo_frame.add(grid)
 
@@ -1567,7 +1581,8 @@ Please check your network connection.''',
 
         #table = gtk.Table(3, 6, True)
         grid = Gtk.Grid()
-        grid.set_properties("row-homogeneous",True,"column-homogeneous",True)
+        grid.set_row_homogeneous(True)
+        grid.set_column_homogeneous(True)
         vbox.pack_end(grid, False, False, 0)
 
         #for uniformity of spacing
@@ -1586,6 +1601,7 @@ Please check your network connection.''',
         self.active_frame_delete_button.set_tooltip_text(
                                                 'Delete Current Share')
         grid.attach(self.active_frame_delete_button, 3, 1, 1, 1)
+        grid.attach(Gtk.Label(""),4,1,1,1)
         
         grid.attach(Gtk.Label(""),0,2,1,1)
 
@@ -1600,13 +1616,15 @@ Please check your network connection.''',
         self.srvinfo_frame = Gtk.Frame()
         self.srv_info_label = Gtk.Label('<b>Share Server Details</b>')
         self.srv_info_label.set_property("use-markup",True)
-        self.srvinfo_frame.set_properties("border-width",5,
-                                    "label-widget",self.srv_info_label)
+        self.srvinfo_frame.set_property("border-width",5)
+        self.srvinfo_frame.set_label_widget(self.srv_info_label)
         vbox.pack_start(self.srvinfo_frame, False, True, 0)
 
         grid = Gtk.Grid()
-        grid.set_properties("border-width",5,"row_spacing",3,
-                                "coulmn_spacing",6)
+        grid.set_border_width(5)
+        grid.set_row_spacing(3)
+        grid.set_column_spacing(6)
+                
         self.srvinfo_frame.add(grid)
 
         label = Gtk.Label(' Target Platform OS  : ',xalign=1,yalign=0.5)
@@ -1674,8 +1692,8 @@ Please check your network connection.''',
         label = Gtk.Label('<b> Shared Disks </b>')
         label.set_property("use-markup",True)
 
-        self.sd_frame.set_properties("label-widget",label,
-                                "border-width",5)
+        self.sd_frame.set_label_widget(label),
+        self.sd_frame.set_border_width(5)
         vbox.pack_start(self.sd_frame, False, False, 0)
 
         # status bar
