@@ -30,6 +30,7 @@ from gi.repository import Gtk
 from gi.repository import GObject
 import os
 import sys
+sys.path.append('/opt/samba4/lib/python2.7/site-packages/')
 
 from samba.dcerpc import srvsvc
 
@@ -91,10 +92,11 @@ class srvsvcConnectDialog(Gtk.Dialog):
 
         # server frame
 
-        self.server_frame = Gtk.Frame('Server')
+        self.server_frame = Gtk.Frame()
+        self.server_frame.set_property("label",' Server')
         self.vbox.pack_start(self.server_frame, False, True, 0)
 
-        grid = Gtk.Grid(3, 2)
+        grid = Gtk.Grid()
         grid.set_property("border-width",5)
         self.server_frame.add(grid)
 
@@ -103,7 +105,7 @@ class srvsvcConnectDialog(Gtk.Dialog):
 
         self.server_address_entry = Gtk.Entry()
         self.server_address_entry.set_properties(
-                            "text",self.server_address
+                            "text",self.server_address,
                             "activates-default",True,
                             "tooltip-text",'Enter the Server Address')
         grid.attach(self.server_address_entry, 1, 0, 1, 1)
@@ -113,7 +115,7 @@ class srvsvcConnectDialog(Gtk.Dialog):
 
         self.username_entry = Gtk.Entry()
         self.username_entry.set_properties(
-                            "text",self.username
+                            "text",self.username,
                             "activates-default",True,
                             "tooltip-text",'Enter your Username')
         grid.attach(self.username_entry, 1, 1, 1, 1)
@@ -123,7 +125,7 @@ class srvsvcConnectDialog(Gtk.Dialog):
 
         self.password_entry = Gtk.Entry()
         self.password_entry.set_properties(
-                            "text",self.password
+                            "text",self.password,
                             "activates-default",True,
                             "tooltip-text",'Enter your Password')
         grid.attach(self.password_entry, 1, 2, 1, 1)
@@ -138,27 +140,30 @@ class srvsvcConnectDialog(Gtk.Dialog):
         vbox.set_property("border-width",5)
         self.transport_frame.add(vbox)
 
-        self.rpc_smb_tcpip_radio_button = Gtk.RadioButton(None,
+        self.rpc_smb_tcpip_radio_button = \
+                        Gtk.RadioButton.new_with_label_from_widget(None,
                 'RPC over SMB over TCP/IP ')
         self.rpc_smb_tcpip_radio_button.set_properties(
                 "tooltip-text",'ncacn_np type : Recomended (default)',  # Default according MS-SRVS specification
-                "active",self.transport_type == 0)
-        vbox.pack_start(self.rpc_smb_tcpip_radio_button)
+                "active",(self.transport_type == 0))
+        vbox.pack_start(self.rpc_smb_tcpip_radio_button, True, True, 0)
 
         self.rpc_tcpip_radio_button = \
-            Gtk.RadioButton(self.rpc_smb_tcpip_radio_button,
+                        Gtk.RadioButton.new_with_label_from_widget(
+                            self.rpc_smb_tcpip_radio_button,
                             'RPC over TCP/IP')
         self.rpc_tcpip_radio_button.set_properties(
                                     "tooltip-text",'ncacn_ip_tcp type',
-                                    "active",self.transport_type == 1)
-        vbox.pack_start(self.rpc_tcpip_radio_button)
+                                    "active",False)
+        vbox.pack_start(self.rpc_tcpip_radio_button, True, True, 0)
 
         self.localhost_radio_button = \
-            Gtk.RadioButton(self.rpc_tcpip_radio_button, 'Localhost')
+            Gtk.RadioButton.new_with_label_from_widget(
+                            self.rpc_tcpip_radio_button, 'Localhost')
         self.localhost_radio_button.set_properties(
-                                    "tooltip-text",'ncalrpc type', #  MS-SRVS specification
-                                    "active",self.transport_type == 2)
-        vbox.pack_start(self.localhost_radio_button)
+                                   "tooltip-text",'ncalrpc type', #  MS-SRVS specification
+                                   "active",False)
+        vbox.pack_start(self.localhost_radio_button, True, True, 0)
 
         self.action_area.set_layout(Gtk.ButtonBoxStyle.END)
 
@@ -200,10 +205,8 @@ class srvsvcConnectDialog(Gtk.Dialog):
             return 0
         elif self.rpc_tcpip_radio_button.get_active():
             return 1
-        elif self.localhost_radio_button.get_active():
-            return 2
         else:
-            return -1
+            return 2
 
     def on_radio_button_toggled(self, widget):
         self.update_sensitivity()
@@ -473,16 +476,16 @@ class ShareAddEditDialog(Gtk.Dialog):
         grid.attach(vbox, 0, 0, 1, 1)
 
         # Radio buttons
-        self.stype_disktree_radio_button = Gtk.RadioButton(None,
-                'Disktree')
+        self.stype_disktree_radio_button = \
+            Gtk.RadioButton.new_with_label_from_widget(None,'Disktree')
         self.stype_disktree_radio_button.set_properties(
                 "tooltip-text",'Disktree (folder) type Share. Default',
                 "active",self.stype == srvsvc.STYPE_DISKTREE)
         vbox.pack_start(self.stype_disktree_radio_button, True, True, 0)
 
         self.stype_printq_radio_button = \
-            Gtk.RadioButton(self.stype_disktree_radio_button,
-                            'Print Queue')
+            Gtk.RadioButton.new_with_label_from_widget(
+                        self.stype_disktree_radio_button,'Print Queue')
         self.stype_printq_radio_button.set_properties(
                             "tooltip-text",'Shared Print Queue',
                             "active",self.stype == srvsvc.STYPE_PRINTQ)
@@ -507,13 +510,13 @@ class ShareAddEditDialog(Gtk.Dialog):
         self.sflag_temp_check_button.set_properties(
                                 "tooltip-text",'Make share Temporary',
                                 "active",self.flags[0])
-        vbox.pack_start(self.sflag_temp_check_button)
+        vbox.pack_start(self.sflag_temp_check_button, True, True, 0)
 
         self.sflag_hidden_check_button = Gtk.CheckButton('Hidden ')
         self.sflag_hidden_check_button.set_properties(
                                 "tooltip-text",'Make share Hidden',
                                 "active",self.flags[1])
-        vbox.pack_start(self.sflag_hidden_check_button)
+        vbox.pack_start(self.sflag_hidden_check_button, True, True, 0)
 
         # Path frame
         frame = Gtk.Frame()
@@ -568,7 +571,7 @@ class ShareAddEditDialog(Gtk.Dialog):
 
         self.max_users_spinbox = Gtk.SpinButton()
         self.max_users_spinbox.set_properties("numeric",True,
-                               "adjustment",self.max_users_adjustment)
+                               "adjustment",self.max_users_adjustment,
                                "tooltip-text",'Max Users for the Share')
         grid.attach(self.max_users_spinbox, 1, 0, 1, 1)
 
@@ -737,12 +740,12 @@ class DeleteDialog(Gtk.Dialog):
 
         box = Gtk.VBox(3)
         label = Gtk.Label('Are yous sure you want to delete the share ?'
-                          xalign = 0.5, yalign = 0.5)
+                          ,xalign = 0.5, yalign = 0.5)
         box.pack_start(label, True, True, 0)
 
         warning = '(Please Note this is an irreversable action)'
         label = Gtk.Label('<span foreground="red">%s</span>' % warning)
-        label.set_properties("use-markup",True,"xalign"0.5,"yalign",0.5)
+        label.set_properties("use-markup",True,"xalign",0.5,"yalign",0.5)
 
         box.pack_start(label, True, True, 0)
         box.set_property("border-width",5)
@@ -830,13 +833,14 @@ class ShareWizardDialog(ShareAddEditDialog):
         # For radio buttons we define other fields on the fly as these
         # are lost on parent removal , and cause errors on draw .
         # Radio buttons
-        self.stype_disktree_radio_button = Gtk.RadioButton(None,
-                'Disktree')
+        self.stype_disktree_radio_button = \
+            Gtk.RadioButton.new_with_label_from_widget(None,'Disktree')
         self.stype_printq_radio_button = \
-            Gtk.RadioButton(self.stype_disktree_radio_button,
-                            'Print Queue')
+            Gtk.RadioButton.new_with_label_from_widget(
+                    self.stype_disktree_radio_button,'Print Queue')
         self.stype_ipc_radio_button = \
-            Gtk.RadioButton(self.stype_printq_radio_button, 'IPC ')
+            Gtk.RadioButton.new_with_label_from_widget(
+                        self.stype_printq_radio_button, 'IPC ')
 
         self.sflag_temp_check_button = Gtk.CheckButton('Temporary')
         self.sflag_hidden_check_button = Gtk.CheckButton('Hidden ')
@@ -852,7 +856,7 @@ class ShareWizardDialog(ShareAddEditDialog):
                 0xFFFFFFFF, 1, 5)
         self.max_users_spinbox = Gtk.SpinButton()
         self.max_users_spinbox.set_properties("numeric",True,
-                               "adjustment",self.max_users_adjustment)
+                               "adjustment",self.max_users_adjustment,
                                "tooltip-text",'Max Users for the Share')
 
 
@@ -917,14 +921,14 @@ class ShareWizardDialog(ShareAddEditDialog):
             label = Gtk.Label('* Share Name : ', xalign=1, yalign=0.5)
             grid.attach(label, 0, 0, 1, 1)
             grid.attach(self.share_name_entry, 1, 0, 1, 1)
-            
+
             label = Gtk.Label('  Share Password : ', xalign=1, yalign=0.5)
             grid.attach(label, 0, 1, 1, 1)
             grid.attach(self.share_password_entry, 1, 1, 1, 1)
 
             self.fields_box.pack_start(grid, False, True, 0)
             self.fields_box.show_all()
-            
+
         elif self.page == 2:
 
             self.title_label.set_markup('<b>Comment and Max Users </b>')
