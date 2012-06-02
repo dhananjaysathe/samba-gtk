@@ -168,27 +168,29 @@ class srvsvcConnectDialog(Gtk.Dialog):
         self.localhost_radio_button.set_active(self.transport_type == 2) #  MS-SRVS specification
         vbox.pack_start(self.localhost_radio_button, True, True, 0)
 
+        # dialog buttons
         self.action_area.set_layout(Gtk.ButtonBoxStyle.END)
 
         self.cancel_button = Gtk.Button('Cancel', Gtk.STOCK_CANCEL)
-        self.cancel_button.set_property("tooltip-text",
-                                                    'Cancel and Quit')
+        self.cancel_button.set_tooltip_text('Cancel and Quit')
         self.add_action_widget(self.cancel_button,
                                             Gtk.ResponseType.CANCEL)
 
         self.connect_button = Gtk.Button('Connect', Gtk.STOCK_CONNECT)
-        self.cancel_button.set_property("can-default",True)
+        self.connect_button.set_can_default(True)
         self.cancel_button.set_tooltip_text('OK / Connect to Server')
         self.add_action_widget(self.connect_button, Gtk.ResponseType.OK)
 
         self.set_default_response(Gtk.ResponseType.OK)
+        
+        # signals/events
 
         self.rpc_smb_tcpip_radio_button.connect('toggled',
-                self.on_radio_button_toggled)
+                                        self.on_radio_button_toggled)
         self.rpc_tcpip_radio_button.connect('toggled',
-                self.on_radio_button_toggled)
+                                        self.on_radio_button_toggled)
         self.localhost_radio_button.connect('toggled',
-                self.on_radio_button_toggled)
+                                        self.on_radio_button_toggled)
 
     def get_server_address(self):
         if self.get_transport_type() is 2:

@@ -7,7 +7,7 @@ import getopt
 import gobject
 import gtk
 
-sys.path.append('/usr/local/samba/lib/python2.7/site-packages/')
+sys.path.append('/opt/samba4/lib/python2.7/site-packages/')
 from samba import credentials
 from samba.dcerpc import (
     samr,

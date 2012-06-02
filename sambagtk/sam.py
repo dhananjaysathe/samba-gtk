@@ -1,7 +1,8 @@
 # Samba GTK+ frontends
 #
 # Copyright (C) 2010 Sergio Martins <sergio97@gmail.com>
-# Copyright (C) 2011 Jelmer Vernooij <jelmer@samba.org>
+# Copyright (C) 2012 Jelmer Vernooij <jelmer@samba.org>
+# Copyright (C) 2012 Dhananjay Sathe <dhananjaysathe@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,8 +20,8 @@
 
 """SAM-related dialogs."""
 
-import gtk
-import gobject
+from gi.repository import Gtk
+from gi.repository import GObject
 
 import os
 import sys
@@ -61,7 +62,7 @@ class Group(object):
         return [self.name, self.description, self.rid]
 
 
-class UserEditDialog(gtk.Dialog):
+class UserEditDialog(Gtk.Dialog):
 
     def __init__(self, pipe_manager, user=None):
         super(UserEditDialog, self).__init__()
@@ -80,222 +81,228 @@ class UserEditDialog(gtk.Dialog):
         self.update_sensitivity()
 
     def create(self):
-        self.set_title(["Edit user", "New user"][self.brand_new] + " " + self.user.username)
+        self.set_title(" ".join([("Edit user", "New user"
+                                        )[self.brand_new],self.user.username]))
         self.set_border_width(5)
-        self.set_icon_from_file(os.path.join(sys.path[0], "images", "user.png"))
+        self.set_icon_from_file(os.path.join(sys.path[0],"images", "user.png"))
+        self.set_modal(True)
+        self.set_resizable(False)
+        self.set_decorated(True)
 
-        notebook = gtk.Notebook()
+        notebook = Gtk.Notebook()
         self.vbox.pack_start(notebook, True, True, 0)
 
-        table = gtk.Table (10, 2, False)
-        table.set_border_width(5)
-        table.set_col_spacings(5)
-        table.set_row_spacings(5)
-        notebook.add(table)
+        grid = Gtk.Grid ()
+        grid.set_border_width(5)
+        grid.set_column_spacing(5)
+        grid.set_row_spacing(5)
+        notebook.append_page(grid, Gtk.Label('User'))
 
-        label = gtk.Label("Username")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 0, 1, gtk.FILL, 0, 0, 0)
+        label = Gtk.Label("Username",xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 0, 1, 1)
 
-        label = gtk.Label("Full name")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 1, 2, gtk.FILL, 0, 0, 0)
+        label = Gtk.Label("Full name",xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 1, 1, 1)
 
-        label = gtk.Label("Description")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 2, 3, gtk.FILL, 0, 0, 0)
+        label = Gtk.Label("Password",xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 2, 1, 1)
 
-        label = gtk.Label("Password")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 3, 4, gtk.FILL, 0, 0, 0)
+        label = Gtk.Label("Password",xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 3, 1, 1)
 
-        label = gtk.Label("Confirm password")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 4, 5, gtk.FILL, 0, 0, 0)
+        label = Gtk.Label("Confirm password",xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 4, 1, 1)
 
-        self.username_entry = gtk.Entry()
+        self.username_entry = Gtk.Entry()
         self.username_entry.set_activates_default(True)
         self.username_entry.set_max_length(20) #This is the length limit for usernames
-        table.attach(self.username_entry, 1, 2, 0, 1, gtk.FILL, 0, 0, 0)
+        grid.attach(self.username_entry, 1, 0, 1, 1)
 
-        self.fullname_entry = gtk.Entry()
+        self.fullname_entry = Gtk.Entry()
         self.fullname_entry.set_activates_default(True)
-        table.attach(self.fullname_entry, 1, 2, 1, 2, gtk.FILL | gtk.EXPAND, 0, 0, 0)
+        grid.attach(self.fullname_entry, 1, 1, 1, 1)
 
-        self.description_entry = gtk.Entry()
+        self.description_entry = Gtk.Entry()
         self.description_entry.set_activates_default(True)
-        table.attach(self.description_entry, 1, 2, 2, 3, gtk.FILL | gtk.EXPAND, 0, 0, 0)
+        grid.attach(self.description_entry, 1, 2, 1, 1)
 
-        self.password_entry = gtk.Entry()
+        self.password_entry = Gtk.Entry()
         self.password_entry.set_visibility(False)
         self.password_entry.set_activates_default(True)
-        table.attach(self.password_entry, 1, 2, 3, 4, gtk.FILL | gtk.EXPAND, 0, 0, 0)
+        grid.attach(self.password_entry, 1, 3, 1, 1)
 
-        self.confirm_password_entry = gtk.Entry()
+        self.confirm_password_entry = Gtk.Entry()
         self.confirm_password_entry.set_visibility(False)
         self.confirm_password_entry.set_activates_default(True)
-        table.attach(self.confirm_password_entry, 1, 2, 4, 5, gtk.FILL | gtk.EXPAND, 0, 0, 0)
+        grid.attach(self.confirm_password_entry, 1, 4, 1, 1)
 
-        self.must_change_password_check = gtk.CheckButton("_User Must Change Password at Next Logon")
+        self.must_change_password_check = Gtk.CheckButton(
+                                    "_User Must Change Password at Next Logon")
         self.must_change_password_check.set_active(self.brand_new)
-        table.attach(self.must_change_password_check, 1, 2, 5, 6, gtk.FILL, 0, 0, 0)
+        grid.attach(self.confirm_password_entry, 1, 5, 1, 1)
 
-        self.cannot_change_password_check = gtk.CheckButton("User Cannot Change Password")
-        table.attach(self.cannot_change_password_check, 1, 2, 6, 7, gtk.FILL, 0, 0, 0)
+        self.cannot_change_password_check = Gtk.CheckButton(
+        "User Cannot ChangePassword")
+        grid.attach(self.must_change_password_check, 1, 6, 1, 1)
 
-        self.password_never_expires_check = gtk.CheckButton("Password Never Expires")
-        table.attach(self.password_never_expires_check, 1, 2, 7, 8, gtk.FILL, 0, 0, 0)
+        self.password_never_expires_check = Gtk.CheckButton(
+                                                    "Password Never Expires")
+        grid.attach(self.password_never_expires_check, 1, 7, 1, 1)
 
-        self.account_disabled_check = gtk.CheckButton("Account Disabled")
+        self.account_disabled_check = Gtk.CheckButton("Account Disabled")
         self.account_disabled_check.set_active(self.brand_new)
-        table.attach(self.account_disabled_check, 1, 2, 8, 9, gtk.FILL, 0, 0, 0)
+        grid.attach(self.account_disabled_check, 1, 8, 1, 1)
 
-        self.account_locked_out_check = gtk.CheckButton("Account Locked Out")
-        table.attach(self.account_locked_out_check, 1, 2, 9, 10, gtk.FILL, 0, 0, 0)
+        self.account_locked_out_check = Gtk.CheckButton("Account Locked Out")
+        grid.attach(self.account_locked_out_check, 1, 9, 1, 1)
 
-        notebook.set_tab_label(notebook.get_nth_page(0), gtk.Label("Main"))
 
-        hbox = gtk.HBox(False, 5)
-        notebook.add(hbox)
+        hbox = Gtk.HBox(False, 5)
+        notebook.append_page(hbox, Gtk.Label('Groups'))
 
-        scrolledwindow = gtk.ScrolledWindow(None, None)
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
+        scrolledwindow = Gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_property("shadow_type",Gtk.ShadowType.IN)
         hbox.pack_start(scrolledwindow, True, True, 0)
 
-        self.existing_groups_tree_view = gtk.TreeView()
+        self.existing_groups_tree_view = Gtk.TreeView()
         scrolledwindow.add(self.existing_groups_tree_view)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Existing groups")
-        renderer = gtk.CellRendererText()
+        renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.existing_groups_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 0)
 
-        self.existing_groups_store = gtk.ListStore(gobject.TYPE_STRING)
-        self.existing_groups_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
+        self.existing_groups_store = Gtk.ListStore(GObject.TYPE_STRING)
+        self.existing_groups_store.set_sort_column_id(0, Gtk.SortType.ASCENDING)
         self.existing_groups_tree_view.set_model(self.existing_groups_store)
 
-        vbox = gtk.VBox(True, 0)
+        vbox = Gtk.VBox(True, 0)
         hbox.pack_start(vbox, True, True, 0)
 
-        self.add_group_button = gtk.Button("Add", gtk.STOCK_ADD)
+        self.add_group_button = Gtk.Button("Add", Gtk.STOCK_ADD)
         vbox.pack_start(self.add_group_button, False, False, 0)
 
-        self.del_group_button = gtk.Button("Remove", gtk.STOCK_REMOVE)
+        self.del_group_button = Gtk.Button("Remove", Gtk.STOCK_REMOVE)
         vbox.pack_start(self.del_group_button, False, False, 0)
 
-        scrolledwindow = gtk.ScrolledWindow(None, None)
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
+        scrolledwindow = Gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_property("shadow_type",Gtk.ShadowType.IN)
         hbox.pack_start(scrolledwindow, True, True, 0)
 
-        self.available_groups_tree_view = gtk.TreeView()
+        self.available_groups_tree_view = Gtk.TreeView()
         scrolledwindow.add(self.available_groups_tree_view)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Available groups")
-        renderer = gtk.CellRendererText()
+        renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.available_groups_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 0)
 
-        self.available_groups_store = gtk.ListStore(gobject.TYPE_STRING)
-        self.available_groups_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
+        self.available_groups_store = Gtk.ListStore(GObject.TYPE_STRING)
+        self.available_groups_store.set_sort_column_id(0, Gtk.SortType.ASCENDING)
         self.available_groups_tree_view.set_model(self.available_groups_store)
 
-        notebook.set_tab_label(notebook.get_nth_page(1), gtk.Label("Groups"))
+        vbox = Gtk.VBox(False, 0)
+        notebook.append_page(vbox, Gtk.Label('Profile'))
 
-        vbox = gtk.VBox(False, 0)
-        notebook.add(vbox)
-
-        frame = gtk.Frame("User Profiles")
+        frame = Gtk.Frame()
+        frame.set_label("User Profiles")
         frame.set_border_width(5)
         vbox.pack_start(frame, True, True, 0)
 
-        table = gtk.Table(2, 2, False)
-        table.set_border_width(5)
-        table.set_col_spacings(5)
-        table.set_row_spacings(5)
-        frame.add(table)
+        grid = Gtk.Grid()
+        grid.set_border_width(5)
+        grid.set_column_spacing(5)
+        grid.set_row_spacing(5)
+        frame.add(grid)
 
-        label = gtk.Label("User Profile Path")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 0, 1, gtk.FILL, 0, 0, 0)
+        label = Gtk.Label("User Profile Path", xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 0, 1, 1)
 
-        label = gtk.Label("Logon Script Name")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 1, 2, gtk.FILL, 0, 0, 0)
+        label = Gtk.Label("Logon Script Name", xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 1, 1, 1)
 
-        self.profile_path_entry = gtk.Entry()
+        self.profile_path_entry = Gtk.Entry()
         self.profile_path_entry.set_activates_default(True)
-        table.attach(self.profile_path_entry, 1, 2, 0, 1, gtk.FILL | gtk.EXPAND, 0, 0, 0)
+        grid.attach(self.profile_path_entry, 1, 1, 1, 1)
 
-        self.logon_script_entry = gtk.Entry()
+        self.logon_script_entry = Gtk.Entry()
         self.logon_script_entry.set_activates_default(True)
-        table.attach(self.logon_script_entry, 1, 2, 1, 2, gtk.FILL | gtk.EXPAND, 0, 0, 0)
+        grid.attach(self.logon_script_entry, 1, 1, 1, 1)
 
-        frame = gtk.Frame("Home Directory")
+        frame = Gtk.Frame()
+        frame.set_label("Home Directory")
         frame.set_border_width(5)
         vbox.pack_start(frame, True, True, 0)
 
-        table = gtk.Table(2, 2, False)
-        table.set_border_width(5)
-        table.set_col_spacings(5)
-        table.set_row_spacings(5)
-        frame.add(table)
+        grid = Gtk.Grid()
+        grid.set_border_width(5)
+        grid.set_column_spacing(5)
+        grid.set_row_spacing(5)
+        frame.add(grid)
 
-        label = gtk.Label("Path")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 0, 1, gtk.FILL, 0, 0, 0)
+        label = Gtk.Label("Path", xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 0, 1, 1)
 
-        self.homedir_path_entry = gtk.Entry()
+        self.homedir_path_entry = Gtk.Entry()
         self.homedir_path_entry.set_activates_default(True)
-        table.attach(self.homedir_path_entry, 1, 2, 0, 1, gtk.FILL | gtk.EXPAND, 0, 0, 0)
+        grid.attach(self.homedir_path_entry, 1, 0, 1, 1)
 
-        self.map_homedir_drive_check = gtk.CheckButton("Map homedir to drive")
-        table.attach(self.map_homedir_drive_check, 0, 1, 1, 2, gtk.FILL, 0, 0, 0)
+        self.map_homedir_drive_check = Gtk.CheckButton("Map homedir to drive")
+        grid.attach(self.map_homedir_drive_check, 0, 1, 1, 1)
 
-        self.map_homedir_drive_combo = gtk.combo_box_new_text()
-        table.attach(self.map_homedir_drive_combo, 1, 2, 1, 2, gtk.FILL, gtk.FILL, 0, 0)
+        self.map_homedir_drive_combo = Gtk.ComboBoxText()
+        grid.attach(self.map_homedir_drive_combo, 1, 1, 1, 1)
 
         for i in range(ord('Z') - ord('A') + 1):
-            self.map_homedir_drive_combo.append_text(chr(i + ord('A')) + ':')
+            self.map_homedir_drive_combo.append_text(''.join([chr(i + ord('A')),
+                                                                        ':']))
 
-        notebook.set_tab_label(notebook.get_nth_page(2), gtk.Label("Profile"))
 
-        self.action_area.set_layout(gtk.BUTTONBOX_END)
+        self.action_area.set_layout(Gtk.ButtonBoxStyle.END)
 
-        self.cancel_button = gtk.Button("Cancel", gtk.STOCK_CANCEL)
-        self.cancel_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.cancel_button, gtk.RESPONSE_CANCEL)
+        self.cancel_button = Gtk.Button("Cancel", Gtk.STOCK_CANCEL)
+        self.cancel_button.set_can_default(True)
+        self.add_action_widget(self.cancel_button, Gtk.ResponseType.CANCEL)
 
-        self.apply_button = gtk.Button("Apply", gtk.STOCK_APPLY)
-        self.apply_button.set_flags(gtk.CAN_DEFAULT)
-        self.apply_button.set_sensitive(not self.brand_new) # disabled for new user
-        self.add_action_widget(self.apply_button, gtk.RESPONSE_APPLY)
+        self.apply_button = Gtk.Button("Apply", Gtk.STOCK_APPLY)
+        self.apply_button.set_can_default(True)
+        self.apply_button.set_sensitive(not self.brand_new)
+        self.add_action_widget(self.apply_button, Gtk.ResponseType.APPLY)
 
-        self.ok_button = gtk.Button("OK", gtk.STOCK_OK)
-        self.ok_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.ok_button, gtk.RESPONSE_OK)
+        self.ok_button = Gtk.Button("OK", Gtk.STOCK_OK)
+        self.ok_button.set_can_default(True)
+        self.add_action_widget(self.ok_button, Gtk.ResponseType.OK)
 
-        self.set_default_response(gtk.RESPONSE_OK)
+        self.set_default_response(Gtk.ResponseType.OK)
 
 
         # signals/events
 
-        self.must_change_password_check.connect("toggled", self.on_update_sensitivity)
-        self.cannot_change_password_check.connect("toggled", self.on_update_sensitivity)
-        self.password_never_expires_check.connect("toggled", self.on_update_sensitivity)
-        self.account_disabled_check.connect("toggled", self.on_update_sensitivity)
-        self.account_locked_out_check.connect("toggled", self.on_update_sensitivity)
+        self.must_change_password_check.connect("toggled",
+                                                    self.on_update_sensitivity)
+        self.cannot_change_password_check.connect("toggled",
+                                                    self.on_update_sensitivity)
+        self.password_never_expires_check.connect("toggled",
+                                                    self.on_update_sensitivity)
+        self.account_disabled_check.connect("toggled",
+                                                    self.on_update_sensitivity)
+        self.account_locked_out_check.connect("toggled",
+                                                    self.on_update_sensitivity)
 
-        self.add_group_button.connect("clicked", self.on_add_group_button_clicked)
-        self.del_group_button.connect("clicked", self.on_del_group_button_clicked)
-        self.existing_groups_tree_view.get_selection().connect("changed", self.on_update_sensitivity)
-        self.available_groups_tree_view.get_selection().connect("changed", self.on_update_sensitivity)
-        self.map_homedir_drive_check.connect("toggled", self.on_update_sensitivity)
+        self.add_group_button.connect("clicked",
+                                              self.on_add_group_button_clicked)
+        self.del_group_button.connect("clicked",
+                                              self.on_del_group_button_clicked)
+        self.existing_groups_tree_view.get_selection().connect("changed",
+                                                    self.on_update_sensitivity)
+        self.available_groups_tree_view.get_selection().connect("changed",
+                                                    self.on_update_sensitivity)
+        self.map_homedir_drive_check.connect("toggled",
+                                                    self.on_update_sensitivity)
 
     def check_for_problems(self):
         if (self.password_entry.get_text() != self.confirm_password_entry.get_text()):
@@ -307,7 +314,7 @@ class UserEditDialog(gtk.Dialog):
         if self.brand_new:
             for user in self.pipe_manager.user_list:
                 if user.username == self.username_entry.get_text():
-                    return "User \"" + user.username + "\" already exists!"
+                   return ''.join(["User \"",user.username,"\" already exists!")
 
         return None
 
@@ -320,8 +327,10 @@ class UserEditDialog(gtk.Dialog):
             self.must_change_password_check.set_sensitive(False)
         else:
             self.must_change_password_check.set_sensitive(True)
-        self.cannot_change_password_check.set_sensitive(not self.must_change_password_check.get_active())
-        self.password_never_expires_check.set_sensitive(not self.must_change_password_check.get_active())
+        self.cannot_change_password_check.set_sensitive(
+                            not self.must_change_password_check.get_active())
+        self.password_never_expires_check.set_sensitive(
+                            not self.must_change_password_check.get_active())
 
         # It is possible that many of these options are turned on at the same
         # time, even though they shouldn't be
@@ -335,7 +344,8 @@ class UserEditDialog(gtk.Dialog):
         self.add_group_button.set_sensitive(available_selected)
         self.del_group_button.set_sensitive(existing_selected)
 
-        self.map_homedir_drive_combo.set_sensitive(self.map_homedir_drive_check.get_active())
+        self.map_homedir_drive_combo.set_sensitive(
+                                    self.map_homedir_drive_check.get_active())
 
     def user_to_values(self):
         if self.user is None:
@@ -412,7 +422,8 @@ class UserEditDialog(gtk.Dialog):
         self.available_groups_store.remove(iter)
 
     def on_del_group_button_clicked(self, widget):
-        (model, iter) = self.existing_groups_tree_view.get_selection().get_selected()
+        (model, iter) = \
+                self.existing_groups_tree_view.get_selection().get_selected()
         if (iter is None):
             return
 
@@ -424,7 +435,7 @@ class UserEditDialog(gtk.Dialog):
         self.update_sensitivity()
 
 
-class GroupEditDialog(gtk.Dialog):
+class GroupEditDialog(Gtk.Dialog):
 
     def __init__(self, pipe_manager, group = None):
         super(GroupEditDialog, self).__init__()
@@ -443,48 +454,51 @@ class GroupEditDialog(gtk.Dialog):
             self.group_to_values()
 
     def create(self):
-        self.set_title(["Edit group", "New group"][self.brand_new] + " " + self.thegroup.name)
+        self.set_title(" ".join([("Edit group", "New group")[self.brand_new]
+                                                        ,self.thegroup.name]))
         self.set_border_width(5)
-        self.set_icon_from_file(os.path.join(sys.path[0], "images", "group.png"))
+        self.set_icon_from_file(
+                            os.path.join(sys.path[0], "images", "group.png"))
+        self.set_modal(True)
+        self.set_resizable(False)
+        self.set_decorated(True)
 
-        table = gtk.Table (2, 2, False)
-        table.set_border_width(5)
-        table.set_col_spacings(5)
-        table.set_row_spacings(5)
+        grid = Gtk.Grid()
+        grid.set_border_width(5)
+        grid.set_column_spacing(5)
+        grid.set_row_spacing(5)
         self.vbox.pack_start(table, True, True, 0)
 
-        label = gtk.Label("Name")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 0, 1, gtk.FILL, 0, 0, 0)
+        label = Gtk.Label("Name", xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 0, 1, 1)
 
-        label = gtk.Label("Description")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 1, 2, gtk.FILL, 0, 0, 0)
+        label = Gtk.Label("Description", xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 1, 1, 1)
 
-        self.name_entry = gtk.Entry()
+        self.name_entry = Gtk.Entry()
         self.name_entry.set_activates_default(True)
-        table.attach(self.name_entry, 1, 2, 0, 1, gtk.FILL, 0, 0, 0)
+        grid.attach(self.name_entry, 1, 0, 1, 1)
 
-        self.description_entry = gtk.Entry()
+        self.description_entry = Gtk.Entry()
         self.description_entry.set_activates_default(True)
-        table.attach(self.description_entry, 1, 2, 1, 2, gtk.FILL | gtk.EXPAND, 0, 0, 0)
+        grid.attach(self.description_entry, 1, 1, 1, 1)
 
-        self.action_area.set_layout(gtk.BUTTONBOX_END)
+        self.action_area.set_layout(Gtk.ButtonBoxStyle.END)
 
-        self.cancel_button = gtk.Button("Cancel", gtk.STOCK_CANCEL)
-        self.cancel_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.cancel_button, gtk.RESPONSE_CANCEL)
+        self.cancel_button = Gtk.Button("Cancel", Gtk.STOCK_CANCEL)
+        self.cancel_button.set_can_default(True)
+        self.add_action_widget(self.cancel_button, Gtk.ResponseType.CANCEL)
 
-        self.apply_button = gtk.Button("Apply", gtk.STOCK_APPLY)
-        self.apply_button.set_flags(gtk.CAN_DEFAULT)
+        self.apply_button = Gtk.Button("Apply", Gtk.STOCK_APPLY)
+        self.apply_button.set_can_default(True)
         self.apply_button.set_sensitive(not self.brand_new) # disabled for new group
-        self.add_action_widget(self.apply_button, gtk.RESPONSE_APPLY)
+        self.add_action_widget(self.apply_button, Gtk.ResponseType.APPLY)
 
-        self.ok_button = gtk.Button("OK", gtk.STOCK_OK)
-        self.ok_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.ok_button, gtk.RESPONSE_OK)
+        self.ok_button = Gtk.Button("OK", Gtk.STOCK_OK)
+        self.ok_button.set_can_default(True)
+        self.add_action_widget(self.ok_button, Gtk.ResponseType.OK)
 
-        self.set_default_response(gtk.RESPONSE_OK)
+        self.set_default_response(Gtk.ResponseType.OK)
 
 
     def check_for_problems(self):
@@ -514,7 +528,7 @@ class GroupEditDialog(gtk.Dialog):
         self.thegroup.description = self.description_entry.get_text()
 
 
-class SAMConnectDialog(gtk.Dialog):
+class SAMConnectDialog(Gtk.Dialog):
 
     def __init__(self, server, transport_type, username, password = ""):
         super(SAMConnectDialog, self).__init__()
@@ -532,129 +546,154 @@ class SAMConnectDialog(gtk.Dialog):
     def create(self):
         self.set_title("Connect to SAM server")
         self.set_border_width(5)
-        self.set_icon_name(gtk.STOCK_CONNECT)
+        self.set_icon_name(Gtk.STOCK_CONNECT)
         self.set_resizable(False)
         self.set_decorated(True)
-
-        # server frame
-
+        self.set_modal(True)
         self.vbox.set_spacing(5)
 
-        self.artwork = gtk.VBox()
+        self.artwork = Gtk.VBox()
 
-        self.samba_image_filename = os.path.join(sys.path[0],'images',
+        self.samba_image_filename = os.path.join(sys.path[0], 'images',
                 'samba-logo-small.png')
-        self.samba_image = gtk.Image()
+        self.samba_image = Gtk.Image()
         self.samba_image.set_from_file(self.samba_image_filename)
         self.artwork.pack_start(self.samba_image, True, True, 0)
 
-        label = gtk.Label('Opening Windows to A Wider World')
-        box = gtk.HBox()
+        label = Gtk.Label('Opening Windows to A Wider World')
+        box = Gtk.HBox()
         box.pack_start(label, True, True, 0)
         self.artwork.pack_start(box, True, True, 0)
 
-        label = gtk.Label('Samba Control Center')
-        box = gtk.HBox()
+        label = Gtk.Label('Samba Control Center')
+        box = Gtk.HBox()
         box.pack_start(label, True, True, 0)
         self.artwork.pack_start(box, True, True, 0)
 
         self.vbox.pack_start(self.artwork, False, True, 0)
 
-        self.server_frame = gtk.Frame("Server")
+        # server frame
+        
+        self.server_frame = Gtk.Frame()
+        self.server_frame.set_property("label",' Server')
         self.vbox.pack_start(self.server_frame, False, True, 0)
 
-        table = gtk.Table(3, 2)
-        table.set_border_width(5)
-        self.server_frame.add(table)
+        grid = Gtk.Grid()
+        grid.set_property("border-width",5)
+        self.server_frame.add(grid)
 
-        label = gtk.Label(" Server address: ")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 0, 1, gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        label = Gtk.Label(' Server address: ',xalign=0, yalign=0.5)
+        grid.attach(label, 0, 0, 1, 1)
 
-        self.server_address_entry = gtk.Entry()
-        self.server_address_entry.set_text(self.server_address)
-        self.server_address_entry.set_activates_default(True)
-        table.attach(self.server_address_entry, 1, 2, 0, 1, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
+        self.server_address_entry = Gtk.Entry()
+        self.server_address_entry.set_property("text",self.password)
+        self.server_address_entry.set_property("activates-default",True)                    
+        self.server_address_entry.set_property("tooltip-text",
+                                        'Enter the Server Address')
+        grid.attach(self.server_address_entry, 1, 0, 1, 1)
 
-        label = gtk.Label(" Username: ")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 1, 2, gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        label = Gtk.Label(' Username: ',xalign=0, yalign=0.5)
+        grid.attach(label, 0, 1, 1, 1)
 
-        self.username_entry = gtk.Entry()
-        self.username_entry.set_text(self.username)
-        self.username_entry.set_activates_default(True)
-        table.attach(self.username_entry, 1, 2, 1, 2, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
+        self.username_entry = Gtk.Entry()
+        self.username_entry.set_property("text",self.password)
+        self.username_entry.set_property("activates-default",True)                    
+        self.username_entry.set_property("tooltip-text",
+                                            'Enter your Username')
+        grid.attach(self.username_entry, 1, 1, 1, 1)
 
-        label = gtk.Label(" Password: ")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 2, 3, gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        label = Gtk.Label(' Password: ',xalign=0, yalign=0.5)
+        grid.attach(label, 0, 2, 1, 1)
 
-        self.password_entry = gtk.Entry()
-        self.password_entry.set_text(self.password)
+        self.password_entry = Gtk.Entry()
+        self.password_entry.set_property("text",self.password)
+        self.password_entry.set_property("activates-default",True)                    
+        self.password_entry.set_property("tooltip-text",
+                                        'Enter your Password')
         self.password_entry.set_visibility(False)
-        self.password_entry.set_activates_default(True)
-        table.attach(self.password_entry, 1, 2, 2, 3, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
+                            
+        grid.attach(self.password_entry, 1, 2, 1, 1)
 
 
         # transport frame
 
-        self.transport_frame = gtk.Frame(" Transport type ")
+        self.transport_frame = Gtk.Frame()
+        self.transport_frame.set_property("label",' Transport type ')
         self.vbox.pack_start(self.transport_frame, False, True, 0)
 
-        vbox = gtk.VBox()
-        vbox.set_border_width(5)
+        vbox = Gtk.VBox()
+        vbox.set_property("border-width",5)
         self.transport_frame.add(vbox)
 
-        self.rpc_smb_tcpip_radio_button = gtk.RadioButton(None, "RPC over SMB over TCP/IP ")
-        self.rpc_smb_tcpip_radio_button.set_active(self.transport_type == 0)
-        vbox.pack_start(self.rpc_smb_tcpip_radio_button)
+        self.rpc_smb_tcpip_radio_button = \
+                        Gtk.RadioButton.new_with_label_from_widget(None,
+                'RPC over SMB over TCP/IP ')
+        self.rpc_smb_tcpip_radio_button.set_tooltip_text(
+                                'ncacn_np type : Recomended (default)')
+        self.rpc_smb_tcpip_radio_button.set_active(
+                                            self.transport_type == 0)   # Default according MS-SRVS specification
+        vbox.pack_start(self.rpc_smb_tcpip_radio_button, True, True, 0)
 
-        self.rpc_tcpip_radio_button = gtk.RadioButton(self.rpc_smb_tcpip_radio_button, "RPC over TCP/IP")
+        self.rpc_tcpip_radio_button = \
+                        Gtk.RadioButton.new_with_label_from_widget(
+                            self.rpc_smb_tcpip_radio_button,
+                            'RPC over TCP/IP')
+        self.rpc_tcpip_radio_button.set_tooltip_text(
+                                                'ncacn_ip_tcp type')
         self.rpc_tcpip_radio_button.set_active(self.transport_type == 1)
-        vbox.pack_start(self.rpc_tcpip_radio_button)
+        vbox.pack_start(self.rpc_tcpip_radio_button, True, True, 0)
 
-        self.localhost_radio_button = gtk.RadioButton(self.rpc_tcpip_radio_button, "Localhost")
-        self.localhost_radio_button.set_active(self.transport_type == 2)
-        vbox.pack_start(self.localhost_radio_button)
+        self.localhost_radio_button = \
+            Gtk.RadioButton.new_with_label_from_widget(
+                            self.rpc_tcpip_radio_button, 'Localhost')
+        self.localhost_radio_button.set_tooltip_text(
+                                                'ncacn_ip_tcp type')
+        self.localhost_radio_button.set_active(self.transport_type == 2) #  MS-SRVS specification
+        vbox.pack_start(self.localhost_radio_button, True, True, 0)
 
 
         # domain frame
 
-        self.domains_frame = gtk.Frame(" Domain ")
+        self.domains_frame = Gtk.Frame()
         self.domains_frame.set_no_show_all(True)
+        self.domains_frame.set_label(" Domain ")
         self.vbox.pack_start(self.domains_frame, False, True, 0)
 
-        table = gtk.Table(1, 2)
-        table.set_border_width(5)
-        self.domains_frame.add(table)
+        grid = Gtk.Grid()
+        grid.set_border_width(5)
+        self.domains_frame.add(grid)
 
-        label = gtk.Label("Select domain: ")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 0, 1, gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
+        label = Gtk.Label("Select domain: ", xalign=0, yalign=0.5)
+        grid.attach(label, 0, 0, 1, 1)
 
-        self.domain_combo_box = gtk.combo_box_new_text()
-        table.attach(self.domain_combo_box, 1, 2, 0, 1, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
+        self.domain_combo_box = Gtk.combo_box_new_text()
+        grid.attach(self.domain_combo_box, 1, 0, 1, 1)
 
 
         # dialog buttons
 
-        self.action_area.set_layout(gtk.BUTTONBOX_END)
+        self.action_area.set_layout(Gtk.ButtonBoxStyle.END)
 
-        self.cancel_button = gtk.Button("Cancel", gtk.STOCK_CANCEL)
-        self.add_action_widget(self.cancel_button, gtk.RESPONSE_CANCEL)
+        self.cancel_button = Gtk.Button('Cancel', Gtk.STOCK_CANCEL)
+        self.cancel_button.set_tooltip_text('Cancel and Quit')
+        self.add_action_widget(self.cancel_button,Gtk.ResponseType.CANCEL)
 
-        self.connect_button = gtk.Button("Connect", gtk.STOCK_CONNECT)
-        self.connect_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.connect_button, gtk.RESPONSE_OK)
+        self.connect_button = Gtk.Button('Connect', Gtk.STOCK_CONNECT)
+        self.connect_button.set_can_default(True)
+        self.cancel_button.set_tooltip_text('OK / Connect to Server')
+        self.add_action_widget(self.connect_button, Gtk.ResponseType.OK)
 
-        self.set_default_response(gtk.RESPONSE_OK)
+        self.set_default_response(Gtk.ResponseType.OK)
 
 
         # signals/events
 
-        self.rpc_smb_tcpip_radio_button.connect("toggled", self.on_radio_button_toggled)
-        self.rpc_tcpip_radio_button.connect("toggled", self.on_radio_button_toggled)
-        self.localhost_radio_button.connect("toggled", self.on_radio_button_toggled)
+        self.rpc_smb_tcpip_radio_button.connect('toggled',
+                self.on_radio_button_toggled)
+        self.rpc_tcpip_radio_button.connect('toggled',
+                self.on_radio_button_toggled)
+        self.localhost_radio_button.connect('toggled',
+                self.on_radio_button_toggled)
 
     def update_sensitivity(self):
         server_required = not self.localhost_radio_button.get_active()
