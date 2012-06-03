@@ -314,7 +314,8 @@ class UserEditDialog(Gtk.Dialog):
         if self.brand_new:
             for user in self.pipe_manager.user_list:
                 if user.username == self.username_entry.get_text():
-                   return ''.join(["User \"",user.username,"\" already exists!")
+                   return ''.join(["User \"",user.username,
+                                                "\" already exists!"])
 
         return None
 
@@ -666,7 +667,7 @@ class SAMConnectDialog(Gtk.Dialog):
         label = Gtk.Label("Select domain: ", xalign=0, yalign=0.5)
         grid.attach(label, 0, 0, 1, 1)
 
-        self.domain_combo_box = Gtk.combo_box_new_text()
+        self.domain_combo_box = Gtk.ComboBoxText()
         grid.attach(self.domain_combo_box, 1, 0, 1, 1)
 
 

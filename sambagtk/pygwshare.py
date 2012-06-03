@@ -1494,7 +1494,6 @@ Please check your network connection.''',
         column.set_title('Name')
         column.set_resizable(True)
         column.set_sort_column_id(0)
-
         renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.shares_tree_view.append_column(column)
