@@ -4,9 +4,8 @@ import sys
 import os.path
 import traceback
 import getopt
-import gobject
-import gtk
-
+from gi.repository import GObject
+from gi.repository import Gtk
 sys.path.append('/opt/samba4/lib/python2.7/site-packages/')
 from samba import credentials
 from samba.dcerpc import (
@@ -15,7 +14,7 @@ from samba.dcerpc import (
     lsa,
     )
 
-from sambagtk.sam import (
+from sam import (
     User,
     Group,
     UserEditDialog,
@@ -228,15 +227,14 @@ class SAMPipeManager(object):
         # secinfo.sd.dacl.aces[i].trustee if we wanted
         security_descriptor = secinfo.sd
         DACL = security_descriptor.dacl
-        ace_list = DACL.aces
-
         ace = None
-
-        for item in ace_list:
-            if str(item.trustee) == sid:
-                ace = item
-                break
-
+        if DACL is not None :
+            ace_list = DACL.aces
+            for item in ace_list:
+                if str(item.trustee) == sid:
+                    ace = item
+                    break
+                    
         if ace is None:
             print "unable to fetch security info for", user.username, "because none exists."
             return user
