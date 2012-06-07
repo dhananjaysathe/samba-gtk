@@ -468,7 +468,7 @@ class GroupEditDialog(Gtk.Dialog):
         grid.set_border_width(5)
         grid.set_column_spacing(5)
         grid.set_row_spacing(5)
-        self.vbox.pack_start(table, True, True, 0)
+        self.vbox.pack_start(grid, True, True, 0)
 
         label = Gtk.Label("Name", xalign =0 , yalign = 0.5)
         grid.attach(label, 0, 0, 1, 1)
