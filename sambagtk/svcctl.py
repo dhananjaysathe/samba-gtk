@@ -19,11 +19,12 @@
 
 """svcctl related dialogs."""
 
-import gobject
-import gtk
-import os
-import pango
+from gi.repository import GObject
+from gi.repository import Gtk
+from gi.repository import Pango
 import sys
+import os
+from dialogs import ConnectDialog
 
 from samba.dcerpc import svcctl
 
@@ -80,7 +81,7 @@ class Service(object):
                 Service.get_start_type_string(self.start_type)]
 
 
-class ServiceEditDialog(gtk.Dialog):
+class ServiceEditDialog(Gtk.Dialog):
 
     def __init__(self, service = None):
         super(ServiceEditDialog, self).__init__()
@@ -101,190 +102,187 @@ class ServiceEditDialog(gtk.Dialog):
     def create(self):
         self.set_title("Edit service " + self.service.name)
         self.set_border_width(5)
-        self.icon_pixbuf = gtk.gdk.pixbuf_new_from_file(os.path.join(sys.path[0], "images", "service.png"))
+        self.icon_pixbuf = GdkPixbuf.Pixbuf.new_from_file(
+                           os.path.join(sys.path[0], "images", "service.png"))
         self.set_icon(self.icon_pixbuf)
         self.set_resizable(False)
+        self.set_decorated(True)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_modal(True)
         self.set_size_request(450, 350)
 
-        notebook = gtk.Notebook()
+        notebook = Gtk.Notebook()
         self.vbox.pack_start(notebook, True, True, 0)
 
 
         # general tab
 
-        table = gtk.Table(6, 2, False)
-        table.set_border_width(5)
-        table.set_col_spacings(5)
-        table.set_row_spacings(5)
-        notebook.add(table)
+        grid = Gtk.Grid()
+        grid.set_border_width(5)
+        grid.set_column_spacing(5)
+        grid.set_row_spacing(5)
+        notebook.append_page(grid, Gtk.Label('General'))
 
-        label = gtk.Label("Name")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 0, 1, gtk.FILL, 0, 5, 0)
+        label = Gtk.Label("Name",xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 0, 1, 1)
 
-        label = gtk.Label("Display name")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 1, 2, gtk.FILL, 0, 5, 0)
+        label = Gtk.Label("Display name",xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 1, 1, 1)
 
-        label = gtk.Label("Description")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 2, 3, gtk.FILL, 0, 5, 0)
+        label = Gtk.Label("Description",xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 2, 1, 1)
 
-        label = gtk.Label("Path to executable")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 3, 4, gtk.FILL, 0, 5, 0)
+        label = Gtk.Label("Path to executable",xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 3, 1, 1)
 
-        label = gtk.Label("Startup type")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 4, 5, gtk.FILL, 0, 5, 0)
+        label = Gtk.Label("Startup type",xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 4, 1, 1)
 
-        label = gtk.Label("Start parameters")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 5, 6, gtk.FILL, 0, 5, 0)
+        label = Gtk.Label("Start parameters",xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 5, 1, 1)
 
-        self.name_label = gtk.Label()
-        self.name_label.set_alignment(0, 0.5)
-        table.attach(self.name_label, 1, 2, 0, 1, gtk.FILL, 0, 0, 5)
+        self.name_label = Gtk.Label(,xalign =0 , yalign = 0.5)
+        grid.attach(self.name_label, 1, 0, 1, 1)
 
-        self.display_name_entry = gtk.Entry()
+        self.display_name_entry = Gtk.Entry()
         self.display_name_entry.set_editable(False)
-        table.attach(self.display_name_entry, 1, 2, 1, 2, gtk.FILL, 0, 0, 5)
+        grid.attach(self.display_name_entry, 1, 1, 1, 1)
 
-        scrolledwindow = gtk.ScrolledWindow(None, None)
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
+        scrolledwindow = Gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_property("shadow_type",Gtk.ShadowType.IN)
         scrolledwindow.set_size_request(0, 50)
-        table.attach(scrolledwindow, 1, 2, 2, 3, gtk.FILL | gtk.EXPAND, gtk.FILL, 0, 5)
+        grid.attach(scrolledwindow, 1, 2, 1, 1)
 
-        self.description_text_view = gtk.TextView()
+        self.description_text_view = Gtk.TextView()
         self.description_text_view.set_editable(False)
-        self.description_text_view.set_wrap_mode(gtk.WRAP_WORD)
+        self.description_text_view.set_wrap_mode(Gtk.WrapMode.WORD)
         scrolledwindow.add(self.description_text_view)
 
-        self.exe_path_entry = gtk.Entry()
+        self.exe_path_entry = Gtk.Entry()
         self.exe_path_entry.set_editable(False)
-        table.attach(self.exe_path_entry, 1, 2, 3, 4, gtk.FILL, 0, 0, 0)
+        grid.attach(self.exe_path_entry, 1, 3, 1, 1)
 
-        self.startup_type_combo = gtk.combo_box_new_text()
+        self.startup_type_combo = Gtk.ComboBoxText()
         self.startup_type_combo.append_text(Service.get_start_type_string(svcctl.SVCCTL_BOOT_START))
         self.startup_type_combo.append_text(Service.get_start_type_string(svcctl.SVCCTL_SYSTEM_START))
         self.startup_type_combo.append_text(Service.get_start_type_string(svcctl.SVCCTL_AUTO_START))
         self.startup_type_combo.append_text(Service.get_start_type_string(svcctl.SVCCTL_DEMAND_START))
         self.startup_type_combo.append_text(Service.get_start_type_string(svcctl.SVCCTL_DISABLED))
-        table.attach(self.startup_type_combo, 1, 2, 4, 5, gtk.FILL, 0, 0, 0)
+        grid.attach(self.exe_path_entry, 1, 4, 1, 1)
 
-        self.start_params_entry = gtk.Entry()
+        self.start_params_entry = Gtk.Entry()
         self.start_params_entry.set_activates_default(True)
-        table.attach(self.start_params_entry, 1, 2, 5, 6, gtk.FILL, 0, 0, 0)
+        grid.attach(self.exe_path_entry, 1, 5, 1, 1)
 
-        notebook.set_tab_label(notebook.get_nth_page(0), gtk.Label("General"))
 
 
         # log on tab
 
         table = gtk.Table(8, 3, False)
-        table.set_border_width(5)
-        table.set_col_spacings(5)
-        table.set_row_spacings(5)
-        notebook.add(table)
+        grid = Gtk.Grid()
+        grid.set_border_width(5)
+        grid.set_column_spacing(5)
+        grid.set_row_spacing(5)
+        notebook.append_page(grid, Gtk.Label('Log On'))
+        
 
-        self.local_account_radio = gtk.RadioButton(None, "_Local System account")
-        table.attach(self.local_account_radio, 0, 1, 0, 1, gtk.FILL, 0, 0, 0)
+        self.local_account_radio = Gtk.RadioButton.new_with_mnemonic_from_widget(
+                                                None, "_Local System account")
+        grid.attach(self.local_account_radio, 0, 0, 1, 1)
 
-        self.allow_desktop_interaction_check = gtk.CheckButton("Allo_w service to interact with desktop")
-        table.attach(self.allow_desktop_interaction_check, 0, 2, 1, 2, gtk.FILL, 0, 20, 0)
+        self.allow_desktop_interaction_check = Gtk.CheckButton.new_with_mnemonic(
+                                    "Allo_w service to interact with desktop")
+        grid.attach(self.allow_desktop_interaction_check, 0, 1, 2, 1)
 
-        self.this_account_radio = gtk.RadioButton(self.local_account_radio, "_This account:")
-        table.attach(self.this_account_radio, 0, 1, 2, 3, gtk.FILL, 0, 0, 0)
+        self.this_account_radio = Gtk.RadioButton.new_with_mnemonic_from_widget(
+                                   self.local_account_radio, "_This account:")
+        grid.attach(self.this_account_radio, 0, 2, 1, 1)
 
-        self.account_entry = gtk.Entry()
+        self.account_entry = Gtk.Entry()
         self.account_entry.set_activates_default(True)
-        table.attach(self.account_entry, 1, 2, 2, 3, gtk.FILL, 0, 0, 0)
+        grid.attach(self.account_entry,  1, 2, 1, 1)
 
-        label = gtk.Label("Password:")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 3, 4, gtk.FILL, 0, 20, 0)
+        label = Gtk.Label("Password:", xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 3, 1, 1)
 
-        self.password_entry = gtk.Entry()
+        self.password_entry = Gtk.Entry()
         self.password_entry.set_activates_default(True)
         self.password_entry.set_visibility(False)
-        table.attach(self.password_entry, 1, 2, 3, 4, gtk.FILL, 0, 0, 0)
+        grid.attach(self.password_entry, 1, 3, 1, 1)
 
-        label = gtk.Label("Confirm password:")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 4, 5, gtk.FILL, 0, 20, 0)
+        label = Gtk.Label("Confirm password:", xalign =0 , yalign = 0.5)
+        grid.attach(label, 0, 4, 1, 1)
 
-        self.confirm_password_entry = gtk.Entry()
+        self.confirm_password_entry = Gtk.Entry()
         self.confirm_password_entry.set_activates_default(True)
         self.confirm_password_entry.set_visibility(False)
-        table.attach(self.confirm_password_entry, 1, 2, 4, 5, gtk.FILL, 0, 0, 0)
+        grid.attach(self.confirm_password_entry, 1, 4, 1, 1)
 
 
         # TODO: implement hw profiles functionality
 
-        label = gtk.Label("You can enable or disable this service for the hardware profiles listed below :")
+        label = Gtk.Label("You can enable or disable this service for the hardware profiles listed below :")
         #table.attach(label, 0, 3, 5, 6, 0, 0, 0, 5)
 
-        scrolledwindow = gtk.ScrolledWindow(None, None)
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
+        scrolledwindow = Gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_property("shadow_type",Gtk.ShadowType.IN)
         #table.attach(scrolledwindow, 0, 3, 6, 7, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 0, 0)
 
-        self.profiles_tree_view = gtk.TreeView()
+        self.profiles_tree_view = Gtk.TreeView()
         scrolledwindow.add(self.profiles_tree_view)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Hardware profile")
-        renderer = gtk.CellRendererText()
+        renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.profiles_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 0)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Status")
-        renderer = gtk.CellRendererText()
+        renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.profiles_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 1)
 
-        self.profiles_store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_STRING)
-        self.profiles_store.set_sort_column_id(0, gtk.SORT_ASCENDING)
+        self.profiles_store = Gtk.ListStore(GObject.TYPE_STRING,
+                                            GObject.TYPE_STRING)
+        self.profiles_store.set_sort_column_id(0, Gtk.SortType.ASCENDING)
         self.profiles_tree_view.set_model(self.profiles_store)
 
-        hbox = gtk.HBox(2, False)
+        hbox = Gtk.HBox(2, False)
 #        table.attach(hbox, 0, 1, 7, 8, 0, 0, 0, 0)
 
-        self.enable_button = gtk.Button("Enable")
+        self.enable_button = Gtk.Button("Enable")
         hbox.pack_start(self.enable_button, False, False, 0)
 
-        self.disable_button = gtk.Button("Disable")
+        self.disable_button = Gtk.Button("Disable")
         hbox.pack_start(self.disable_button, False, False, 0)
-
-        notebook.set_tab_label(notebook.get_nth_page(1), gtk.Label("Log On"))
 
         # dialog buttons
 
-        self.action_area.set_layout(gtk.BUTTONBOX_END)
+        self.action_area.set_layout(Gtk.ButtonBoxStyle.END)
 
-        self.cancel_button = gtk.Button("Cancel", gtk.STOCK_CANCEL)
-        self.cancel_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.cancel_button, gtk.RESPONSE_CANCEL)
+        self.cancel_button = Gtk.Button("Cancel", Gtk.STOCK_CANCEL)
+        self.cancel_button.set_can_default(True)
+        self.add_action_widget(self.cancel_button, Gtk.ResponseType.CANCEL)
 
-        self.apply_button = gtk.Button("Apply", gtk.STOCK_APPLY)
-        self.apply_button.set_flags(gtk.CAN_DEFAULT)
+        self.apply_button = Gtk.Button("Apply", Gtk.STOCK_APPLY)
+        self.apply_button.set_can_default(True)
         self.apply_button.set_sensitive(not self.brand_new) # disabled for new group
-        self.add_action_widget(self.apply_button, gtk.RESPONSE_APPLY)
+        self.add_action_widget(self.apply_button, Gtk.ResponseType.APPLY)
 
-        self.ok_button = gtk.Button("OK", gtk.STOCK_OK)
-        self.ok_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.ok_button, gtk.RESPONSE_OK)
+        self.ok_button = Gtk.Button("OK", Gtk.STOCK_OK)
+        self.ok_button.set_can_default(True)
+        self.add_action_widget(self.ok_button, Gtk.ResponseType.OK)
 
-        self.set_default_response(gtk.RESPONSE_OK)
+        self.set_default_response(Gtk.ResponseType.OK)
 
 
         # signals/events
 
-        self.local_account_radio.connect("toggled", self.on_local_account_radio_clicked)
+        self.local_account_radio.connect("toggled",
+                                          self.on_local_account_radio_clicked)
         #self.profiles_tree_view.get_selection().connect("changed", self.on_profiles_tree_view_selection_changed)
         #self.enable_button.connect("clicked", self.on_enable_button_click)
         #self.disable_button.connect("clicked", self.on_disable_button_click)
@@ -320,21 +318,27 @@ class ServiceEditDialog(gtk.Dialog):
         self.description_text_view.get_buffer().set_text(self.service.description)
         self.exe_path_entry.set_text(self.service.path_to_exe)
 
-        temp_dict = {svcctl.SVCCTL_BOOT_START:0, svcctl.SVCCTL_SYSTEM_START:1, svcctl.SVCCTL_AUTO_START:2, svcctl.SVCCTL_DEMAND_START:3, svcctl.SVCCTL_DISABLED:4}
+        temp_dict = {svcctl.SVCCTL_BOOT_START:0,
+                     svcctl.SVCCTL_SYSTEM_START:1,
+                     svcctl.SVCCTL_AUTO_START:2,
+                     svcctl.SVCCTL_DEMAND_START:3,
+                     svcctl.SVCCTL_DISABLED:4}
 
         self.startup_type_combo.set_active(temp_dict[self.service.start_type])
         self.start_params_entry.set_text(self.service.start_params)
 
         if (self.service.account is None):
             self.local_account_radio.set_active(True)
-            self.allow_desktop_interaction_check.set_active(self.service.allow_desktop_interaction)
+            self.allow_desktop_interaction_check.set_active(
+                                        self.service.allow_desktop_interaction)
         else:
             self.this_account_radio.set_active(True)
             self.account_entry.set_text(self.service.account)
 
             if (self.service.account_password is not None):
                 self.password_entry.set_text(self.service.account_password)
-                self.confirm_password_entry.set_text(self.service.account_password)
+                self.confirm_password_entry.set_text(
+                                                self.service.account_password)
 
         #self.refresh_profiles_tree_view()
 
@@ -342,15 +346,20 @@ class ServiceEditDialog(gtk.Dialog):
         if (self.service is None):
             raise Exception("service not set")
 
-        temp_dict = {0:svcctl.SVCCTL_BOOT_START, 1:svcctl.SVCCTL_SYSTEM_START, 2:svcctl.SVCCTL_AUTO_START, 3:svcctl.SVCCTL_DEMAND_START, 4:svcctl.SVCCTL_DISABLED}
-
+    temp_dict = {svcctl.SVCCTL_BOOT_START:0,
+                 svcctl.SVCCTL_SYSTEM_START:1,
+                 svcctl.SVCCTL_AUTO_START:2,
+                 svcctl.SVCCTL_DEMAND_START:3,
+                 svcctl.SVCCTL_DISABLED:4}
+                 
         self.service.start_type = temp_dict[self.startup_type_combo.get_active()]
         self.service.start_params = self.start_params_entry.get_text()
 
         if (self.local_account_radio.get_active()):
             self.service.account = None
             self.service.account_password = None
-            self.service.allow_desktop_interaction = self.allow_desktop_interaction_check.get_active()
+            self.service.allow_desktop_interaction =  \
+                            self.allow_desktop_interaction_check.get_active()
         else:
             self.service.account = self.account_entry.get_text()
             self.service.account_password = self.password_entry.get_text()
@@ -405,7 +414,7 @@ class ServiceEditDialog(gtk.Dialog):
 #        self.update_sensitivity()
 
 
-class ServiceControlDialog(gtk.Dialog):
+class ServiceControlDialog(Gtk.Dialog):
 
     def __init__(self, service, control):
         super(ServiceControlDialog, self).__init__()
@@ -420,30 +429,34 @@ class ServiceControlDialog(gtk.Dialog):
     def create(self):
         self.set_title("Service Control")
         self.set_border_width(10)
-        self.set_icon_from_file(os.path.join(sys.path[0], "images", "service.png"))
+        self.set_icon_from_file(os.path.join(sys.path[0],
+                                                    "images", "service.png"))
         self.set_resizable(False)
         self.set_size_request(400, 150)
+        self.set_decorated(True)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_modal(True)
 
-        self.control_label = gtk.Label()
+        self.control_label = Gtk.Label()
         self.control_label.set_markup("<b>" + ServiceControlDialog.get_control_string(self) + "</b> " + self.service.display_name + "...")
         self.control_label.set_padding(10, 10)
-        self.control_label.set_ellipsize(pango.ELLIPSIZE_END)
+        self.control_label.set_ellipsize(Pango.EllipsizeMode.END)
         self.vbox.pack_start(self.control_label, False, True, 5)
 
-        self.progress_bar = gtk.ProgressBar()
+        self.progress_bar = Gtk.ProgressBar()
         self.progress_bar.set_fraction(0.0)
         self.vbox.pack_start(self.progress_bar, False, True, 5)
 
 
         # dialog buttons
 
-        self.action_area.set_layout(gtk.BUTTONBOX_CENTER)
+        self.action_area.set_layout(Gtk.ButtonBoxStyle.CENTER)
 
-        self.close_button = gtk.Button("Close", gtk.STOCK_CLOSE)
-        self.close_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.close_button, gtk.RESPONSE_CANCEL)
+        self.close_button = Gtk.Button("Close", Gtk.STOCK_CLOSE)
+        self.close_button.set_can_default(True)
+        self.add_action_widget(self.close_button, Gtk.ResponseType.CANCEL)
 
-        self.set_default_response(gtk.RESPONSE_CANCEL)
+        self.set_default_response(Gtk.ResponseType.CANCEL)
 
 
         # signals/events
@@ -481,134 +494,10 @@ class ServiceControlDialog(gtk.Dialog):
             self.close_callback()
 
 
-class SvcCtlConnectDialog(gtk.Dialog):
+class SvcCtlConnectDialog(ConnectDialog):
 
-    def __init__(self, server, transport_type, username, password):
-        super(SvcCtlConnectDialog, self).__init__()
+    def __init__(self, server, transport_type, username, password=''):
 
-        self.server_address = server
-        self.transport_type = transport_type
-        self.username = username
-        self.password = password
-
-        self.create()
-
-        self.update_sensitivity()
-
-    def create(self):
-        self.set_title("Connect to a server")
-        self.set_border_width(5)
-        self.set_icon_name(gtk.STOCK_CONNECT)
-        self.set_resizable(False)
-
-        # server frame
-
-        self.vbox.set_spacing(5)
-
-        self.server_frame = gtk.Frame("Server")
-        self.vbox.pack_start(self.server_frame, False, True, 0)
-
-        table = gtk.Table(3, 2)
-        table.set_border_width(5)
-        self.server_frame.add(table)
-
-        label = gtk.Label(" Server address: ")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 0, 1, gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
-
-        self.server_address_entry = gtk.Entry()
-        self.server_address_entry.set_text(self.server_address)
-        self.server_address_entry.set_activates_default(True)
-        table.attach(self.server_address_entry, 1, 2, 0, 1, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
-
-        label = gtk.Label(" Username: ")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 1, 2, gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
-
-        self.username_entry = gtk.Entry()
-        self.username_entry.set_text(self.username)
-        self.username_entry.set_activates_default(True)
-        table.attach(self.username_entry, 1, 2, 1, 2, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
-
-        label = gtk.Label(" Password: ")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 2, 3, gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
-
-        self.password_entry = gtk.Entry()
-        self.password_entry.set_text(self.password)
-        self.password_entry.set_visibility(False)
-        self.password_entry.set_activates_default(True)
-        table.attach(self.password_entry, 1, 2, 2, 3, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
-
-
-        # transport frame
-
-        self.transport_frame = gtk.Frame(" Transport type ")
-        self.vbox.pack_start(self.transport_frame, False, True, 0)
-
-        vbox = gtk.VBox()
-        vbox.set_border_width(5)
-        self.transport_frame.add(vbox)
-
-        self.rpc_smb_tcpip_radio_button = gtk.RadioButton(None, "RPC over SMB over TCP/IP")
-        self.rpc_smb_tcpip_radio_button.set_active(self.transport_type == 0)
-        vbox.pack_start(self.rpc_smb_tcpip_radio_button)
-
-        self.rpc_tcpip_radio_button = gtk.RadioButton(self.rpc_smb_tcpip_radio_button, "RPC over TCP/IP")
-        self.rpc_tcpip_radio_button.set_active(self.transport_type == 1)
-        vbox.pack_start(self.rpc_tcpip_radio_button)
-
-        self.localhost_radio_button = gtk.RadioButton(self.rpc_tcpip_radio_button, "Localhost")
-        self.localhost_radio_button.set_active(self.transport_type == 2)
-        vbox.pack_start(self.localhost_radio_button)
-
-
-        # dialog buttons
-
-        self.action_area.set_layout(gtk.BUTTONBOX_END)
-
-        self.cancel_button = gtk.Button("Cancel", gtk.STOCK_CANCEL)
-        self.add_action_widget(self.cancel_button, gtk.RESPONSE_CANCEL)
-
-        self.connect_button = gtk.Button("Connect", gtk.STOCK_CONNECT)
-        self.connect_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.connect_button, gtk.RESPONSE_OK)
-
-        self.set_default_response(gtk.RESPONSE_OK)
-
-
-        # signals/events
-
-        self.rpc_smb_tcpip_radio_button.connect("toggled", self.on_radio_button_toggled)
-        self.rpc_tcpip_radio_button.connect("toggled", self.on_radio_button_toggled)
-        self.localhost_radio_button.connect("toggled", self.on_radio_button_toggled)
-
-    def update_sensitivity(self):
-        server_required = not self.localhost_radio_button.get_active()
-
-        self.server_address_entry.set_sensitive(server_required)
-
-    def get_server_address(self):
-        return self.server_address_entry.get_text().strip()
-
-    def get_transport_type(self):
-        if self.rpc_smb_tcpip_radio_button.get_active():
-            return 0
-        elif self.rpc_tcpip_radio_button.get_active():
-            return 1
-        elif self.localhost_radio_button.get_active():
-            return 2
-        else:
-            return -1
-
-    def get_username(self):
-        return self.username_entry.get_text().strip()
-
-    def get_password(self):
-        return self.password_entry.get_text()
-
-    def on_radio_button_toggled(self, widget):
-        self.update_sensitivity()
-
-
-
+        super(SvcCtlConnectDialog, self).__init__(
+                    server, transport_type, username, password='')
+        self.set_title('Connect to Samba Service Manager')

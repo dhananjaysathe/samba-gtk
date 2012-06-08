@@ -251,10 +251,11 @@ class SAMPipeManager(object):
         ace = None
         if DACL is not None :
             ace_list = DACL.aces
-            for item in ace_list:
-                if str(item.trustee) == sid:
-                    ace = item
-                    break
+            if ace_list is not None :
+                for item in ace_list:
+                    if str(item.trustee) == sid:
+                        ace = item
+                        break
                     
         if ace is None:
             print "unable to fetch security info for", user.username, "because none exists."

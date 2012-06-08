@@ -837,7 +837,7 @@ Please check your network connection.''',
             grid.set_row_homogeneous(True)
             grid.set_column_homogeneous(True)
             
-            label = Gtk.Label('<b> Disks </b>',xalign=1,yalign=0.5)
+            label = Gtk.Label('<b> Disks </b>',xalign=0.1,yalign=0.5)
             label.set_property("use-markup",True)
 
             grid.attach(label, 0, 0, 1, 1)
@@ -848,8 +848,8 @@ Please check your network connection.''',
             tmp = filler
 
             for i in self.pipe_manager.disks_list:
-                label = Gtk.Label(i,xalign=1,yalign=0.5)
-                grid.attach_next_to(tmp,label,
+                label = Gtk.Label(i,xalign=0.1,yalign=0.5)
+                grid.attach_next_to(label,tmp,
                                 Gtk.PositionType.BOTTOM, 1, 1)
                 tmp = label
 
@@ -1549,6 +1549,7 @@ Please check your network connection.''',
         ### Right active widget :
 
         vbox = Gtk.VBox()
+        vbox.set_size_request(200,0)
         main_hbox.pack_start(vbox, False, False, 0)
 
         self.shareinfo_frame = Gtk.Frame()

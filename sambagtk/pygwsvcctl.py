@@ -45,9 +45,16 @@ class SvcCtlPipeManager(object):
         creds.set_workstation("")
         creds.set_password(password)
 
-        binding = ["ncacn_np:%s", "ncacn_ip_tcp:%s", "ncalrpc:%s"][transport_type]
+        binding = ['ncacn_np:%s', 'ncacn_ip_tcp:%s', 'ncalrpc:%s'
+                   ][transport_type]
+        if transport_type is 2:
+            server_address = '127.0.0.1'
 
-        self.pipe = svcctl.svcctl(binding % (server_address), credentials = creds)
+        self.pipe = svcctl.svcctl(binding % server_address,
+                                  credentials=creds)
+        
+
+        #self.pipe = svcctl.svcctl(binding % (server_address), credentials = creds)
         self.scm_handle = self.pipe.OpenSCManagerA(None, None, svcctl.SC_MANAGER_ALL_ACCESS)
 
     def close(self):
