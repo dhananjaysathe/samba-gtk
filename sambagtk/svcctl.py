@@ -22,6 +22,8 @@
 from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Pango
+from gi.repository import GdkPixbuf
+
 import sys
 import os
 from dialogs import ConnectDialog
@@ -141,7 +143,7 @@ class ServiceEditDialog(Gtk.Dialog):
         label = Gtk.Label("Start parameters",xalign =0 , yalign = 0.5)
         grid.attach(label, 0, 5, 1, 1)
 
-        self.name_label = Gtk.Label(,xalign =0 , yalign = 0.5)
+        self.name_label = Gtk.Label(xalign =0 , yalign = 0.5)
         grid.attach(self.name_label, 1, 0, 1, 1)
 
         self.display_name_entry = Gtk.Entry()
@@ -178,13 +180,13 @@ class ServiceEditDialog(Gtk.Dialog):
 
         # log on tab
 
-        table = gtk.Table(8, 3, False)
+        #table = gtk.Table(8, 3, False)
         grid = Gtk.Grid()
         grid.set_border_width(5)
         grid.set_column_spacing(5)
         grid.set_row_spacing(5)
         notebook.append_page(grid, Gtk.Label('Log On'))
-        
+
 
         self.local_account_radio = Gtk.RadioButton.new_with_mnemonic_from_widget(
                                                 None, "_Local System account")
@@ -346,12 +348,12 @@ class ServiceEditDialog(Gtk.Dialog):
         if (self.service is None):
             raise Exception("service not set")
 
-    temp_dict = {svcctl.SVCCTL_BOOT_START:0,
-                 svcctl.SVCCTL_SYSTEM_START:1,
-                 svcctl.SVCCTL_AUTO_START:2,
-                 svcctl.SVCCTL_DEMAND_START:3,
-                 svcctl.SVCCTL_DISABLED:4}
-                 
+        temp_dict = {svcctl.SVCCTL_BOOT_START:0,
+                    svcctl.SVCCTL_SYSTEM_START:1,
+                    svcctl.SVCCTL_AUTO_START:2,
+                    svcctl.SVCCTL_DEMAND_START:3,
+                    svcctl.SVCCTL_DISABLED:4}
+
         self.service.start_type = temp_dict[self.startup_type_combo.get_active()]
         self.service.start_params = self.start_params_entry.get_text()
 
