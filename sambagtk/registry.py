@@ -1,7 +1,9 @@
 # Samba GTK+ frontends
 #
 # Copyright (C) 2010 Sergio Martins <sergio97@gmail.com>
-# Copyright (C) 2011 Jelmer Vernooij <jelmer@samba.org>
+# Copyright (C) 2012 Jelmer Vernooij <jelmer@samba.org>
+# Copyright (C) 2012 Dhananjay Sathe <dhananjaysathe@gmail.com>
+
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,15 +21,17 @@
 
 """Registry-related dialogs."""
 
-import gtk
-import gobject
-import pango
+from gi.repository import Gtk
+from gi.repository import GObject
+from gi.repository import Pango
 
 import os
 import string
 import sys
 
 from samba.dcerpc import misc
+from dialogs import ConnectDialog
+
 
 class RegistryValue(object):
 
@@ -216,7 +220,7 @@ class RegistryKey(object):
         return [self.name, self]
 
 
-class RegValueEditDialog(gtk.Dialog):
+class RegValueEditDialog(Gtk.Dialog):
 
     def __init__(self, reg_value, type):
         super(RegValueEditDialog, self).__init__()
@@ -236,146 +240,166 @@ class RegValueEditDialog(gtk.Dialog):
         self.reg_value_to_values()
 
     def create(self):
-        self.set_title(["Edit registry value", "New registry value"][self.brand_new])
+        self.set_title(["Edit registry value", "New registry value"]
+                      [self.brand_new])
         self.set_border_width(5)
 
         self.icon_registry_number_filename = os.path.join(sys.path[0],
-                "images", "registry-number.png")
+                                            "images", "registry-number.png")
         self.icon_registry_string_filename = os.path.join(sys.path[0],
-                "images", "registry-string.png")
+                                            "images", "registry-string.png")
         self.icon_registry_binary_filename = os.path.join(sys.path[0],
-                "images", "registry-binary.png")
+                                            "images", "registry-binary.png")
 
         self.set_resizable(True)
+        self.set_decorated(True)
+        self.set_modal(True)
 
         # value name
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         self.vbox.pack_start(hbox, False, False, 10)
 
-        label = gtk.Label("Value name:")
+        label = Gtk.Label("Value name:")
         hbox.pack_start(label, False, True, 10)
 
-        self.name_entry = gtk.Entry()
+        self.name_entry = Gtk.Entry()
         self.name_entry.set_activates_default(True)
         self.name_entry.set_sensitive(self.brand_new)
         hbox.pack_start(self.name_entry, True, True, 10)
 
-        separator = gtk.HSeparator()
+        separator = Gtk.HSeparator()
         self.vbox.pack_start(separator, False, True, 5)
 
         # data
-        frame = gtk.Frame(" Value data: ")
+        frame = Gtk.Frame()
+        frame.set_label(" Value data: ")
         self.vbox.pack_start(frame, True, True, 10)
 
-        self.type_notebook = gtk.Notebook()
+        self.type_notebook =Gtk.Notebook()
         self.type_notebook.set_border_width(5)
         self.type_notebook.set_show_tabs(False)
         self.type_notebook.set_show_border(False)
         frame.add(self.type_notebook)
 
         # string type page
-        self.string_data_entry = gtk.Entry()
+        self.string_data_entry = Gtk.Entry()
         self.string_data_entry.set_activates_default(True)
         self.type_notebook.append_page(self.string_data_entry)
 
 
         # binary type page
-        scrolledwindow = gtk.ScrolledWindow(None, None)
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
-        scrolledwindow.set_shadow_type(gtk.SHADOW_NONE)
+        scrolledwindow = Gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_policy(Gtk.PolicyType.AUTOMATIC,Gtk.PolicyType.ALWAYS)
+        scrolledwindow.set_shadow_type(Gtk.ShadowType.NONE)
         self.type_notebook.append_page(scrolledwindow)
 
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         scrolledwindow.add_with_viewport(hbox)
 
-        self.binary_data_addr_text_view = gtk.TextView()
-        self.binary_data_addr_text_view.set_wrap_mode(gtk.WRAP_WORD)
+        self.binary_data_addr_text_view = Gtk.TextView()
+        self.binary_data_addr_text_view.set_wrap_mode(Gtk.WrapMode.WORD)
         self.binary_data_addr_text_view.set_editable(False)
-        self.binary_data_addr_text_view.modify_font(pango.FontDescription("mono 10"))
+        self.binary_data_addr_text_view.modify_font(Pango.FontDescription(
+                                                                    "mono 10"))
         self.binary_data_addr_text_view.set_size_request(60, -1)
         hbox.pack_start(self.binary_data_addr_text_view, False, False, 0)
 
-        self.binary_data_hex_text_view = gtk.TextView()
-        self.binary_data_hex_text_view.set_wrap_mode(gtk.WRAP_WORD)
+        self.binary_data_hex_text_view = Gtk.TextView()
+        self.binary_data_hex_text_view.set_wrap_mode(Gtk.WrapMode.WORD)
         self.binary_data_hex_text_view.set_accepts_tab(False)
-        self.binary_data_hex_text_view.modify_font(pango.FontDescription("mono bold 10"))
+        self.binary_data_hex_text_view.modify_font(Pango.FontDescription(
+                                                             "mono bold 10"))
         self.binary_data_hex_text_view.set_size_request(275, -1)
         hbox.pack_start(self.binary_data_hex_text_view, False, False, 0)
 
-        self.binary_data_ascii_text_view = gtk.TextView()
-        self.binary_data_ascii_text_view.set_wrap_mode(gtk.WRAP_CHAR)
+        self.binary_data_ascii_text_view = Gtk.TextView()
+        self.binary_data_ascii_text_view.set_wrap_mode(Gtk.WrapMode.CHAR)
         #self.binary_data_ascii_text_view.set_editable(False)
-        self.binary_data_ascii_text_view.modify_font(pango.FontDescription("mono 10"))
+        self.binary_data_ascii_text_view.modify_font(Pango.FontDescription(
+                                                                    "mono 10"))
         self.binary_data_ascii_text_view.set_accepts_tab(False)
         self.binary_data_ascii_text_view.set_size_request(100, -1)
         hbox.pack_start(self.binary_data_ascii_text_view, False, False, 0)
 
 
         # number type page
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         self.type_notebook.append_page(hbox)
 
-        self.number_data_entry = gtk.Entry()
+        self.number_data_entry = Gtk.Entry()
         self.number_data_entry.set_activates_default(True)
         hbox.pack_start(self.number_data_entry, True, True, 5)
 
-        self.number_data_dec_radio = gtk.RadioButton(None, "Decimal")
+        self.number_data_dec_radio = \
+                    Gtk.RadioButton.new_with_label_from_widget(None, "Decimal")
         hbox.pack_start(self.number_data_dec_radio, False, True, 5)
 
-        self.number_data_hex_radio = gtk.RadioButton(self.number_data_dec_radio, "Hexadecimal")
+        self.number_data_hex_radio = \
+                                Gtk.RadioButton.new_with_label_from_widget(
+                                   self.number_data_dec_radio, "Hexadecimal")
         hbox.pack_start(self.number_data_hex_radio, False, True, 5)
 
         self.number_data_hex_radio.set_active(True)
 
         # multi-string type page
-        scrolledwindow = gtk.ScrolledWindow(None, None)
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
+        scrolledwindow = Gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_shadow_type(Gtk.ShadowType.IN)
         self.type_notebook.append_page(scrolledwindow)
 
-        self.multi_string_data_text_view = gtk.TextView()
-        self.multi_string_data_text_view.set_wrap_mode(gtk.WRAP_NONE)
+        self.multi_string_data_text_view = Gtk.TextView()
+        self.multi_string_data_text_view.set_wrap_mode(Gtk.WrapMode.NONE)
         scrolledwindow.add(self.multi_string_data_text_view)
 
         # dialog buttons
-        self.action_area.set_layout(gtk.BUTTONBOX_END)
+        self.action_area.set_layout(Gtk.ButtonBoxStyle.END)
 
-        self.cancel_button = gtk.Button("Cancel", gtk.STOCK_CANCEL)
-        self.cancel_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.cancel_button, gtk.RESPONSE_CANCEL)
+        self.cancel_button = Gtk.Button("Cancel", Gtk.STOCK_CANCEL)
+        self.cancel_button.set_can_default(True)
+        self.add_action_widget(self.cancel_button, Gtk.ResponseType.CANCEL)
 
-        self.apply_button = gtk.Button("Apply", gtk.STOCK_APPLY)
-        self.apply_button.set_flags(gtk.CAN_DEFAULT)
+        self.apply_button = Gtk.Button("Apply", Gtk.STOCK_APPLY)
+        self.apply_button.set_can_default(True)
         self.apply_button.set_sensitive(not self.brand_new) # disabled for new task
-        self.add_action_widget(self.apply_button, gtk.RESPONSE_APPLY)
+        self.add_action_widget(self.apply_button, Gtk.ResponseType.APPLY)
 
-        self.ok_button = gtk.Button("OK", gtk.STOCK_OK)
-        self.ok_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.ok_button, gtk.RESPONSE_OK)
+        self.ok_button = Gtk.Button("OK", Gtk.STOCK_OK)
+        self.ok_button.set_can_default(True)
+        self.add_action_widget(self.ok_button, Gtk.ResponseType.OK)
 
-        self.set_default_response(gtk.RESPONSE_OK)
+        self.set_default_response(Gtk.ResponseType.OK)
 
         # signals/events
-        self.binary_data_hex_text_view.get_buffer().connect("changed", self.on_binary_data_hex_text_view_buffer_changed)
-        self.binary_data_hex_text_view.get_buffer().connect("insert-text", self.on_binary_data_hex_text_view_buffer_insert_text)
-        self.binary_data_hex_text_view.get_buffer().connect("delete-range", self.on_binary_data_hex_text_view_buffer_delete_range)
+        self.binary_data_hex_text_view.get_buffer().connect("changed",
+                            self.on_binary_data_hex_text_view_buffer_changed)
+        self.binary_data_hex_text_view.get_buffer().connect("insert-text",
+                        self.on_binary_data_hex_text_view_buffer_insert_text)
+        self.binary_data_hex_text_view.get_buffer().connect("delete-range",
+                        self.on_binary_data_hex_text_view_buffer_delete_range)
 
         # Ascii text view callbacks. This view requires special attention to
         # facilitate the crazy editing it needs to do
-        self.binary_data_ascii_text_view.get_buffer().connect("insert-text", self.on_binary_data_ascii_text_view_buffer_insert_text) #manually handles inserting text
-        self.binary_data_ascii_text_view.get_buffer().connect("delete-range", self.on_binary_data_ascii_text_view_buffer_delete_range) #manually handles deleting text
-        self.binary_data_ascii_text_view.get_buffer().connect("changed", self.on_binary_data_ascii_text_view_buffer_changed)
-        self.binary_data_ascii_text_view.connect("move-cursor", self.on_binary_data_ascii_text_view_move_cursor)
+        self.binary_data_ascii_text_view.get_buffer().connect("insert-text",
+                        self.on_binary_data_ascii_text_view_buffer_insert_text) #manually handles inserting text
+        self.binary_data_ascii_text_view.get_buffer().connect("delete-range",
+                       self.on_binary_data_ascii_text_view_buffer_delete_range) #manually handles deleting text
+        self.binary_data_ascii_text_view.get_buffer().connect("changed",
+                            self.on_binary_data_ascii_text_view_buffer_changed)
+        self.binary_data_ascii_text_view.connect("move-cursor",
+                               self.on_binary_data_ascii_text_view_move_cursor)
 
-        self.number_data_dec_radio.connect("toggled", self.on_number_data_dec_radio_toggled)
-        self.number_data_hex_radio.connect("toggled", self.on_number_data_hex_radio_toggled)
-        self.number_data_entry.connect("changed", self.on_number_data_entry_changed)
+        self.number_data_dec_radio.connect("toggled",
+                                        self.on_number_data_dec_radio_toggled)
+        self.number_data_hex_radio.connect("toggled",
+                                        self.on_number_data_hex_radio_toggled)
+        self.number_data_entry.connect("changed",
+                                            self.on_number_data_entry_changed)
 
     def check_for_problems(self):
         if len(self.name_entry.get_text().strip()) == 0:
             return "Please specify a name."
 
-        if self.reg_value.type in [misc.REG_DWORD, misc.REG_DWORD_BIG_ENDIAN, misc.REG_QWORD]:
+        regtypes = [misc.REG_DWORD, misc.REG_DWORD_BIG_ENDIAN, misc.REG_QWORD]
+        elif self.reg_value.type in regtypes:
             number_str = self.number_data_entry.get_text()
             if len(number_str) == 0:
                 return "Please enter a number."
@@ -388,7 +412,8 @@ class RegValueEditDialog(gtk.Dialog):
                 else:
                     number_str_hex = "%X" % number
 
-                    if self.reg_value.type in [misc.REG_DWORD, misc.REG_DWORD_BIG_ENDIAN]:
+                    if self.reg_value.type in [
+                                    misc.REG_DWORD, misc.REG_DWORD_BIG_ENDIAN]:
                         max_hex_len = 8
                     else:
                         max_hex_len = 16
@@ -407,22 +432,28 @@ class RegValueEditDialog(gtk.Dialog):
             self.set_icon_from_file(self.icon_registry_string_filename)
             self.set_size_request(430, 200)
 
-            self.string_data_entry.set_text(self.reg_value.get_interpreted_data())
+            self.string_data_entry.set_text(
+                                        self.reg_value.get_interpreted_data())
         elif self.reg_value.type == misc.REG_BINARY:
             self.set_icon_from_file(self.icon_registry_binary_filename)
             self.set_size_request(483, 400) #extra few pixels for the scroll bar
 
-            self.binary_data_hex_text_view.get_buffer().set_text(RegValueEditDialog.byte_array_to_hex(self.reg_value.get_interpreted_data(), 8))
+            self.binary_data_hex_text_view.get_buffer().set_text(
+                               RegValueEditDialog.byte_array_to_hex(
+                                    self.reg_value.get_interpreted_data(), 8))
             #self.on_binary_data_hex_text_view_buffer_changed(None) #this is already called with the statement above
 
-        elif self.reg_value.type in [misc.REG_DWORD, misc.REG_DWORD_BIG_ENDIAN, misc.REG_QWORD]:
+        regtypes = [misc.REG_DWORD, misc.REG_DWORD_BIG_ENDIAN, misc.REG_QWORD]
+        elif self.reg_value.type in regtypes:
             self.set_icon_from_file(self.icon_registry_number_filename)
             self.set_size_request(430, 200)
 
             if self.reg_value.type == misc.REG_QWORD:
-                self.number_data_entry.set_text("%016X" % self.reg_value.get_interpreted_data())
+                self.number_data_entry.set_text("%016X" %
+                                        self.reg_value.get_interpreted_data())
             else:
-                self.number_data_entry.set_text("%08X" % self.reg_value.get_interpreted_data())
+                self.number_data_entry.set_text("%08X" %
+                                        self.reg_value.get_interpreted_data())
 
         elif self.reg_value.type == misc.REG_MULTI_SZ:
             self.set_icon_from_file(self.icon_registry_string_filename)
@@ -441,23 +472,32 @@ class RegValueEditDialog(gtk.Dialog):
         self.reg_value.name = self.name_entry.get_text()
 
         if self.reg_value.type in [misc.REG_SZ, misc.REG_EXPAND_SZ]:
-            self.reg_value.set_interpreted_data(self.string_data_entry.get_text())
+            self.reg_value.set_interpreted_data(
+                                            self.string_data_entry.get_text())
+
         elif self.reg_value.type == misc.REG_BINARY:
             buffer = self.binary_data_hex_text_view.get_buffer()
-            text = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter())
-            self.reg_value.set_interpreted_data(RegValueEditDialog.hex_to_byte_array(text))
-        elif self.reg_value.type in [misc.REG_DWORD, misc.REG_DWORD_BIG_ENDIAN, misc.REG_QWORD]:
+            text = buffer.get_text(buffer.get_start_iter(),
+                                  buffer.get_end_iter())
+            self.reg_value.set_interpreted_data(
+                                    RegValueEditDialog.hex_to_byte_array(text))
+
+        regtypes = [misc.REG_DWORD, misc.REG_DWORD_BIG_ENDIAN, misc.REG_QWORD]
+        elif self.reg_value.type in regtypes:
             if self.number_data_dec_radio.get_active():
-                self.reg_value.set_interpreted_data(string.atoi(self.number_data_entry.get_text(), 10))
+                self.reg_value.set_interpreted_data(string.atoi(
+                                        self.number_data_entry.get_text(), 10))
             else:
-                self.reg_value.set_interpreted_data(string.atoi(self.number_data_entry.get_text(), 0x10))
+                self.reg_value.set_interpreted_data(string.atoi(
+                                      self.number_data_entry.get_text(), 0x10))
 
         elif self.reg_value.type == misc.REG_MULTI_SZ:
             lines = []
             line = ""
 
             buffer = self.multi_string_data_text_view.get_buffer()
-            for ch in buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter()):
+            for ch in buffer.get_text(buffer.get_start_iter(),
+                                     buffer.get_end_iter()):
                 if ch != "\n":
                     line += ch
                 else:
@@ -507,7 +547,8 @@ class RegValueEditDialog(gtk.Dialog):
         insert_char_offs = insert_iter.get_offset()
         #print "cursor at:", insert_char_offs
 
-        text = hex_buffer.get_text(hex_buffer.get_start_iter(), hex_buffer.get_end_iter())
+        text = hex_buffer.get_text(hex_buffer.get_start_iter(),
+                                   hex_buffer.get_end_iter())
         before_len = len(text)
         text = RegValueEditDialog.check_hex_string(text).strip()
         after_len = len(text)
@@ -517,18 +558,21 @@ class RegValueEditDialog(gtk.Dialog):
         addr_buffer.set_text(RegValueEditDialog.hex_to_addr(text))
 
         #print "cursor now at:", insert_char_offs + (after_len - before_len)
-        hex_buffer.place_cursor(hex_buffer.get_iter_at_offset(insert_char_offs + self.hex_cursor_shift))
+        hex_buffer.place_cursor(hex_buffer.get_iter_at_offset(
+                                insert_char_offs + self.hex_cursor_shift))
         self.hex_cursor_shift = 0
         self.disable_signals = False
 
-    def on_binary_data_hex_text_view_buffer_insert_text(self, widget, iter, text, length):
+    def on_binary_data_hex_text_view_buffer_insert_text(self, widget, iter,
+                                                        text, length):
         """callback for text inserted into the hex field. \nThe purpose of this function is only to update the cursor"""
         if self.disable_signals:
             return
         self.disable_signals = True
 
         offset = iter.get_offset()
-        whole_text = widget.get_text(widget.get_start_iter(), widget.get_end_iter())
+        whole_text = widget.get_text(widget.get_start_iter(),
+                                    widget.get_end_iter())
 
         #construct the final text
         final_text = ""
@@ -544,13 +588,15 @@ class RegValueEditDialog(gtk.Dialog):
         count = 0
         limit = len(final_text) #it could be that the user typed an invalid character, so we'll play it safe
         for i in range(offset, offset + length + count + 1): #go through the inserted characters and see if any have been replaced by white space
-            if (i < limit) and ((final_text[i] == ' ') or (final_text[i] == '\n')):
+            if (i < limit) and ((final_text[i] == ' ') or
+                                                     (final_text[i] == '\n')):
                 count += 1
         self.hex_cursor_shift = count
 
         self.disable_signals = False
 
-    def on_binary_data_hex_text_view_buffer_delete_range(self, widget, start, end):
+    def on_binary_data_hex_text_view_buffer_delete_range(self, widget,
+                                                        start, end):
         """callback for text inserted into the hex field. \nThe purpose of this function is only to update the cursor"""
         if (self.disable_signals):
             return
@@ -587,12 +633,14 @@ class RegValueEditDialog(gtk.Dialog):
         self.disable_signals = True
 
         #now that we've overwritten everything in the textbuffer, we have to put the cursor back in the same spot
-        widget.place_cursor(widget.get_iter_at_offset(cursor_offset + self.ascii_cursor_shift))
+        widget.place_cursor(widget.get_iter_at_offset(cursor_offset +
+                                                     self.ascii_cursor_shift))
         self.ascii_cursor_shift = 0
 
         self.disable_signals = False
 
-    def on_binary_data_ascii_text_view_buffer_insert_text(self, widget, iter, text, length):
+    def on_binary_data_ascii_text_view_buffer_insert_text(self, widget, iter,
+                                                         text, length):
         if (self.disable_signals):
             return
         self.disable_signals = True
@@ -606,7 +654,8 @@ class RegValueEditDialog(gtk.Dialog):
         hex_pos -= inclusive_text.count('\n') * 2 #because '\n' counts as a character, but it doesn't take up 3 spaces in the hex string.
         hex_buffer = self.binary_data_hex_text_view.get_buffer()
         addr_buffer = self.binary_data_addr_text_view.get_buffer()
-        hex_text = hex_buffer.get_text(hex_buffer.get_start_iter(), hex_buffer.get_end_iter())
+        hex_text = hex_buffer.get_text(hex_buffer.get_start_iter(),
+                                       hex_buffer.get_end_iter())
 
         #insert into hex_text up to the point where the new character was inserted
         new_hex = ""
@@ -635,7 +684,8 @@ class RegValueEditDialog(gtk.Dialog):
         addr_buffer.set_text(self.hex_to_addr(new_hex)) #can't forget to update the address text!
         self.disable_signals = False
 
-    def on_binary_data_ascii_text_view_buffer_delete_range(self, widget, start, end):
+    def on_binary_data_ascii_text_view_buffer_delete_range(self, widget,
+                                                          start, end):
         if (self.disable_signals):
             return
         self.disable_signals = True
@@ -646,7 +696,8 @@ class RegValueEditDialog(gtk.Dialog):
         inclusive_text = widget.get_text(widget.get_start_iter(), end)
         hex_buffer = self.binary_data_hex_text_view.get_buffer()
         addr_buffer = self.binary_data_addr_text_view.get_buffer()
-        hex_text = hex_buffer.get_text(hex_buffer.get_start_iter(), hex_buffer.get_end_iter())
+        hex_text = hex_buffer.get_text(hex_buffer.get_start_iter(),
+                                       hex_buffer.get_end_iter())
         new_end_iter = None #this will tell us if any extra characters need to be deleted later
 
         if text == '\n': #we assume that the user pressed backspace and NOT delete. We don't get any indicator of which key was pressed so without adding another complex function, this is the best we can do
@@ -675,7 +726,8 @@ class RegValueEditDialog(gtk.Dialog):
 
         self.disable_signals = False
 
-    def on_binary_data_ascii_text_view_move_cursor(self, textview, step_size, count, extend_selection):
+    def on_binary_data_ascii_text_view_move_cursor(self, textview, step_size,
+                                                    count, extend_selection):
         """This function handles cursor movement. For now it only responds to text selection"""
         print "ext_sel", extend_selection
         #The following doesn't work... even if extend_selection is true, get_selection_bounds() still returns nothing
@@ -737,7 +789,7 @@ class RegValueEditDialog(gtk.Dialog):
     def on_number_data_entry_changed(self, widget):
         old_text = self.number_data_entry.get_text()
 
-        if (self.reg_value.type in [misc.REG_DWORD, misc.REG_DWORD_BIG_ENDIAN]):
+        if (self.reg_value.type in [misc.REG_DWORD,misc.REG_DWORD_BIG_ENDIAN]):
             max_len = 8
         else:
             max_len = 16
@@ -812,7 +864,9 @@ class RegValueEditDialog(gtk.Dialog):
 
             if (len(digits) >= 2):
                 new_chr = chr(string.atol(digits, 0x10))
-                if (new_chr in (string.punctuation + string.digits + string.ascii_letters + ' ')): #We don't just use string.printables because that inclues '\n' and '\r' which we don't want to put into the ascii box
+                if (new_chr in (string.punctuation +
+                                string.digits +
+                                string.ascii_letters + ' ')): #We don't just use string.printables because that inclues '\n' and '\r' which we don't want to put into the ascii box
                     ascii_string += new_chr
                 else:
                     ascii_string += "."
@@ -854,7 +908,8 @@ class RegValueEditDialog(gtk.Dialog):
         for byte in array:
             new_string += "%02x" % byte
 
-        return RegValueEditDialog.check_hex_string(new_string, line_length, False)
+        return RegValueEditDialog.check_hex_string(new_string,
+                                                  line_length, False)
 
     @staticmethod
     def hex_to_byte_array(hex_string):
@@ -873,7 +928,7 @@ class RegValueEditDialog(gtk.Dialog):
         return array
 
 
-class RegKeyEditDialog(gtk.Dialog):
+class RegKeyEditDialog(Gtk.Dialog):
 
     def __init__(self, reg_key):
         super(RegKeyEditDialog, self).__init__()
@@ -890,46 +945,49 @@ class RegKeyEditDialog(gtk.Dialog):
         self.reg_key_to_values()
 
     def create(self):
-        self.set_title(["Edit registry key", "New registry key"][self.brand_new])
+        self.set_title(["Edit registry key", "New registry key"]
+                      [self.brand_new])
         self.set_border_width(5)
 
-        self.icon_registry_filename = os.path.join(sys.path[0], "images", "registry.png")
+        self.icon_registry_filename = os.path.join(sys.path[0],
+                                    "images", "registry.png")
         self.set_icon_from_file(self.icon_registry_filename)
 
         self.set_resizable(False)
-
+        self.set_decorated(True)
+        self.set_modal(True)
 
         # value name
 
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         self.vbox.pack_start(hbox, False, False, 10)
 
-        label = gtk.Label("Key name:")
+        label = Gtk.Label("Key name:")
         hbox.pack_start(label, False, True, 10)
 
-        self.name_entry = gtk.Entry()
+        self.name_entry = Gtk.Entry()
         self.name_entry.set_activates_default(True)
         hbox.pack_start(self.name_entry, True, True, 10)
 
 
         # dialog buttons
 
-        self.action_area.set_layout(gtk.BUTTONBOX_END)
+        self.action_area.set_layout(Gtk.ButtonBoxStyle.END)
 
-        self.cancel_button = gtk.Button("Cancel", gtk.STOCK_CANCEL)
-        self.cancel_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.cancel_button, gtk.RESPONSE_CANCEL)
+        self.cancel_button = Gtk.Button("Cancel", Gtk.STOCK_CANCEL)
+        self.cancel_button.set_can_default(True)
+        self.add_action_widget(self.cancel_button, Gtk.ResponseType.CANCEL)
 
-        self.apply_button = gtk.Button("Apply", gtk.STOCK_APPLY)
-        self.apply_button.set_flags(gtk.CAN_DEFAULT)
+        self.apply_button = Gtk.Button("Apply", Gtk.STOCK_APPLY)
+        self.apply_button.set_can_default(True)
         self.apply_button.set_sensitive(not self.brand_new) # disabled for new task
-        self.add_action_widget(self.apply_button, gtk.RESPONSE_APPLY)
+        self.add_action_widget(self.apply_button, Gtk.ResponseType.APPLY)
 
-        self.ok_button = gtk.Button("OK", gtk.STOCK_OK)
-        self.ok_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.ok_button, gtk.RESPONSE_OK)
+        self.ok_button = Gtk.Button("OK", Gtk.STOCK_OK)
+        self.ok_button.set_can_default(True)
+        self.add_action_widget(self.ok_button, Gtk.ResponseType.OK)
 
-        self.set_default_response(gtk.RESPONSE_OK)
+        self.set_default_response(Gtk.ResponseType.OK)
 
 
         # signals/events
@@ -953,7 +1011,7 @@ class RegKeyEditDialog(gtk.Dialog):
         self.reg_key.name = self.name_entry.get_text()
 
 
-class RegRenameDialog(gtk.Dialog):
+class RegRenameDialog(Gtk.Dialog):
 
     def __init__(self, reg_key, reg_value):
         super(RegRenameDialog, self).__init__()
@@ -972,38 +1030,40 @@ class RegRenameDialog(gtk.Dialog):
         self.set_icon_from_file(self.icon_registry_filename)
 
         self.set_resizable(False)
+        self.set_decorated(True)
+        self.set_modal(True)
 
 
         # name
 
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         self.vbox.pack_start(hbox, False, False, 10)
 
-        label = gtk.Label("Name:")
+        label = Gtk.Label("Name:")
         hbox.pack_start(label, False, True, 10)
 
-        self.name_entry = gtk.Entry()
+        self.name_entry = Gtk.Entry()
         self.name_entry.set_activates_default(True)
         hbox.pack_start(self.name_entry, True, True, 10)
 
 
         # dialog buttons
 
-        self.action_area.set_layout(gtk.BUTTONBOX_END)
+        self.action_area.set_layout(Gtk.ButtonBoxStyle.END)
 
-        self.cancel_button = gtk.Button("Cancel", gtk.STOCK_CANCEL)
-        self.cancel_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.cancel_button, gtk.RESPONSE_CANCEL)
+        self.cancel_button = Gtk.Button("Cancel", Gtk.STOCK_CANCEL)
+        self.cancel_button.set_can_default(True)
+        self.add_action_widget(self.cancel_button, Gtk.ResponseType.CANCEL)
 
-        self.apply_button = gtk.Button("Apply", gtk.STOCK_APPLY)
-        self.apply_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.apply_button, gtk.RESPONSE_APPLY)
+        self.apply_button = Gtk.Button("Apply", Gtk.STOCK_APPLY)
+        self.apply_button.set_can_default(True)
+        self.add_action_widget(self.apply_button, Gtk.ResponseType.APPLY)
 
-        self.ok_button = gtk.Button("OK", gtk.STOCK_OK)
-        self.ok_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.ok_button, gtk.RESPONSE_OK)
+        self.ok_button = Gtk.Button("OK", Gtk.STOCK_OK)
+        self.ok_button.set_can_default(True)
+        self.add_action_widget(self.ok_button, Gtk.ResponseType.OK)
 
-        self.set_default_response(gtk.RESPONSE_OK)
+        self.set_default_response(Gtk.ResponseType.OK)
 
 
         # signals/events
@@ -1025,7 +1085,7 @@ class RegRenameDialog(gtk.Dialog):
         else:
             self.reg_key.name = self.name_entry.get_text()
 
-class RegSearchDialog(gtk.Dialog):
+class RegSearchDialog(Gtk.Dialog):
 
     def __init__(self):
         super(RegSearchDialog, self).__init__()
@@ -1042,75 +1102,82 @@ class RegSearchDialog(gtk.Dialog):
         self.set_icon_from_file(self.icon_registry_filename)
 
         self.set_resizable(False)
+        self.set_decorated(True)
+        self.set_modal(True)
 
 
         # name
 
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         self.vbox.pack_start(hbox, False, False, 10)
 
-        label = gtk.Label("Search for: ")
+        label = Gtk.Label("Search for: ")
         hbox.pack_start(label, False, True, 10)
 
-        self.search_entry = gtk.Entry()
+        self.search_entry = Gtk.Entry()
         self.search_entry.set_activates_default(True)
         hbox.pack_start(self.search_entry, True, True, 10)
 
 
         # options
 
-        frame = gtk.Frame("Match:")
+        frame = Gtk.Frame()
+        frame.set_label("Match:")
         self.vbox.pack_start(frame, False, True, 0)
 
-        vbox = gtk.VBox()
+        vbox = Gtk.VBox()
         vbox.set_border_width(4)
         frame.add(vbox)
 
-        self.check_match_keys = gtk.CheckButton("Keys")
+        self.check_match_keys = Gtk.CheckButton("Keys")
         self.check_match_keys.set_active(True)
         vbox.pack_start(self.check_match_keys, False, False, 0)
-        self.check_match_values = gtk.CheckButton("Values")
+        self.check_match_values = Gtk.CheckButton("Values")
         self.check_match_values.set_active(True)
         vbox.pack_start(self.check_match_values, False, False, 0)
-        self.check_match_data = gtk.CheckButton("Data")
+        self.check_match_data = Gtk.CheckButton("Data")
         self.check_match_data.set_active(True)
         vbox.pack_start(self.check_match_data, False, False, 0)
 
-        self.check_match_whole_string = gtk.CheckButton("Match whole string only")
+        self.check_match_whole_string = Gtk.CheckButton("Match whole string only")
         self.vbox.pack_start(self.check_match_whole_string, False, False, 5)
 
 
         # dialog buttons
 
-        self.action_area.set_layout(gtk.BUTTONBOX_END)
+        self.action_area.set_layout(Gtk.ButtonBoxStyle.END)
 
-        self.cancel_button = gtk.Button("Cancel", gtk.STOCK_CANCEL)
-        self.cancel_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.cancel_button, gtk.RESPONSE_CANCEL)
+        self.cancel_button = Gtk.Button("Cancel", Gtk.STOCK_CANCEL)
+        self.cancel_button.set_can_default(True)
+        self.add_action_widget(self.cancel_button, Gtk.ResponseType.CANCEL)
 
-        self.ok_button = gtk.Button("Search", gtk.STOCK_FIND)
-        self.ok_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.ok_button, gtk.RESPONSE_OK)
+        self.ok_button = Gtk.Button("Search", Gtk.STOCK_FIND)
+        self.ok_button.set_can_default(True)
+        self.add_action_widget(self.ok_button, Gtk.ResponseType.OK)
 
-        self.set_default_response(gtk.RESPONSE_OK)
+        self.set_default_response(Gtk.ResponseType.OK)
 
 
         # signals/events
 
     def check_for_problems(self):
         if self.search_entry.get_text() == "":
-            return ("You must enter text to search for!", gtk.MESSAGE_ERROR)
-        elif not self.check_match_data.get_active() and not self.check_match_keys.get_active() and not self.check_match_values.get_active():
-            return ("You much select at least one of: keys, values, or data to search", gtk.MESSAGE_ERROR)
+            return ("You must enter text to search for!",Gtk.MessageType.ERROR)
+        elif not ( self.check_match_data.get_active() and 
+                   not self.check_match_keys.get_active() and
+                   not self.check_match_values.get_active()):
+            errmsg = "You much select at least one of: keys, values, or data to search"
+            return (errmsg, Gtk.MessageType.ERROR)
         elif not self.check_match_whole_string.get_active() and not self.warned:
             for ch in self.search_entry.get_text():
                 if ch in string.punctuation:
                     self.warned = True
-                    return ("Search items should be separated by a space. Punctuation (such as commas) will be considered part of the search string.\n\nPress find again to continue anyways.", gtk.MESSAGE_INFO)
+                    errmsg = "Search items should be separated by a space. Punctuation (such as commas) will be considered part of the search string.\n\nPress find again to continue anyways."
+                    return (errmsg, Gtk.MessageType.INFO)
 
         return None
 
-class RegPermissionsDialog(gtk.Dialog):
+class RegPermissionsDialog(Gtk.Dialog):
 
     def __init__(self, users, permissions):
         super(RegPermissionsDialog, self).__init__()
@@ -1128,148 +1195,156 @@ class RegPermissionsDialog(gtk.Dialog):
     def create(self):
         self.set_title("Permissions")
         self.set_border_width(5)
-        self.set_resizable(True)
         self.set_default_size(380, 480)
 
-        self.icon_registry_filename = os.path.join(sys.path[0], "images", "registry.png")
+        self.icon_registry_filename = os.path.join(sys.path[0],
+                                    "images", "registry.png")
         self.set_icon_from_file(self.icon_registry_filename)
+
+        self.set_resizable(True)
+        self.set_decorated(True)
+        self.set_modal(True)
 
 
 
         # Groups/Users area
 
-        vbox = gtk.VBox()
+        vbox = Gtk.VBox()
         self.vbox.pack_start(vbox, True, True, 10)
 
-        label = gtk.Label("Users:")
-        label.set_alignment(0, 1)
+        label = Gtk.Label("Users:", xalign = 0 , yalign =1 )
         vbox.pack_start(label, False, False, 0)
 
-        hpaned = gtk.HPaned()
+        hpaned = Gtk.HPaned()
         vbox.pack_start(hpaned, True, True, 0)
 
-        scrolledwindow = gtk.ScrolledWindow(None, None)
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
+        scrolledwindow = Gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_shadow_type(Gtk.ShadowType.IN)
         hpaned.add1(scrolledwindow)
 
-        self.user_tree_view = gtk.TreeView()
+        self.user_tree_view = Gtk.TreeView()
         self.user_tree_view.set_headers_visible(False)
         scrolledwindow.add(self.user_tree_view)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("User")
         column.set_resizable(True)
         column.set_fixed_width(200)
         column.set_sort_column_id(0)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.user_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 0)
 
-        self.user_store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_PYOBJECT)
+        self.user_store = Gtk.ListStore(GObject.TYPE_STRING,
+                                       GObject.TYPE_PYOBJECT)
         self.user_tree_view.set_model(self.user_store)
 
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         vbox.pack_start(hbox, False, False, 0)
 
-        padding = gtk.HBox()
+        padding = Gtk.HBox()
         hbox.pack_start(padding, True, True, 0)
 
-        self.add_button = gtk.Button("Add", gtk.STOCK_ADD)
+        self.add_button = Gtk.Button("Add", Gtk.STOCK_ADD)
         hbox.pack_start(self.add_button, False, False, 2)
 
-        self.remove_button = gtk.Button("Remove", gtk.STOCK_REMOVE)
+        self.remove_button = Gtk.Button("Remove", Gtk.STOCK_REMOVE)
         hbox.pack_start(self.remove_button, False, False, 2)
 
 
 
         #Permissions area
 
-        vbox = gtk.VBox()
+        vbox = Gtk.VBox()
         self.vbox.pack_start(vbox, True, True, 10)
 
-        self.permissions_label = gtk.Label("Permissions for UNKNOWN USER/GROUP:")
-        self.permissions_label.set_alignment(0, 1)
+        self.permissions_label = Gtk.Label(label="Permissions for UNKNOWN USER/GROUP:",
+                                        xalign= 0, yalign= 1 )
         vbox.pack_start(self.permissions_label, False, False, 0)
 
-        hpaned = gtk.HPaned()
+        hpaned = Gtk.HPaned()
         vbox.pack_start(hpaned, True, True, 0)
 
-        scrolledwindow = gtk.ScrolledWindow(None, None)
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
+        scrolledwindow = Gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_shadow_type(Gtk.ShadowType.IN)
         hpaned.add1(scrolledwindow)
 
-        self.permissions_tree_view = gtk.TreeView()
+        self.permissions_tree_view = Gtk.TreeView()
         scrolledwindow.add(self.permissions_tree_view)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Permission")
         column.set_resizable(True)
         column.set_min_width(160)
         column.set_sort_column_id(0)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.permissions_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 0)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Allow")
         column.set_resizable(False)
         column.set_fixed_width(30)
         column.set_sort_column_id(1)
-        renderer = gtk.CellRendererToggle()
+        renderer = Gtk.CellRendererToggle()
         column.pack_start(renderer, True)
         self.permissions_tree_view.append_column(column)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Deny")
         column.set_resizable(False)
         column.set_fixed_width(30)
         column.set_sort_column_id(2)
-        renderer = gtk.CellRendererToggle()
+        renderer = Gtk.CellRendererToggle()
         column.pack_start(renderer, True)
         self.permissions_tree_view.append_column(column)
 
-        self.permissions_store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_BOOLEAN, gobject.TYPE_BOOLEAN, gobject.TYPE_PYOBJECT)
+        self.permissions_store = Gtk.ListStore(GObject.TYPE_STRING,
+                                              GObject.TYPE_BOOLEAN,
+                                              GObject.TYPE_BOOLEAN,
+                                              GObject.TYPE_PYOBJECT)
         self.permissions_tree_view.set_model(self.permissions_store)
 
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         vbox.pack_start(hbox, False, False, 0)
 
-        padding = gtk.HBox()
+        padding = Gtk.HBox()
         hbox.pack_start(padding, True, True, 0)
 
-        self.advanced_button = gtk.Button("Advanced")
+        self.advanced_button = Gtk.Button("Advanced")
         hbox.pack_start(self.advanced_button, False, False, 2)
 
 
 
         # dialog buttons
 
-        self.action_area.set_layout(gtk.BUTTONBOX_END)
+        self.action_area.set_layout(Gtk.ButtonBoxStyle.END)
 
-        self.cancel_button = gtk.Button("Cancel", gtk.STOCK_CANCEL)
-        self.cancel_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.cancel_button, gtk.RESPONSE_CANCEL)
+        self.cancel_button = Gtk.Button("Cancel", Gtk.STOCK_CANCEL)
+        self.cancel_button.set_can_default(True)
+        self.add_action_widget(self.cancel_button, Gtk.ResponseType.CANCEL)
 
-        self.ok_button = gtk.Button("Ok", gtk.STOCK_OK)
-        self.ok_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.ok_button, gtk.RESPONSE_OK)
+        self.ok_button = Gtk.Button("Ok", Gtk.STOCK_OK)
+        self.ok_button.set_can_default(True)
+        self.add_action_widget(self.ok_button, Gtk.ResponseType.OK)
 
-        self.ok_button = gtk.Button("Apply", gtk.STOCK_APPLY)
-        self.ok_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.ok_button, gtk.RESPONSE_APPLY)
+        self.ok_button = Gtk.Button("Apply", Gtk.STOCK_APPLY)
+        self.ok_button.set_can_default(True)
+        self.add_action_widget(self.ok_button, Gtk.ResponseType.APPLY)
 
-        self.set_default_response(gtk.RESPONSE_APPLY)
+        self.set_default_response(Gtk.ResponseType.APPLY)
+
+
 
 
         # signals/events
 
-        self.user_tree_view.get_selection().connect("changed", self.on_user_tree_view_selection_changed)
+        self.user_tree_view.get_selection().connect("changed",
+                                    self.on_user_tree_view_selection_changed)
         self.add_button.connect("clicked", self.on_add_item_activate)
         self.remove_button.connect("clicked", self.on_remove_item_activate)
 
@@ -1286,7 +1361,8 @@ class RegPermissionsDialog(gtk.Dialog):
         (iter, user) = self.get_selected_user()
 
         if (iter is not None):
-            self.permissions_label.set_text("Permissions for " + user.username + ":")
+            self.permissions_label.set_text('',join(["Permissions for ",
+                                                    user.username,":"])
             #TODO: update permissions view on selection changed
         else:
             self.permissions_label.set_text("")
@@ -1318,7 +1394,7 @@ class RegPermissionsDialog(gtk.Dialog):
         else:
             return (iter, model.get_value(iter, 1))
 
-class RegAdvancedPermissionsDialog(gtk.Dialog):
+class RegAdvancedPermissionsDialog(Gtk.Dialog):
     def __init__(self, users, permissions):
         super(RegAdvancedPermissionsDialog, self).__init__()
 
@@ -1337,334 +1413,361 @@ class RegAdvancedPermissionsDialog(gtk.Dialog):
         self.set_title("Permissions")
         self.set_border_width(5)
         self.set_resizable(True)
+        self.set_decorated(True)
+        self.set_modal(True)
         self.set_default_size(630, 490)
 
-        self.icon_registry_filename = os.path.join(sys.path[0], "images", "registry.png")
+        self.icon_registry_filename = os.path.join(sys.path[0],
+                                    "images", "registry.png")
         self.set_icon_from_file(self.icon_registry_filename)
 
-        self.notebook = gtk.Notebook()
+        self.notebook = Gtk.Notebook()
         self.vbox.pack_start(self.notebook, True, True, 0)
 
 
 
         # Permissions tab
 
-        hbox = gtk.HBox() #hbox is for the padding on the left & right.
-        self.notebook.append_page(hbox, gtk.Label("Permissions"))
+        hbox = Gtk.HBox() #hbox is for the padding on the left & right.
+        self.notebook.append_page(hbox, Gtk.Label("Permissions"))
 
-        vbox = gtk.VBox()
+        vbox = Gtk.VBox()
         hbox.pack_start(vbox, True, True, 10)
 
-        label = gtk.Label("To view the details of special permissions entries, select it and then click Edit.\n")
-        label.set_alignment(0, 0)
+        label = Gtk.Label("To view the details of special permissions entries, select it and then click Edit.\n",
+                         xalign= 0 , yalign= 0)
         vbox.pack_start(label, False, False, 15)
 
-        label = gtk.Label("Permission entries:")
-        label.set_alignment(0, 1)
+        label = Gtk.Label(label="Permission entries:",xalign= 0 , yalign= 1)
         vbox.pack_start(label, False, False, 0)
 
-        hpaned = gtk.HPaned()
+        hpaned = Gtk.HPaned()
         vbox.pack_start(hpaned, True, True, 0)
 
-        scrolledwindow = gtk.ScrolledWindow(None, None)
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
+        scrolledwindow = Gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_shadow_type(Gtk.ShadowType.IN)
         hpaned.add1(scrolledwindow)
 
-        self.permissions_tree_view = gtk.TreeView()
+        self.permissions_tree_view = Gtk.TreeView()
         scrolledwindow.add(self.permissions_tree_view)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Type")
         column.set_resizable(True)
         column.set_sort_column_id(0)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.permissions_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 0)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Name")
         column.set_resizable(True)
         column.set_expand(True)
         column.set_sort_column_id(1)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.permissions_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 1)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Permission")
         column.set_resizable(True)
         column.set_expand(True)
         column.set_sort_column_id(2)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.permissions_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 2)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Inherited from")
         column.set_resizable(True)
         column.set_expand(True)
         column.set_sort_column_id(3)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.permissions_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 3)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Applies to")
         column.set_resizable(True)
         column.set_expand(True)
         column.set_sort_column_id(4)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.permissions_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 4)
 
         #Store contains: type (string), name (string), permission (string), inherited from (string), apply to (string, permissions (object)
-        self.permissions_store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_PYOBJECT)
+        self.permissions_store = Gtk.ListStore(GObject.TYPE_STRING,
+                                              GObject.TYPE_STRING,
+                                              GObject.TYPE_STRING,
+                                              GObject.TYPE_STRING,
+                                              GObject.TYPE_STRING,
+                                              GObject.TYPE_PYOBJECT)
         self.permissions_tree_view.set_model(self.permissions_store)
 
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         vbox.pack_start(hbox, False, False, 0)
 
-        padding = gtk.HBox()
+        padding = Gtk.HBox()
         hbox.pack_start(padding, True, True, 0)
 
-        self.add_button_permissions = gtk.Button("Add", gtk.STOCK_ADD)
+        self.add_button_permissions = Gtk.Button("Add", Gtk.STOCK_ADD)
         hbox.pack_start(self.add_button_permissions, False, False, 2)
 
-        self.edit_button_permissions = gtk.Button("Edit", gtk.STOCK_EDIT)
+        self.edit_button_permissions = Gtk.Button("Edit", Gtk.STOCK_EDIT)
         hbox.pack_start(self.edit_button_permissions, False, False, 2)
 
-        self.remove_button_permissions = gtk.Button("Remove", gtk.STOCK_REMOVE)
+        self.remove_button_permissions = Gtk.Button("Remove", Gtk.STOCK_REMOVE)
         hbox.pack_start(self.remove_button_permissions, False, False, 2)
 
-        check_area = gtk.VBox()
+        check_area = Gtk.VBox()
         vbox.pack_start(check_area, False, False, 10)
 
-        self.check_inherit_permissions = gtk.CheckButton("Inherit permissions from parents that apply to child objects.")
+        self.check_inherit_permissions = Gtk.CheckButton(
+               "Inherit permissions from parents that apply to child objects.")
         check_area.pack_start(self.check_inherit_permissions, False, False, 0)
 
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         check_area.pack_start(hbox, False, False, 0)
 
-        self.replace_child_permissions_button = gtk.Button("Replace child permissions")
+        self.replace_child_permissions_button = Gtk.Button(
+                                                "Replace child permissions")
         hbox.pack_start(self.replace_child_permissions_button, False, False, 0)
 
 
 
         # Auditing tab
 
-        hbox = gtk.HBox() #hbox is for the padding on the left & right.
-        self.notebook.append_page(hbox, gtk.Label("Auditing"))
+        hbox = Gtk.HBox() #hbox is for the padding on the left & right.
+        self.notebook.append_page(hbox, Gtk.Label("Auditing"))
 
-        vbox = gtk.VBox()
+        vbox = Gtk.VBox()
         hbox.pack_start(vbox, True, True, 10)
 
-        label = gtk.Label("To view the details of special auditing entries, select it and then click Edit.\n")
-        label.set_alignment(0, 0)
+        label = Gtk.Label("To view the details of special auditing entries, select it and then click Edit.\n",
+                         xalign= 0, yalign= 0)
         vbox.pack_start(label, False, False, 15)
 
-        label = gtk.Label("Auditing entries:")
-        label.set_alignment(0, 1)
+        label = Gtk.Label("Auditing entries:", xalign= 0, yalign= 1)
         vbox.pack_start(label, False, False, 0)
 
-        hpaned = gtk.HPaned()
+        hpaned = Gtk.HPaned()
         vbox.pack_start(hpaned, True, True, 0)
 
-        scrolledwindow = gtk.ScrolledWindow(None, None)
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
+        scrolledwindow = Gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_shadow_type(Gtk.ShadowType.IN)
         hpaned.add1(scrolledwindow)
 
-        self.auditing_tree_view = gtk.TreeView()
+        self.auditing_tree_view = Gtk.TreeView()
         scrolledwindow.add(self.auditing_tree_view)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Type")
         column.set_resizable(True)
         column.set_sort_column_id(0)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.auditing_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 0)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Name")
         column.set_resizable(True)
         column.set_expand(True)
         column.set_sort_column_id(1)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.auditing_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 1)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Permission")
         column.set_resizable(True)
         column.set_expand(True)
         column.set_sort_column_id(2)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.auditing_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 2)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Inherited from")
         column.set_resizable(True)
         column.set_expand(True)
         column.set_sort_column_id(3)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.auditing_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 3)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Applies to")
         column.set_resizable(True)
         column.set_expand(True)
         column.set_sort_column_id(4)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.auditing_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 4)
 
-        self.auditing_store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_PYOBJECT)
+        self.auditing_store = Gtk.ListStore(GObject.TYPE_STRING,
+                                            GObject.TYPE_STRING,
+                                            GObject.TYPE_STRING,
+                                            GObject.TYPE_STRING,
+                                            GObject.TYPE_STRING,
+                                            GObject.TYPE_PYOBJECT)
         self.auditing_tree_view.set_model(self.auditing_store)
 
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         vbox.pack_start(hbox, False, False, 0)
 
-        padding = gtk.HBox()
+        padding = Gtk.HBox()
         hbox.pack_start(padding, True, True, 0)
 
-        self.add_button_auditing = gtk.Button("Add", gtk.STOCK_ADD)
+        self.add_button_auditing = Gtk.Button("Add", Gtk.STOCK_ADD)
         hbox.pack_start(self.add_button_auditing, False, False, 2)
 
-        self.edit_button_auditing = gtk.Button("Edit", gtk.STOCK_EDIT)
+        self.edit_button_auditing = Gtk.Button("Edit", Gtk.STOCK_EDIT)
         hbox.pack_start(self.edit_button_auditing, False, False, 2)
 
-        self.remove_button_auditing = gtk.Button("Remove", gtk.STOCK_REMOVE)
+        self.remove_button_auditing = Gtk.Button("Remove", Gtk.STOCK_REMOVE)
         hbox.pack_start(self.remove_button_auditing, False, False, 2)
 
-        check_area = gtk.VBox()
+        check_area = Gtk.VBox()
         vbox.pack_start(check_area, False, False, 10)
 
-        self.check_inherit_auditing = gtk.CheckButton("Inherit auditing options from parents that apply to child objects.")
+        self.check_inherit_auditing = Gtk.CheckButton(
+          "Inherit auditing options from parents that apply to child objects.")
         check_area.pack_start(self.check_inherit_auditing, False, False, 0)
 
-        hbox = gtk.HBox()
+        hbox = Gtk.HBox()
         check_area.pack_start(hbox, False, False, 0)
 
-        self.replace_child_auditing_button = gtk.Button("Replace child auditing options")
+        self.replace_child_auditing_button = Gtk.Button(
+                                            "Replace child auditing options")
         hbox.pack_start(self.replace_child_auditing_button, False, False, 0)
+
+
 
 
 
         # Ownership tab
 
-        hbox = gtk.HBox() #hbox is for the padding on the left & right.
-        self.notebook.append_page(hbox, gtk.Label("Ownership"))
+        hbox = Gtk.HBox() #hbox is for the padding on the left & right.
+        self.notebook.append_page(hbox, Gtk.Label(label="Ownership"))
 
-        vbox = gtk.VBox()
+        vbox = Gtk.VBox()
         hbox.pack_start(vbox, True, True, 10)
 
 
-        label = gtk.Label("You may take ownership of an object if you have the appropriate permissions.\n")
-        label.set_alignment(0, 0)
+        label = Gtk.Label("You may take ownership of an object if you have the appropriate permissions.\n",
+                         xalign= 0 , yalign= 0)
         vbox.pack_start(label, False, False, 15)
 
-        label = gtk.Label("Current owner of this item:")
-        label.set_alignment(0, 1)
+        label = Gtk.Label(label="Current owner of this item:",
+                         xalign= 0 , yalign= 1)
         vbox.pack_start(label, False, False, 0)
 
-        textview = gtk.Entry()
+        textview = Gtk.Entry()
         textview.set_editable(False)
         vbox.pack_start(textview, False, False, 0)
 
-        label = gtk.Label("Change owner to:")
-        label.set_alignment(0, 1)
+        label = Gtk.Label(label="Change owner to:",xalign= 0 , yalign= 1)
         vbox.pack_start(label, False, False, 0)
 
-        hpaned = gtk.HPaned()
+        hpaned = Gtk.HPaned()
         vbox.pack_start(hpaned, True, True, 0)
 
-        scrolledwindow = gtk.ScrolledWindow(None, None)
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
+        scrolledwindow = Gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_shadow_type(Gtk.ShadowType.IN)
         hpaned.add1(scrolledwindow)
 
-        self.owner_tree_view = gtk.TreeView()
+        self.owner_tree_view = Gtk.TreeView()
         self.owner_tree_view.set_headers_visible(False)
         scrolledwindow.add(self.owner_tree_view)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Name")
         column.set_resizable(True)
         column.set_fixed_width(200)
         column.set_sort_column_id(0)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.owner_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 0)
 
-        self.owner_store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_PYOBJECT)
+        self.owner_store = Gtk.ListStore(GObject.TYPE_STRING,
+                                        GObject.TYPE_PYOBJECT)
         self.owner_tree_view.set_model(self.owner_store)
 
-        self.check_replace_owner_child_objects = gtk.CheckButton("Replace ownership of child objects")
-        vbox.pack_start(self.check_replace_owner_child_objects, False, False, 10)
+        self.check_replace_owner_child_objects = Gtk.CheckButton(
+                                        "Replace ownership of child objects")
+        vbox.pack_start(self.check_replace_owner_child_objects,False, False,10)
 
 
 
         # dialog buttons
 
-        self.action_area.set_layout(gtk.BUTTONBOX_END)
+        self.action_area.set_layout(Gtk.ButtonBoxStyle.END)
 
-        self.cancel_button = gtk.Button("Cancel", gtk.STOCK_CANCEL)
-        self.cancel_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.cancel_button, gtk.RESPONSE_CANCEL)
+        self.cancel_button = Gtk.Button("Cancel", Gtk.STOCK_CANCEL)
+        self.cancel_button.set_can_default(True)
+        self.add_action_widget(self.cancel_button, Gtk.ResponseType.CANCEL)
 
-        self.ok_button = gtk.Button("Ok", gtk.STOCK_OK)
-        self.ok_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.ok_button, gtk.RESPONSE_OK)
+        self.ok_button = Gtk.Button("Ok", Gtk.STOCK_OK)
+        self.ok_button.set_can_default(True)
+        self.add_action_widget(self.ok_button, Gtk.ResponseType.OK)
 
-        self.ok_button = gtk.Button("Apply", gtk.STOCK_APPLY)
-        self.ok_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.ok_button, gtk.RESPONSE_APPLY)
+        self.ok_button = Gtk.Button("Apply", Gtk.STOCK_APPLY)
+        self.ok_button.set_can_default(True)
+        self.add_action_widget(self.ok_button, Gtk.ResponseType.APPLY)
 
-        self.set_default_response(gtk.RESPONSE_APPLY)
+        self.set_default_response(Gtk.ResponseType.APPLY)
 
         # TODO: Effective permissions
 
         # signals/events
-        self.permissions_tree_view.get_selection().connect("changed", self.on_permissions_tree_view_selection_changed)
-        self.auditing_tree_view.get_selection().connect("changed", self.on_auditing_tree_view_selection_changed)
+        self.permissions_tree_view.get_selection().connect("changed",
+                               self.on_permissions_tree_view_selection_changed)
+        self.auditing_tree_view.get_selection().connect("changed",
+                                  self.on_auditing_tree_view_selection_changed)
 
-        self.add_button_permissions.connect("clicked", self.on_add_permissions_button_clicked)
-        self.edit_button_permissions.connect("clicked", self.on_edit_permissions_button_clicked)
-        self.remove_button_permissions.connect("clicked", self.on_remove_permissions_button_clicked)
-        self.replace_child_permissions_button.connect("clicked", self.on_replace_permissions_button_clicked)
-        self.add_button_auditing.connect("clicked", self.on_add_auditing_button_clicked)
-        self.edit_button_auditing.connect("clicked", self.on_edit_auditing_button_clicked)
-        self.remove_button_auditing.connect("clicked", self.on_remove_auditing_button_clicked)
-        self.replace_child_auditing_button.connect("clicked", self.on_replace_auditing_button_clicked)
+        self.add_button_permissions.connect("clicked",
+                                        self.on_add_permissions_button_clicked)
+        self.edit_button_permissions.connect("clicked",
+                                       self.on_edit_permissions_button_clicked)
+        self.remove_button_permissions.connect("clicked",
+                                     self.on_remove_permissions_button_clicked)
+        self.replace_child_permissions_button.connect("clicked",
+                                    self.on_replace_permissions_button_clicked)
+        self.add_button_auditing.connect("clicked",
+                                           self.on_add_auditing_button_clicked)
+        self.edit_button_auditing.connect("clicked",
+                                          self.on_edit_auditing_button_clicked)
+        self.remove_button_auditing.connect("clicked",
+                                        self.on_remove_auditing_button_clicked)
+        self.replace_child_auditing_button.connect("clicked",
+                                       self.on_replace_auditing_button_clicked)
 
-        self.check_inherit_permissions.connect("clicked", self.on_check_inherit_permissions_changed)
-        self.check_inherit_auditing.connect("clicked", self.on_check_inherit_auditing_changed)
+        self.check_inherit_permissions.connect("clicked",
+                                     self.on_check_inherit_permissions_changed)
+        self.check_inherit_auditing.connect("clicked",
+                                        self.on_check_inherit_auditing_changed)
 
 
 
@@ -1674,11 +1777,17 @@ class RegAdvancedPermissionsDialog(gtk.Dialog):
         self.check_inherit_auditing.set_active(True)
 
         user = User("Foo Bar", "", "", 0)
-        self.permissions_store.append(("Allow", user.username, "Special Permissions", "Unicorns", "This key only", user))
-        self.permissions_store.append(("Deny", "Pib", "Access to Playdoe", "HKEY_USERS", "This key and subkeys", user))
+        self.permissions_store.append(("Allow", user.username,
+                    "Special Permissions", "Unicorns", "This key only", user))
+        self.permissions_store.append(("Deny", "Pib", "Access to Playdoe",
+                                  "HKEY_USERS", "This key and subkeys", user))
 
-        self.auditing_store.append(("Deny", "Homer Simpson", "Double Rainbow", "HKEY_LOCAL_MACHINE\\made up key\\temp\\new", "This key and subkeys", user))
-        self.auditing_store.append(("Allow", "Administrator", "Your Right to Party", "Earthworm Jim", "This key only", user))
+        self.auditing_store.append(("Deny", "Homer Simpson", "Double Rainbow",
+                                  "HKEY_LOCAL_MACHINE\\made up key\\temp\\new",
+                                  "This key and subkeys", user))
+        self.auditing_store.append(("Allow", "Administrator",
+                                    "Your Right to Party", "Earthworm Jim",
+                                    "This key only", user))
 
     def get_selected_permission(self):
         (model, iter) = self.permissions_tree_view.get_selection().get_selected()
@@ -1743,164 +1852,50 @@ class RegAdvancedPermissionsDialog(gtk.Dialog):
             return
         #TODO: if no permissions are inherited
 
-        message_box = gtk.MessageDialog(self, gtk.DIALOG_MODAL, gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO, "Unchecking this option means permissions inherited from the parent object will be lost.\n\nDo you want to copy the inherited permissions for this object?")
+        message = "Unchecking this option means auditing options inherited from the parent object will be lost.\n\nDo you want to copy the inherited auditing options for this object?"
+        message_box = Gtk.MessageDialog(self, Gtk.DialogFlags.MODAL,
+                                       Gtk.MessageType.QUESTION,
+                                       Gtk.ButtonsType.YES_NO, message)
         response = message_box.run()
         message_box.hide()
 
-        if (response == gtk.RESPONSE_YES):
+        if (response == Gtk.ResponseType.YES):
             #TODO: copy permissions from the parent object
             pass
-        elif (response == gtk.RESPONSE_NO):
+        elif (response == Gtk.ResponseType.NO):
             #TODO: delete all inherited permissions from the permissions store
             pass
-        else:#probably gtk.RESPONSE_DELETE_EVENT (from pressing escape)
+        else:#probably Gtk.ResponseType.DELETE_EVENT (from pressing escape)
             widget.set_active(True)
+
 
     def on_check_inherit_auditing_changed(self, widget):
         if widget.get_active():
             return
         #TODO: if no permissions are inherited
 
-        message_box = gtk.MessageDialog(self, gtk.DIALOG_MODAL, gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO, "Unchecking this option means auditing options inherited from the parent object will be lost.\n\nDo you want to copy the inherited auditing options for this object?")
+        message = "Unchecking this option means auditing options inherited from the parent object will be lost.\n\nDo you want to copy the inherited auditing options for this object?"
+        message_box = Gtk.MessageDialog(self, Gtk.DialogFlags.MODAL,
+                                       Gtk.MessageType.QUESTION,
+                                       Gtk.ButtonsType.YES_NO, message)
         response = message_box.run()
         message_box.hide()
 
-        if response == gtk.RESPONSE_YES:
+        if response == Gtk.ResponseType.YES:
             #TODO: copy auditing from the parent object
             pass
-        elif response == gtk.RESPONSE_NO:
+        elif response == Gtk.ResponseType.NO:
             #TODO: delete all inherited auditing from the permissions store
             pass
-        else:#probably gtk.RESPONSE_DELETE_EVENT (from pressing escape)
+        else:#probably Gtk.ResponseType.DELETE_EVENT (from pressing escape)
             widget.set_active(True)
 
 
-class WinRegConnectDialog(gtk.Dialog):
+class WinRegConnectDialog(ConnectDialog):
 
-    def __init__(self, server, transport_type, username, password=""):
-        super(WinRegConnectDialog, self).__init__()
+    def __init__(self, server, transport_type, username, password=''):
 
-        self.server_address = server
-        self.transport_type = transport_type
-        self.username = username
-        self.password = password
+        super(WinRegConnectDialog, self).__init__(
+                    server, transport_type, username, password='')
+        self.set_title('Connect to Server')
 
-        self.create()
-
-        self.update_sensitivity()
-
-    def create(self):
-        self.set_title("Connect to a server")
-        self.set_border_width(5)
-        self.set_icon_name(gtk.STOCK_CONNECT)
-        self.set_resizable(False)
-
-
-        # server frame
-
-        self.vbox.set_spacing(5)
-
-        self.server_frame = gtk.Frame("Server")
-        self.vbox.pack_start(self.server_frame, False, True, 0)
-
-        table = gtk.Table(3, 2)
-        table.set_border_width(5)
-        self.server_frame.add(table)
-
-        label = gtk.Label(" Server address: ")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 0, 1, gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
-
-        self.server_address_entry = gtk.Entry()
-        self.server_address_entry.set_text(self.server_address)
-        self.server_address_entry.set_activates_default(True)
-        table.attach(self.server_address_entry, 1, 2, 0, 1, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
-
-        label = gtk.Label(" Username: ")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 1, 2, gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
-
-        self.username_entry = gtk.Entry()
-        self.username_entry.set_text(self.username)
-        self.username_entry.set_activates_default(True)
-        table.attach(self.username_entry, 1, 2, 1, 2, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
-
-        label = gtk.Label(" Password: ")
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 2, 3, gtk.FILL, gtk.FILL | gtk.EXPAND, 0, 0)
-
-        self.password_entry = gtk.Entry()
-        self.password_entry.set_text(self.password)
-        self.password_entry.set_visibility(False)
-        self.password_entry.set_activates_default(True)
-        table.attach(self.password_entry, 1, 2, 2, 3, gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND, 1, 1)
-
-
-        # transport frame
-
-        self.transport_frame = gtk.Frame(" Transport type ")
-        self.vbox.pack_start(self.transport_frame, False, True, 0)
-
-        vbox = gtk.VBox()
-        vbox.set_border_width(5)
-        self.transport_frame.add(vbox)
-
-        self.rpc_smb_tcpip_radio_button = gtk.RadioButton(None, "RPC over SMB over TCP/IP")
-        self.rpc_smb_tcpip_radio_button.set_active(self.transport_type == 0)
-        vbox.pack_start(self.rpc_smb_tcpip_radio_button)
-
-        self.rpc_tcpip_radio_button = gtk.RadioButton(self.rpc_smb_tcpip_radio_button, "RPC over TCP/IP")
-        self.rpc_tcpip_radio_button.set_active(self.transport_type == 1)
-        vbox.pack_start(self.rpc_tcpip_radio_button)
-
-        self.localhost_radio_button = gtk.RadioButton(self.rpc_tcpip_radio_button, "Localhost")
-        self.localhost_radio_button.set_active(self.transport_type == 2)
-        vbox.pack_start(self.localhost_radio_button)
-
-
-        # dialog buttons
-
-        self.action_area.set_layout(gtk.BUTTONBOX_END)
-
-        self.cancel_button = gtk.Button("Cancel", gtk.STOCK_CANCEL)
-        self.add_action_widget(self.cancel_button, gtk.RESPONSE_CANCEL)
-
-        self.connect_button = gtk.Button("Connect", gtk.STOCK_CONNECT)
-        self.connect_button.set_flags(gtk.CAN_DEFAULT)
-        self.add_action_widget(self.connect_button, gtk.RESPONSE_OK)
-
-        self.set_default_response(gtk.RESPONSE_OK)
-
-
-        # signals/events
-
-        self.rpc_smb_tcpip_radio_button.connect("toggled", self.on_radio_button_toggled)
-        self.rpc_tcpip_radio_button.connect("toggled", self.on_radio_button_toggled)
-        self.localhost_radio_button.connect("toggled", self.on_radio_button_toggled)
-
-    def update_sensitivity(self):
-        server_required = not self.localhost_radio_button.get_active()
-
-        self.server_address_entry.set_sensitive(server_required)
-
-    def get_server_address(self):
-        return self.server_address_entry.get_text().strip()
-
-    def get_transport_type(self):
-        if self.rpc_smb_tcpip_radio_button.get_active():
-            return 0
-        elif self.rpc_tcpip_radio_button.get_active():
-            return 1
-        elif self.localhost_radio_button.get_active():
-            return 2
-        else:
-            return -1
-
-    def get_username(self):
-        return self.username_entry.get_text().strip()
-
-    def get_password(self):
-        return self.password_entry.get_text()
-
-    def on_radio_button_toggled(self, widget):
-        self.update_sensitivity()
