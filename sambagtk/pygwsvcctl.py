@@ -591,31 +591,33 @@ class SvcCtlWindow(Gtk.Window):
         self.toolbar = Gtk.Toolbar()
         vbox.pack_start(self.toolbar, False, False, 0)
 
-        self.connect_button = Gtk.ToolButton(Gtk.STOCK_CONNECT)
+        self.connect_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_CONNECT)
         self.connect_button.set_is_important(True)
         self.connect_button.set_tooltip_text("Connect to a server")
         self.toolbar.insert(self.connect_button, 0)
 
-        self.disconnect_button = Gtk.ToolButton(Gtk.STOCK_DISCONNECT)
+        self.disconnect_button = Gtk.ToolButton.new_from_stock(
+                                                         Gtk.STOCK_DISCONNECT)
         self.disconnect_button.set_is_important(True)
         self.disconnect_button.set_tooltip_text("Disconnect from the server")
         self.toolbar.insert(self.disconnect_button, 1)
 
         self.toolbar.insert(Gtk.SeparatorToolItem(), 2)
 
-        self.start_button = Gtk.ToolButton(Gtk.STOCK_MEDIA_PLAY)
+        self.start_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_MEDIA_PLAY)
         self.start_button.set_label("Start")
         self.start_button.set_tooltip_text("Start the service")
         self.start_button.set_is_important(True)
         self.toolbar.insert(self.start_button, 3)
 
-        self.stop_button = Gtk.ToolButton(Gtk.STOCK_MEDIA_STOP)
+        self.stop_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_MEDIA_STOP)
         self.stop_button.set_label("Stop")
         self.stop_button.set_tooltip_text("Stop the service")
         self.stop_button.set_is_important(True)
         self.toolbar.insert(self.stop_button, 4)
 
-        self.pause_resume_button = Gtk.ToolButton(Gtk.STOCK_MEDIA_PAUSE)
+        self.pause_resume_button = Gtk.ToolButton.new_from_stock(
+                                                        Gtk.STOCK_MEDIA_PAUSE)
         self.pause_resume_button.set_is_important(True)
         self.toolbar.insert(self.pause_resume_button, 5)
 

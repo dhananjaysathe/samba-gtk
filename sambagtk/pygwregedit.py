@@ -6,15 +6,19 @@ import traceback
 import threading
 import getopt
 
-import gobject
-import gtk
-import pango
+from gi.repository import GObject
+from gi.repository import Gtk
+from gi.repository import Pango
+from gi.repository import Gdk
+from gi.repository import GdkPixbuf
+from gi.repository import GLib
+
 
 from samba import credentials
 from samba.dcerpc import winreg, security
 from samba.dcerpc import misc
 
-from sambagtk.registry import (
+from registry import ( #TODO make this local
     RegistryKey,
     RegistryValue,
     RegValueEditDialog,
@@ -25,7 +29,7 @@ from sambagtk.registry import (
     WinRegConnectDialog,
     )
 
-from sambagtk.dialogs import (
+from dialogs import (
     AboutDialog,
     )
 
@@ -49,7 +53,8 @@ class WinRegPipeManager(object):
         creds.set_workstation("")
         creds.set_password(password)
 
-        binding = ["ncacn_np:%s", "ncacn_ip_tcp:%s", "ncalrpc:%s"][transport_type]
+        binding = ["ncacn_np:%s", "ncacn_ip_tcp:%s", "ncalrpc:%s"][
+                   transport_type]
         self.pipe = winreg.winreg(binding % (server_address), credentials = creds)
 
         self.open_well_known_keys()
@@ -83,9 +88,11 @@ class WinRegPipeManager(object):
             num_subkeys = 4800.0 #backup value
             self.lock.acquire()
             try:
-                num_subkeys = float(self.pipe.QueryInfoKey(key_handle, WinRegPipeManager.winreg_string(""))[1])
+                num_subkeys = float(self.pipe.QueryInfoKey(key_handle,
+                                      WinRegPipeManager.winreg_string(""))[1])
             except RuntimeError as re:
-                print "Failed to fetch key information for %s: %s." % (key.get_absolute_path(), re.args[1])
+                print ("Failed to fetch key information for %s: %s."
+                                       % (key.get_absolute_path(), re.args[1]))
             finally:
                 self.lock.release()
 
@@ -93,20 +100,24 @@ class WinRegPipeManager(object):
         while True: #get a list of subkeys
             try:
                 self.lock.acquire()
-                (subkey_name, subkey_class, subkey_changed_time) = self.pipe.EnumKey(key_handle, index, blank_buff, blank_buff, None)
+                (subkey_name, subkey_class, subkey_changed_time) = \
+                              self.pipe.EnumKey(key_handle, index,blank_buff,
+                                                            blank_buff, None)
                 self.lock.release() #we want to release the pipe lock before grabbing the gdk lock or else we might cause a deadlock!
 
                 subkey = RegistryKey(subkey_name.name, key)
                 subkey_list.append(subkey)
 
                 if (update_GUI):
-                    gtk.gdk.threads_enter()
-                    regedit_window.set_status("Fetching key: %s" % (subkey_name.name))
+                    Gdk.threads_enter()
+                    regedit_window.set_status("Fetching key: %s" %
+                                                            (subkey_name.name))
                     if (progress_bar):
                         if (index < num_subkeys): #the value of total was a guess so this may cause a GtkWarning for setting fraction to a value above 1.0
-                            regedit_window.progressbar.set_fraction(index/num_subkeys)
+                            regedit_window.progressbar.set_fraction(
+                                                             index/num_subkeys)
                             regedit_window.progressbar.show() #other threads calling ls_key() may finish and hide the progress bar.
-                    gtk.gdk.threads_leave()
+                    Gdk.threads_leave()
 
                 index += 1
 
@@ -114,9 +125,9 @@ class WinRegPipeManager(object):
                 self.lock.release()
                 if (re.args[0] == 0x103): #0x103 is WERR_NO_MORE_ITEMS, so we're done
                     if (update_GUI and progress_bar):
-                        gtk.gdk.threads_enter()
+                        Gdk.threads_enter()
                         regedit_window.progressbar.hide()
-                        gtk.gdk.threads_leave()
+                        Gdk.threads_leave()
                     break
                 else:
                     raise re
@@ -125,16 +136,14 @@ class WinRegPipeManager(object):
         while True: #get a list of values for the key
             try:
                 self.lock.acquire()
-                (value_name, value_type, value_data, value_length) = self.pipe.EnumValue(key_handle,
-                                                                                         index,
-                                                                                         WinRegPipeManager.winreg_val_name_buf(""),
-                                                                                         0,
-                                                                                         [],
-                                                                                         8192
-                                                                                         )
+                (value_name, value_type, value_data, value_length) = \
+                                    self.pipe.EnumValue(key_handle,index,
+                                    WinRegPipeManager.winreg_val_name_buf(""),
+                                    0,[],8192)
                 self.lock.release()
 
-                value = RegistryValue(value_name.name, value_type, value_data, key)
+                value = RegistryValue(value_name.name, value_type,
+                                     value_data, key)
                 value_list.append(value)
 
                 # there's no need to update GUI here since there's usually few
@@ -157,7 +166,7 @@ class WinRegPipeManager(object):
         finally:
             self.lock.release()
 
-        default_value_list = [value for value in value_list if value.name == ""]
+        default_value_list = [value for value in value_list if value.name ==""]
         if len(default_value_list) == 0:
             value = RegistryValue("(Default)", misc.REG_SZ, [], key)
             value_list.append(value)
@@ -165,9 +174,10 @@ class WinRegPipeManager(object):
             default_value_list[0].name = "(Default)"
 
         if (update_GUI and confirm):
-            gtk.gdk.threads_enter()
-            regedit_window.set_status("Successfully fetched keys and values of %s." % (key.name))
-            gtk.gdk.threads_leave()
+            Gdk.threads_enter()
+            regedit_window.set_status(
+                    "Successfully fetched keys and values of %s." % (key.name))
+            Gdk.threads_leave()
 
 #        #The reference count to Py_None is still not right: It climbs to infinity!
 #        print "Finish ls_key()", sys.getrefcount(None)
@@ -188,8 +198,8 @@ class WinRegPipeManager(object):
             try:
                 (subkey_name,
                  subkey_class,
-                 subkey_changed_time) = self.pipe.EnumKey(key_handle, index, blank_buff, blank_buff, None)
-
+                 subkey_changed_time) = self.pipe.EnumKey(key_handle, index,
+                                                blank_buff, blank_buff, None)
                 subkey = RegistryKey(subkey_name.name, key)
                 subkey_list.append(subkey)
 
@@ -240,7 +250,7 @@ class WinRegPipeManager(object):
 
         # Every key is supposted to have a default value. If this key doesn't
         # have one, we'll display a blank one
-        default_value_list = [value for value in value_list if value.name == ""]
+        default_value_list = [value for value in value_list if value.name ==""]
         if (len(default_value_list) == 0):
             value = RegistryValue("(Default)", misc.REG_SZ, [], key)
             value_list.append(value)
@@ -258,10 +268,12 @@ class WinRegPipeManager(object):
         key_sec_data = winreg.KeySecurityData()
         key_sec_data.size = 99999999 #TODO: find a better number.
         #Fetch the DACL
-        result = self.pipe.GetKeySecurity(key_handle, security.SECINFO_DACL , key_sec_data)
+        result = self.pipe.GetKeySecurity(key_handle,
+                                        security.SECINFO_DACL , key_sec_data)
 
         #This is what Vista does. I don't know what it means...
-        vista_key_sec_data1 = self.pipe.GetKeySecurity(key_handle, 0x0e4fcce7 , key_sec_data)
+        vista_key_sec_data1 = self.pipe.GetKeySecurity(key_handle, 0x0e4fcce7 ,
+                                                        key_sec_data)
         #vista_key_sec_data2 = self.pipe.GetKeySecurity(key_handle, 0xb234a886 , key_sec_data) #this crashes, "Expected type int"
 
 
@@ -274,13 +286,16 @@ class WinRegPipeManager(object):
     def create_key(self, key):
         path_handles = self.open_path(key.parent)
         key_handle = path_handles[len(path_handles) - 1]
+        calculated_winreg_key_enum_val = \
+                  (winreg.KEY_ENUMERATE_SUB_KEYS | winreg.KEY_CREATE_SUB_KEY |
+                   winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE)
 
         (new_handle, action_taken) = self.pipe.CreateKey(
             key_handle,
             WinRegPipeManager.winreg_string(key.name),
             WinRegPipeManager.winreg_string(key.name),
             0,
-            winreg.KEY_ENUMERATE_SUB_KEYS | winreg.KEY_CREATE_SUB_KEY | winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE,
+            calculated_winreg_key_enum_val,
             None,
             winreg.REG_ACTION_NONE) #why this value isn't winreg.REG_CREATED_NEW_KEY is beyond me. I'm not even sure why this value is needed, what were the designers thinking?
 
@@ -304,7 +319,8 @@ class WinRegPipeManager(object):
         path_handles = self.open_path(key)
         key_handle = path_handles[len(path_handles) - 2]
 
-        self.pipe.DeleteKey(key_handle, WinRegPipeManager.winreg_string(key.name))
+        self.pipe.DeleteKey(key_handle,
+                           WinRegPipeManager.winreg_string(key.name))
         self.close_path(path_handles)
 
     def set_value(self, value):
@@ -316,7 +332,8 @@ class WinRegPipeManager(object):
         else:
             name = value.name
 
-        self.pipe.SetValue(key_handle, WinRegPipeManager.winreg_string(name), value.type, value.data)
+        self.pipe.SetValue(key_handle, WinRegPipeManager.winreg_string(name),
+                           value.type, value.data)
         self.close_path(path_handles)
 
     def unset_value(self, value):
@@ -328,15 +345,18 @@ class WinRegPipeManager(object):
         else:
             name = value.name
 
-        self.pipe.DeleteValue(key_handle, WinRegPipeManager.winreg_string(name))
+        self.pipe.DeleteValue(key_handle,WinRegPipeManager.winreg_string(name))
         self.close_path(path_handles)
 
     def move_value(self, value, old_name):
         path_handles = self.open_path(value.parent)
         key_handle = path_handles[len(path_handles) - 1]
 
-        self.pipe.DeleteValue(key_handle, WinRegPipeManager.winreg_string(old_name))
-        self.pipe.SetValue(key_handle, WinRegPipeManager.winreg_string(value.name), value.type, value.data)
+        self.pipe.DeleteValue(key_handle,
+                             WinRegPipeManager.winreg_string(old_name))
+        self.pipe.SetValue(key_handle,
+                          WinRegPipeManager.winreg_string(value.name),
+                          value.type, value.data)
 
         self.close_path(path_handles)
 
@@ -346,27 +366,31 @@ class WinRegPipeManager(object):
         #additional permissions need to be added to properly fetch security information.
         #winreg.REG_KEY_ALL works but it's best to figure out what permission is actually needed
 
-        key_handle = self.pipe.OpenHKCR(None, winreg.KEY_ENUMERATE_SUB_KEYS | winreg.KEY_CREATE_SUB_KEY | winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE)
+
+        calculated_winreg_key_enum_val = \
+                  (winreg.KEY_ENUMERATE_SUB_KEYS | winreg.KEY_CREATE_SUB_KEY |
+                   winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE)
+        key_handle = self.pipe.OpenHKCR(None, calculated_winreg_key_enum_val)
         key = RegistryKey("HKEY_CLASSES_ROOT", None)
         key.handle = key_handle
         self.well_known_keys.append(key)
 
-        key_handle = self.pipe.OpenHKCU(None, winreg.KEY_ENUMERATE_SUB_KEYS | winreg.KEY_CREATE_SUB_KEY | winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE)
+        key_handle = self.pipe.OpenHKCU(None, calculated_winreg_key_enum_val)
         key = RegistryKey("HKEY_CURRENT_USER", None)
         key.handle = key_handle
         self.well_known_keys.append(key)
 
-        key_handle = self.pipe.OpenHKLM(None, winreg.KEY_ENUMERATE_SUB_KEYS | winreg.KEY_CREATE_SUB_KEY | winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE)
+        key_handle = self.pipe.OpenHKLM(None, calculated_winreg_key_enum_val)
         key = RegistryKey("HKEY_LOCAL_MACHINE", None)
         key.handle = key_handle
         self.well_known_keys.append(key)
 
-        key_handle = self.pipe.OpenHKU(None, winreg.KEY_ENUMERATE_SUB_KEYS | winreg.KEY_CREATE_SUB_KEY | winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE)
+        key_handle = self.pipe.OpenHKU(None, calculated_winreg_key_enum_val)
         key = RegistryKey("HKEY_USERS", None)
         key.handle = key_handle
         self.well_known_keys.append(key)
 
-        key_handle = self.pipe.OpenHKCC(None, winreg.KEY_ENUMERATE_SUB_KEYS | winreg.KEY_CREATE_SUB_KEY | winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE)
+        key_handle = self.pipe.OpenHKCC(None, calculated_winreg_key_enum_val)
         key = RegistryKey("HKEY_CURRENT_CONFIG", None)
         key.handle = key_handle
         self.well_known_keys.append(key)
@@ -378,12 +402,14 @@ class WinRegPipeManager(object):
             path = self.open_path(key.parent)
             parent_handle = path[-1]
 
+            calculated_winreg_key_enum_val = \
+                  (winreg.KEY_ENUMERATE_SUB_KEYS | winreg.KEY_CREATE_SUB_KEY |
+                   winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE)
             key_handle = self.pipe.OpenKey(
                                       parent_handle,
                                       WinRegPipeManager.winreg_string(key.name),
                                       0,
-                                      winreg.KEY_ENUMERATE_SUB_KEYS | winreg.KEY_CREATE_SUB_KEY | winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE
-                                      )
+                                      calculated_winreg_key_enum_val)
 
             return path + [key_handle]
 
@@ -434,9 +460,10 @@ class KeyFetchThread(threading.Thread):
         msg = None
         try:
             #the ls_key function will grab the pipe lock
-            (key_list, value_list) = self.pipe_manager.ls_key(self.selected_key, self.regedit_window)
+            (key_list, value_list) = self.pipe_manager.ls_key(
+                                        self.selected_key, self.regedit_window)
 
-            gtk.gdk.threads_enter()
+            Gdk.threads_enter()
             self.regedit_window.refresh_keys_tree_view(self.iter, key_list)
             #self.regedit_window.keys_tree_view.get_selection().select_iter(self.iter) #select the key, in case selection has changed during fetching. This causes problems
             #columns_autosize() already called by refresh_keys_tree_view()
@@ -445,21 +472,24 @@ class KeyFetchThread(threading.Thread):
             self.regedit_window.update_sensitivity()
             #threads_leave in the finally: section
         except RuntimeError as re:
-            msg = "Failed to fetch information about %s: %s." % (self.selected_key.get_absolute_path(), re.args[1])
+            msg = "Failed to fetch information about %s: %s." % (
+                            self.selected_key.get_absolute_path(), re.args[1])
             print msg
 
         finally:
-            gtk.gdk.threads_leave()
+            Gdk.threads_leave()
 
             if (msg is not None):
-                gtk.gdk.threads_enter()
+                Gdk.threads_enter()
                 self.regedit_window.set_status(msg)
-                self.regedit_window.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
-                gtk.gdk.threads_leave()
+                self.regedit_window.run_message_dialog(Gtk.MessageType.ERROR,
+                                                      Gtk.ButtonsType.OK, msg)
+                Gdk.threads_leave()
 
 
 class SearchThread(threading.Thread):
-    def __init__(self, pipe_manager, regedit_window, options, starting_key_iter=None):
+    def __init__(self, pipe_manager, regedit_window, options,
+                starting_key_iter=None):
         """This thread searches the registry using the options specified in 'options'.
         If 'starting_key_iter' is supplied then it will search only from that key onward."""
         super(SearchThread, self).__init__()
@@ -492,17 +522,17 @@ class SearchThread(threading.Thread):
             well_known_keys = self.pipe_manager.well_known_keys
             self.pipe_manager.lock.release()
 
-            gtk.gdk.threads_enter()
+            Gdk.threads_enter()
             for key in well_known_keys: #push the root keys onto the stack
-                stack.append((key, self.regedit_window.get_iter_for_key(key), ))
-            gtk.gdk.threads_leave()
+                stack.append((key, self.regedit_window.get_iter_for_key(key),))
+            Gdk.threads_leave()
             stack.reverse() #we pop keys from the end of the list. Without this we'd be searching from the last root key first
 
         else: #The user pressed find next.
             #create the stack with only the keys we haven't searched yet
-            gtk.gdk.threads_enter() #the function below requires the GUI gui_lock because it has to get info from the gtk data structures. But i'm not positive this gui_lock is needed
+            Gdk.threads_enter() #the function below requires the GUI gui_lock because it has to get info from the gtk data structures. But i'm not positive this gui_lock is needed
             stack = self.fill_stack()
-            gtk.gdk.threads_leave()
+            Gdk.threads_leave()
 
         #stuff we need
         model = self.regedit_window.keys_tree_view.get_model()
@@ -513,8 +543,8 @@ class SearchThread(threading.Thread):
         search_values = self.search_values
         search_data = self.search_data
         #dot operations addresses are looked up at run time, so this saves us many lookups
-        gui_lock = gtk.gdk.threads_enter
-        gui_unlock = gtk.gdk.threads_leave
+        gui_lock = Gdk.threads_enter
+        gui_unlock = Gdk.threads_leave
         pipe_lock = self.pipe_manager.lock.acquire
         pipe_unlock = self.pipe_manager.lock.release
         append_to_key_store = self.regedit_window.keys_store.append
@@ -554,7 +584,8 @@ class SearchThread(threading.Thread):
                     value_list = self.pipe_manager.get_values_for_key(key)
                 except RuntimeError as ex:
                     #probably a WERR_ACCESS_DENIED exception. We'll just skip over keys that can't be fetched
-                    print "Failed to fetch values for %s: %s." % (key.get_absolute_path(), ex.args[1])
+                    print "Failed to fetch values for %s: %s." % (
+                                          key.get_absolute_path(), ex.args[1])
                     continue
                 finally:
                     pipe_unlock()
@@ -565,10 +596,14 @@ class SearchThread(threading.Thread):
                    for text in search_items: #and check those values for each search string
                         if (value.name.find(text) >= 0): #check if it's in the value's name
                             gui_lock()
-                            self.regedit_window.refresh_values_tree_view(value_list) #Fill in the values, we'll need this to hightlight the result
-                            value_iter = self.regedit_window.get_iter_for_value(value)
-                            self.regedit_window.highlight_search_result(key_iter, value_iter)
-                            msg = "Found value at: %s." % value.get_absolute_path()
+                            self.regedit_window.refresh_values_tree_view(
+                                                                   value_list) #Fill in the values, we'll need this to hightlight the result
+                            value_iter = self.regedit_window.get_iter_for_value(
+                                                                         value)
+                            self.regedit_window.highlight_search_result(
+                                                          key_iter, value_iter)
+                            msg = "Found value at: %s." % (
+                                                    value.get_absolute_path())
                             self.regedit_window.set_status(msg)
                             self.regedit_window.search_thread = None
                             gui_unlock()
@@ -580,10 +615,14 @@ class SearchThread(threading.Thread):
                    for text in search_items: #and check those values for each search string
                         if (value.get_data_string().find(text) >= 0): #check if it's in the value's data
                             gui_lock()
-                            self.regedit_window.refresh_values_tree_view(value_list) #Fill in the values, we'll need this to hightlight the result
-                            value_iter = self.regedit_window.get_iter_for_value(value)
-                            self.regedit_window.highlight_search_result(key_iter, value_iter)
-                            msg = "Found data at: %s." % value.get_absolute_path()
+                            self.regedit_window.refresh_values_tree_view(
+                                                                    value_list) #Fill in the values, we'll need this to hightlight the result
+                            value_iter = self.regedit_window.get_iter_for_value(
+                                                                        value)
+                            self.regedit_window.highlight_search_result(
+                                                          key_iter, value_iter)
+                            msg = "Found data at: %s." % (
+                                                    value.get_absolute_path())
                             self.regedit_window.set_status(msg)
                             self.regedit_window.search_thread = None
                             gui_unlock()
@@ -596,7 +635,8 @@ class SearchThread(threading.Thread):
             subkey_iter = model.iter_children(key_iter)
             if subkey_iter is not None: #if the subkeys already exist in the tree view
                 while subkey_iter is not None:
-                    append_list.append((model.get_value(subkey_iter, 1), subkey_iter, ))
+                    append_list.append((model.get_value(subkey_iter, 1),
+                                                                subkey_iter, ))
                     subkey_iter = model.iter_next(subkey_iter)
                 gui_unlock()
             else: #If we don't already have them, we have to get them
@@ -606,7 +646,8 @@ class SearchThread(threading.Thread):
                     subkey_list = self.pipe_manager.get_subkeys_for_key(key)
                 except RuntimeError as re:
                     #probably a WERR_ACCESS_DENIED exception. We'll just skip over keys that can't be fetched
-                    print "Failed to fetch subkeys for %s: %s." % (key.get_absolute_path(), re.args[1])
+                    print "Failed to fetch subkeys for %s: %s." % (
+                                           key.get_absolute_path(), re.args[1])
                     continue
                 finally:
                     pipe_unlock()
@@ -616,7 +657,8 @@ class SearchThread(threading.Thread):
                 gui_lock()
                 #key_iter = self.regedit_window.get_iter_for_key(key)
                 for current_key in subkey_list:
-                    child_iter = append_to_key_store(key_iter, current_key.list_view_representation())
+                    child_iter = append_to_key_store(key_iter,
+                                        current_key.list_view_representation())
                     append_list.append((current_key, child_iter, ))
                 gui_unlock()
 
@@ -626,10 +668,11 @@ class SearchThread(threading.Thread):
         #if we are here then the loop has finished and found nothing
         msg = "Search query not found."
         if self.match_whole_string: msg += "\n\nConsider searching again with 'Match whole string' unchecked"
-        gtk.gdk.threads_enter()
+        Gdk.threads_enter()
         self.regedit_window.search_thread = None
-        self.regedit_window.run_message_dialog(gtk.MESSAGE_INFO, gtk.BUTTONS_OK, msg)
-        gtk.gdk.threads_leave()
+        self.regedit_window.run_message_dialog(Gtk.MessageType.INFO,
+                                              Gtk.ButtonsType.OK, msg)
+        Gdk.threads_leave()
 
     def fill_stack(self):
         """Fills the stack with the keys we need to search. This only gets called to create the stack when the user presses 'find next'.
@@ -650,7 +693,8 @@ class SearchThread(threading.Thread):
         n += 1 #we don't want to add the current root key to the stack
         append_list = []
         while n < len(well_known_keys):
-            append_list.append((well_known_keys[n], self.regedit_window.get_iter_for_key(well_known_keys[n]) ,))
+            append_list.append((well_known_keys[n],
+                  self.regedit_window.get_iter_for_key(well_known_keys[n]) ,))
             n += 1
         append_list.reverse()
         stack.extend(append_list)
@@ -692,7 +736,7 @@ class SearchThread(threading.Thread):
         self.explode = True
 
 
-class RegEditWindow(gtk.Window):
+class RegEditWindow(Gtk.Window):
 
     def __init__(self, info_callback=None, server="", username="",
             password="", transport_type=0, connect_now=False):
@@ -723,182 +767,228 @@ class RegEditWindow(gtk.Window):
 
         # main window
 
-        accel_group = gtk.AccelGroup()
+        accel_group = Gtk.AccelGroup()
 
         self.set_title("Registry Editor")
         self.set_default_size(800, 600)
-        self.icon_filename = os.path.join(sys.path[0], "images", "registry.png")
-        self.icon_registry_number_filename = os.path.join(sys.path[0], "images", "registry-number.png")
-        self.icon_registry_string_filename = os.path.join(sys.path[0], "images", "registry-string.png")
-        self.icon_registry_binary_filename = os.path.join(sys.path[0], "images", "registry-binary.png")
-        self.icon_pixbuf = gtk.gdk.pixbuf_new_from_file(self.icon_filename)
-        self.icon_registry_number_pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(self.icon_registry_number_filename, 22, 22)
-        self.icon_registry_string_pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(self.icon_registry_string_filename, 22, 22)
-        self.icon_registry_binary_pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(self.icon_registry_binary_filename, 22, 22)
+        self.icon_filename = os.path.join(sys.path[0],"images", "registry.png")
+        self.icon_registry_number_filename = os.path.join(sys.path[0],
+                                               "images", "registry-number.png")
+        self.icon_registry_string_filename = os.path.join(sys.path[0],
+                                               "images", "registry-string.png")
+        self.icon_registry_binary_filename = os.path.join(sys.path[0],
+                                               "images", "registry-binary.png")
+        self.icon_pixbuf = GdkPixbuf.Pixbuf.new_from_file(self.icon_filename)
+        self.icon_registry_number_pixbuf = \
+                            GdkPixbuf.Pixbuf.new_from_file_at_size(
+                                    self.icon_registry_number_filename, 22, 22)
+        self.icon_registry_string_pixbuf = \
+                            GdkPixbuf.Pixbuf.new_from_file_at_size(
+                                    self.icon_registry_string_filename, 22, 22)
+        self.icon_registry_binary_pixbuf = \
+                            GdkPixbuf.Pixbuf.new_from_file_at_size(
+                                    self.icon_registry_binary_filename, 22, 22)
 
         self.set_icon(self.icon_pixbuf)
 
-        vbox = gtk.VBox(False, 0)
+        vbox = Gtk.VBox(False, 0)
         self.add(vbox)
 
         # TODO: assign keyboard shortcuts
 
         # menu
 
-        self.menubar = gtk.MenuBar()
+        self.menubar = Gtk.MenuBar()
         vbox.pack_start(self.menubar, False, False, 0)
 
-        self.file_item = gtk.MenuItem("_File")
+        self.file_item = Gtk.MenuItem.new_with_mnemonic("_File")
         self.menubar.add(self.file_item)
 
-        file_menu = gtk.Menu()
-        self.file_item.set_submenu(file_menu)
+        file_menu = Gtk.Menu()
+        self.file_item.set_property("submenu",file_menu)
 
-        self.connect_item = gtk.ImageMenuItem(gtk.STOCK_CONNECT, accel_group)
+        self.connect_item = Gtk.ImageMenuItem(Gtk.STOCK_CONNECT)
+        self.connect_item.set_property("accel-group",accel_group)
         file_menu.add(self.connect_item)
 
-        self.disconnect_item = gtk.ImageMenuItem(gtk.STOCK_DISCONNECT, accel_group)
+        self.disconnect_item = Gtk.ImageMenuItem(Gtk.STOCK_DISCONNECT)
+        self.disconnect_item.set_properties("accel-group",accel_group,
+                                            "sensitive",False)
         file_menu.add(self.disconnect_item)
 
-        menu_separator_item = gtk.SeparatorMenuItem()
+        menu_separator_item = Gtk.SeparatorMenuItem()
+        menu_separator_item.set_property("sensitive",False)
         file_menu.add(menu_separator_item)
 
-        self.import_item = gtk.MenuItem("_Import...", accel_group)
+        self.import_item = Gtk.MenuItem.new_with_mnemonic("_Import...")
         # TODO: implement import & export
         #file_menu.add(self.import_item)
 
-        self.export_item = gtk.MenuItem("_Export...", accel_group)
+        self.export_item = Gtk.MenuItem.new_with_mnemonic("_Export...")
         #file_menu.add(self.export_item)
 
-#        menu_separator_item = gtk.SeparatorMenuItem()
+#        menu_separator_item = Gtk.SeparatorMenuItem()
 #        file_menu.add(menu_separator_item)
 
-        self.quit_item = gtk.ImageMenuItem(gtk.STOCK_QUIT, accel_group)
+        self.quit_item = Gtk.ImageMenuItem(Gtk.STOCK_QUIT)
+        self.quit_item.set_property("accel-group",accel_group)
         file_menu.add(self.quit_item)
 
-        self.edit_item = gtk.MenuItem("_Edit")
+        self.edit_item = Gtk.MenuItem.new_with_mnemonic("_Edit")
         self.menubar.add(self.edit_item)
 
-        self.edit_menu = gtk.Menu()
+        self.edit_menu = Gtk.Menu()
         self.edit_item.set_submenu(self.edit_menu)
 
-        self.modify_item = gtk.ImageMenuItem("_Modify", accel_group)
+        self.modify_item = Gtk.ImageMenuItem.new_with_mnemonic("_Modify")
+        self.modify_item.set_property("accel-group",accel_group)
         self.edit_menu.add(self.modify_item)
 
-        self.modify_binary_item = gtk.MenuItem("Modify _Binary", accel_group)
+        self.modify_binary_item = Gtk.MenuItem.new_with_mnemonic("Modify _Binary")
+        self.modify_binary_item.set_property("accel-group",accel_group)
         self.edit_menu.add(self.modify_binary_item)
 
-        self.edit_menu.add(gtk.SeparatorMenuItem())
+        menu_separator_item = Gtk.SeparatorMenuItem()
+        menu_separator_item.set_property("sensitive",False)
+        self.edit_menu.add(menu_separator_item)
 
-        self.new_item = gtk.ImageMenuItem(gtk.STOCK_NEW, accel_group)
+        self.new_item = Gtk.ImageMenuItem(Gtk.STOCK_NEW)
+        self.new_item.set_property("accel-group",accel_group)
         self.edit_menu.add(self.new_item)
 
-        new_menu = gtk.Menu()
+        new_menu = Gtk.Menu()
         self.new_item.set_submenu(new_menu)
 
-        self.new_key_item = gtk.MenuItem("_Key", accel_group)
+        self.new_key_item = Gtk.MenuItem.new_with_mnemonic("_Key")
+        self.new_key_item.set_property("accel-group",accel_group)
         new_menu.add(self.new_key_item)
 
-        new_menu.add(gtk.SeparatorMenuItem())
+        menu_separator_item = Gtk.SeparatorMenuItem()
+        menu_separator_item.set_property("sensitive",False)
+        new_menu.add(menu_separator_item)
 
-        self.new_string_item = gtk.MenuItem("_String Value", accel_group)
+        self.new_string_item = Gtk.MenuItem.new_with_mnemonic("_String Value")
+        self.new_string_item.set_property("accel-group",accel_group)
         new_menu.add(self.new_string_item)
 
-        self.new_binary_item = gtk.MenuItem("_Binary Value", accel_group)
+        self.new_binary_item = Gtk.MenuItem.new_with_mnemonic("_Binary Value")
+        self.new_binary_item.set_property("accel-group",accel_group)
         new_menu.add(self.new_binary_item)
 
-        self.new_dword_item = gtk.MenuItem("_DWORD Value", accel_group)
+        self.new_dword_item = Gtk.MenuItem.new_with_mnemonic("_DWORD Value")
+        self.new_dword_item.set_property("accel-group",accel_group)
         new_menu.add(self.new_dword_item)
 
-        self.new_multi_string_item = gtk.MenuItem("_Multi-String Value", accel_group)
+        self.new_multi_string_item = Gtk.MenuItem.new_with_mnemonic(
+                                                        "_Multi-String Value")
+        self.new_multi_string_item.set_property("accel-group",accel_group)
         new_menu.add(self.new_multi_string_item)
 
-        self.new_expandable_item = gtk.MenuItem("_Expandable String Value", accel_group)
+        self.new_expandable_item = Gtk.MenuItem.new_with_mnemonic(
+                                                    "_Expandable String Value")
+        self.new_expandable_item.set_property("accel-group",accel_group)
         new_menu.add(self.new_expandable_item)
 
-        self.edit_menu.add(gtk.SeparatorMenuItem())
+        menu_separator_item = Gtk.SeparatorMenuItem()
+        menu_separator_item.set_property("sensitive",False)
+        self.edit_menu.add(menu_separator_item)
 
         #TODO: Finish implementing permissions (dialogs are mostly done, just need to fetch/update the data)
-        #self.permissions_item = gtk.MenuItem("_Permissions", accel_group)
+        #self.permissions_item = Gtk.MenuItem.new_with_mnemonic("_Permissions")
+        #self.permissions_item.set_property("accel-group",accel_group)
         #self.edit_menu.add(self.permissions_item)
 
-        #self.edit_menu.add(gtk.SeparatorMenuItem())
+        #menu_separator_item = Gtk.SeparatorMenuItem()
+        #menu_separator_item.set_property("sensitive",False)
+        #self.edit_menu.add(menu_separator_item)
 
-        self.delete_item = gtk.ImageMenuItem(gtk.STOCK_DELETE, accel_group)
+        self.delete_item = Gtk.ImageMenuItem(Gtk.STOCK_DELETE)
+        self.delete_item.set_property("accel-group",accel_group)
         self.edit_menu.add(self.delete_item)
 
-        self.rename_item = gtk.ImageMenuItem(gtk.STOCK_EDIT, accel_group)
+        self.rename_item = Gtk.ImageMenuItem(Gtk.STOCK_EDIT)
+        self.rename_item.set_property("accel-group",accel_group)
         self.edit_menu.add(self.rename_item)
 
-        self.edit_menu.add(gtk.SeparatorMenuItem())
+        menu_separator_item = Gtk.SeparatorMenuItem()
+        menu_separator_item.set_property("sensitive",False)
+        self.edit_menu.add(menu_separator_item)
 
-        self.copy_item = gtk.MenuItem("_Copy Registry Path", accel_group)
+        self.copy_item = Gtk.MenuItem.new_with_mnemonic("_Copy Registry Path")
+        self.copy_item.set_property("accel-group",accel_group)
         self.edit_menu.add(self.copy_item)
 
-        self.edit_menu.add(gtk.SeparatorMenuItem())
+        menu_separator_item = Gtk.SeparatorMenuItem()
+        menu_separator_item.set_property("sensitive",False)
+        self.edit_menu.add(menu_separator_item)
 
-        self.find_item = gtk.ImageMenuItem(gtk.STOCK_FIND, accel_group)
+        self.find_item = Gtk.ImageMenuItem(Gtk.STOCK_FIND)
+        self.find_item.set_property("accel-group",accel_group)
         self.find_item.get_child().set_text("Find...")
         self.edit_menu.add(self.find_item)
 
-        self.find_next_item = gtk.MenuItem("Find _Next", accel_group)
+        self.find_next_item = Gtk.MenuItem.new_with_mnemonic("Find _Next")
+        self.find_next_item.set_property("accel-group",accel_group)
         self.edit_menu.add(self.find_next_item)
 
-        self.view_item = gtk.MenuItem("_View")
+        self.view_item = Gtk.MenuItem.new_with_mnemonic("_View")
         self.menubar.add(self.view_item)
 
-        view_menu = gtk.Menu()
+        view_menu = Gtk.Menu()
         self.view_item.set_submenu(view_menu)
 
-        self.refresh_item = gtk.ImageMenuItem(gtk.STOCK_REFRESH, accel_group)
+        self.refresh_item = Gtk.ImageMenuItem(Gtk.STOCK_REFRESH)
+        self.refresh_item.set_property("accel-group",accel_group)
         view_menu.add(self.refresh_item)
 
-        self.help_item = gtk.MenuItem("_Help")
+        self.help_item = Gtk.MenuItem.new_with_mnemonic("_Help")
         self.menubar.add(self.help_item)
 
-        help_menu = gtk.Menu()
+        help_menu = Gtk.Menu()
         self.help_item.set_submenu(help_menu)
 
-        self.about_item = gtk.ImageMenuItem(gtk.STOCK_ABOUT, accel_group)
+        self.about_item = Gtk.ImageMenuItem(Gtk.STOCK_ABOUT)
+        self.about_item.set_property("accel-group",accel_group)
         help_menu.add(self.about_item)
 
 
         # toolbar
 
-        self.toolbar = gtk.Toolbar()
+        self.toolbar = Gtk.Toolbar()
         vbox.pack_start(self.toolbar, False, False, 0)
 
-        self.connect_button = gtk.ToolButton(gtk.STOCK_CONNECT)
+        self.connect_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_CONNECT)
         self.connect_button.set_is_important(True)
         self.connect_button.set_tooltip_text("Connect to a server")
         self.toolbar.insert(self.connect_button, 0)
 
-        self.disconnect_button = gtk.ToolButton(gtk.STOCK_DISCONNECT)
+        self.disconnect_button = Gtk.ToolButton.new_from_stock(
+                                                         Gtk.STOCK_DISCONNECT)
         self.disconnect_button.set_is_important(True)
         self.disconnect_button.set_tooltip_text("Disconnect from the server")
         self.toolbar.insert(self.disconnect_button, 1)
 
-        self.toolbar.insert(gtk.SeparatorToolItem(), 2)
+        self.toolbar.insert(Gtk.SeparatorToolItem(), 2)
 
-        self.new_key_button = gtk.ToolButton(gtk.STOCK_NEW)
+        self.new_key_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_NEW)
         self.new_key_button.set_label("New Key")
         self.new_key_button.set_tooltip_text("Create a new registry key")
         self.new_key_button.set_is_important(True)
         self.toolbar.insert(self.new_key_button, 3)
 
-        self.new_string_button = gtk.ToolButton(gtk.STOCK_NEW)
+        self.new_string_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_NEW)
         self.new_string_button.set_label("New Value")
         self.new_string_button.set_tooltip_text("Create a new string registry value")
         self.new_string_button.set_is_important(True)
         self.toolbar.insert(self.new_string_button, 4)
 
-        self.rename_button = gtk.ToolButton(gtk.STOCK_EDIT)
+        self.rename_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_EDIT)
         self.rename_button.set_label("Rename")
         self.rename_button.set_tooltip_text("Rename the selected key or value")
         self.rename_button.set_is_important(True)
         self.toolbar.insert(self.rename_button, 5)
 
-        self.delete_button = gtk.ToolButton(gtk.STOCK_DELETE)
+        self.delete_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_DELETE)
         self.delete_button.set_tooltip_text("Delete the selected key or value")
         self.delete_button.set_is_important(True)
         self.toolbar.insert(self.delete_button, 5)
@@ -908,108 +998,110 @@ class RegEditWindow(gtk.Window):
 
         # TODO: make the expanders nicely align with the icons
 
-        self.hpaned = gtk.HPaned()
-        vbox.pack_start(self.hpaned)
+        self.hpaned = Gtk.HPaned()
+        vbox.pack_start(self.hpaned, True, True, 0)
 
-        scrolledwindow = gtk.ScrolledWindow(None, None)
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
+        scrolledwindow = Gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_shadow_type(Gtk.ShadowType.IN)
         scrolledwindow.set_size_request(250, 0)
         self.hpaned.add1(scrolledwindow)
 
-        self.keys_tree_view = gtk.TreeView()
+        self.keys_tree_view = Gtk.TreeView()
         self.keys_tree_view.set_headers_visible(False)
         scrolledwindow.add(self.keys_tree_view)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("")
         column.set_resizable(False)
-        renderer = gtk.CellRendererPixbuf()
-        renderer.set_property("stock-id", gtk.STOCK_DIRECTORY)
+        renderer = Gtk.CellRendererPixbuf()
+        renderer.set_property("stock-id", Gtk.STOCK_DIRECTORY)
         column.pack_start(renderer, True)
         self.keys_tree_view.append_column(column)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Name")
-        renderer = gtk.CellRendererText()
+        renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.keys_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 0)
 
-        self.keys_store = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_PYOBJECT)
+        self.keys_store = Gtk.TreeStore(GObject.TYPE_STRING,
+                                        GObject.TYPE_PYOBJECT)
         self.keys_tree_view.set_model(self.keys_store)
 
 
         # value list
 
-        scrolledwindow = gtk.ScrolledWindow(None, None)
-        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
+        scrolledwindow = Gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_shadow_type(Gtk.ShadowType.IN)
         self.hpaned.add2(scrolledwindow)
 
-        self.values_tree_view = gtk.TreeView()
+        self.values_tree_view = Gtk.TreeView()
         scrolledwindow.add(self.values_tree_view)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("")
         column.set_resizable(False)
-        renderer = gtk.CellRendererPixbuf()
+        renderer = Gtk.CellRendererPixbuf()
         column.pack_start(renderer, True)
         self.values_tree_view.append_column(column)
         column.add_attribute(renderer, "pixbuf", 0)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Name")
         column.set_resizable(True)
         column.set_fixed_width(190)
         #column.set_expand(True)
-        column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+        column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
         column.set_sort_column_id(1)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.values_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 1)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Type")
         column.set_resizable(True)
         column.set_fixed_width(160)
-        column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+        column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
         column.set_sort_column_id(2)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.values_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 2)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Data")
         column.set_resizable(True)
         column.set_fixed_width(300)
         column.set_expand(True)
         column.set_sort_column_id(3)
-        renderer = gtk.CellRendererText()
-        renderer.set_property("ellipsize", pango.ELLIPSIZE_END)
+        renderer = Gtk.CellRendererText()
+        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(renderer, True)
         self.values_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 3)
 
-        self.values_store = gtk.ListStore(gtk.gdk.Pixbuf, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_PYOBJECT)
-        self.values_store.set_sort_column_id(1, gtk.SORT_ASCENDING)
+        self.values_store = Gtk.ListStore(GdkPixbuf.Pixbuf,
+                                         GObject.TYPE_STRING,
+                                         GObject.TYPE_STRING,
+                                         GObject.TYPE_STRING,
+                                         GObject.TYPE_PYOBJECT)
+        self.values_store.set_sort_column_id(1, Gtk.SortType.ASCENDING)
         self.values_tree_view.set_model(self.values_store)
 
 
         # status bar & progress bar
 
-        self.statusbar = gtk.Statusbar()
-        self.statusbar.set_has_resize_grip(True)
+        self.statusbar = Gtk.Statusbar()
 
-        self.progressbar = gtk.ProgressBar()
+        self.progressbar = Gtk.ProgressBar()
         self.progressbar.set_no_show_all(True)
         self.progressbar.hide()
 
-        hbox = gtk.HBox(False, 0)
+        hbox = Gtk.HBox(False, 0)
         hbox.pack_start(self.progressbar, False, False, 0)
         hbox.pack_start(self.statusbar, True, True, 0)
 
@@ -1022,42 +1114,59 @@ class RegEditWindow(gtk.Window):
         self.connect("key-press-event", self.on_key_press)
 
         self.connect_item.connect("activate", self.on_connect_item_activate)
-        self.disconnect_item.connect("activate", self.on_disconnect_item_activate)
+        self.disconnect_item.connect("activate",
+                                    self.on_disconnect_item_activate)
         self.import_item.connect("activate", self.on_import_item_activate)
         self.export_item.connect("activate", self.on_export_item_activate)
         self.quit_item.connect("activate", self.on_quit_item_activate)
         self.modify_item.connect("activate", self.on_modify_item_activate)
-        self.modify_binary_item.connect("activate", self.on_modify_binary_item_activate)
+        self.modify_binary_item.connect("activate",
+                                        self.on_modify_binary_item_activate)
         self.new_key_item.connect("activate", self.on_new_key_item_activate)
-        self.new_string_item.connect("activate", self.on_new_string_item_activate)
-        self.new_binary_item.connect("activate", self.on_new_binary_item_activate)
-        self.new_dword_item.connect("activate", self.on_new_dword_item_activate)
-        self.new_multi_string_item.connect("activate", self.on_new_multi_string_item_activate)
-        self.new_expandable_item.connect("activate", self.on_new_expandable_item_activate)
+        self.new_string_item.connect("activate",
+                                             self.on_new_string_item_activate)
+        self.new_binary_item.connect("activate",
+                                             self.on_new_binary_item_activate)
+        self.new_dword_item.connect("activate",
+                                              self.on_new_dword_item_activate)
+        self.new_multi_string_item.connect("activate",
+                                       self.on_new_multi_string_item_activate)
+        self.new_expandable_item.connect("activate",
+                                         self.on_new_expandable_item_activate)
         #self.permissions_item.connect("activate", self.on_permissions_item_activate)
         self.delete_item.connect("activate", self.on_delete_item_activate)
         self.rename_item.connect("activate", self.on_rename_item_activate)
         self.copy_item.connect("activate", self.on_copy_item_activate)
         self.find_item.connect("activate", self.on_find_item_activate)
-        self.find_next_item.connect("activate", self.on_find_next_item_activate)
+        self.find_next_item.connect("activate",self.on_find_next_item_activate)
         self.refresh_item.connect("activate", self.on_refresh_item_activate)
         self.about_item.connect("activate", self.on_about_item_activate)
 
         self.connect_button.connect("clicked", self.on_connect_item_activate)
-        self.disconnect_button.connect("clicked", self.on_disconnect_item_activate)
+        self.disconnect_button.connect("clicked",
+                                      self.on_disconnect_item_activate)
         self.new_key_button.connect("clicked", self.on_new_key_item_activate)
-        self.new_string_button.connect("clicked", self.on_new_string_item_activate)
+        self.new_string_button.connect("clicked",
+                                      self.on_new_string_item_activate)
         self.delete_button.connect("clicked", self.on_delete_item_activate)
         self.rename_button.connect("clicked", self.on_rename_item_activate)
 
-        self.keys_tree_view.get_selection().connect("changed", self.on_keys_tree_view_selection_changed)
-        self.keys_tree_view.connect("row-collapsed", self.on_keys_tree_view_row_collapsed_expanded)
-        self.keys_tree_view.connect("row-expanded", self.on_keys_tree_view_row_collapsed_expanded)
-        self.keys_tree_view.connect("button_press_event", self.on_keys_tree_view_button_press)
-        self.keys_tree_view.connect("focus-in-event", self.on_tree_views_focus_in)
-        self.values_tree_view.get_selection().connect("changed", self.on_values_tree_view_selection_changed)
-        self.values_tree_view.connect("button_press_event", self.on_values_tree_view_button_press)
-        self.values_tree_view.connect("focus-in-event", self.on_tree_views_focus_in)
+        self.keys_tree_view.get_selection().connect("changed",
+                                     self.on_keys_tree_view_selection_changed)
+        self.keys_tree_view.connect("row-collapsed",
+                                self.on_keys_tree_view_row_collapsed_expanded)
+        self.keys_tree_view.connect("row-expanded",
+                                self.on_keys_tree_view_row_collapsed_expanded)
+        self.keys_tree_view.connect("button_press_event",
+                                          self.on_keys_tree_view_button_press)
+        self.keys_tree_view.connect("focus-in-event",
+                                                  self.on_tree_views_focus_in)
+        self.values_tree_view.get_selection().connect("changed",
+                                   self.on_values_tree_view_selection_changed)
+        self.values_tree_view.connect("button_press_event",
+                                        self.on_values_tree_view_button_press)
+        self.values_tree_view.connect("focus-in-event",
+                                                  self.on_tree_views_focus_in)
 
         self.add_accel_group(accel_group)
 
@@ -1069,7 +1178,8 @@ class RegEditWindow(gtk.Window):
         if (not self.connected()):
             return
 
-        (model, selected_paths) = self.keys_tree_view.get_selection().get_selected_rows()
+        (model, selected_paths) = \
+                        self.keys_tree_view.get_selection().get_selected_rows()
 
         if (iter is None):
             #If iter is None then the tree is empty.
@@ -1131,17 +1241,20 @@ class RegEditWindow(gtk.Window):
                         misc.REG_QWORD:self.icon_registry_number_pixbuf,
                         }
 
-        (model, selected_paths) = self.values_tree_view.get_selection().get_selected_rows()
+        (model, selected_paths) = \
+                      self.values_tree_view.get_selection().get_selected_rows()
 
         self.values_store.clear()
 
         for value in value_list:
             try: #This can fail when we get a value of a type that isn't in type_pixbufs (such as REG_NONE)
-                self.values_store.append([type_pixbufs[value.type]] + value.list_view_representation())
+                self.values_store.append([type_pixbufs[value.type]] +
+                                        value.list_view_representation())
             except (KeyError, IndexError, ) as er:
                 #TODO: handle REG_NONE types better.
                 if value.type == misc.REG_NONE:
-                    print "Not displaying a hidden value at %s." % (value.get_absolute_path())
+                    print "Not displaying a hidden value at %s." % (
+                                                    value.get_absolute_path())
                 else:
                     print "Failed to display %s in the value tree: values of type %s cannot be handled." % (value.get_absolute_path(), str(value.type))
 
@@ -1186,7 +1299,7 @@ class RegEditWindow(gtk.Window):
             return (iter, model.get_value(iter, 4))
 
     def get_iter_for_value(self, value):
-        """This function takes a value and gets the iterator for that value in the gtk.TreeStore.
+        """This function takes a value and gets the iterator for that value in the Gtk.TreeStore.
 
         Returns an iterator or None"""
         if not self.connected():
@@ -1202,7 +1315,7 @@ class RegEditWindow(gtk.Window):
         return None
 
     def get_iter_for_key(self, key):
-        """This function takes a key and gets the iterator for that key in the gtk.TreeStore.
+        """This function takes a key and gets the iterator for that key in the Gtk.TreeStore.
         Note: this function is SLOW. Only call this function if you cannot figure out a better method.
 
         Returns an iterator or None"""
@@ -1239,11 +1352,14 @@ class RegEditWindow(gtk.Window):
 
         key_selected = (self.get_selected_registry_key()[1] is not None)
         value_selected = (self.get_selected_registry_value()[1] is not None)
-        value_set = (value_selected and len(self.get_selected_registry_value()[1].data) > 0)
-        value_default = (value_selected and self.get_selected_registry_value()[1].name == "(Default)")
+        value_set = (value_selected and
+                          len(self.get_selected_registry_value()[1].data) > 0)
+        value_default = (value_selected and
+                    self.get_selected_registry_value()[1].name == "(Default)")
         key_focused = self.keys_tree_view.is_focus()
         if (connected):
-            root_key_selected = (key_selected and self.get_selected_registry_key()[1].parent is None)
+            root_key_selected = (key_selected and
+                           self.get_selected_registry_key()[1].parent is None)
 
         # sensitiviy
 
@@ -1261,37 +1377,52 @@ class RegEditWindow(gtk.Window):
         self.new_expandable_item.set_sensitive(connected and key_selected)
         #self.permissions_item.set_sensitive(connected and (key_selected or value_selected))
         if (key_focused):
-            self.delete_item.set_sensitive(connected and key_selected and not root_key_selected)
-            self.rename_item.set_sensitive(connected and key_selected and not root_key_selected)
+            self.delete_item.set_sensitive(connected and key_selected and
+                                          not root_key_selected)
+            self.rename_item.set_sensitive(connected and key_selected and
+                                           not root_key_selected)
         else:
-            self.delete_item.set_sensitive(connected and value_selected and (value_set or not value_default))
-            self.rename_item.set_sensitive(connected and value_selected and not value_default)
+            self.delete_item.set_sensitive(connected and value_selected and
+                                           (value_set or not value_default))
+            self.rename_item.set_sensitive(connected and value_selected and
+                                          not value_default)
         self.copy_item.set_sensitive(connected and key_selected)
         self.find_item.set_sensitive(connected)
         self.find_next_item.set_sensitive(connected)
         self.refresh_item.set_sensitive(connected)
 
-        self.connect_button.set_sensitive(self.connect_item.state != gtk.STATE_INSENSITIVE)
-        self.disconnect_button.set_sensitive(self.disconnect_item.state != gtk.STATE_INSENSITIVE)
-        self.new_key_button.set_sensitive(self.new_key_item.state != gtk.STATE_INSENSITIVE)
-        self.new_string_button.set_sensitive(self.new_string_item.state != gtk.STATE_INSENSITIVE)
-        self.rename_button.set_sensitive(self.rename_item.state != gtk.STATE_INSENSITIVE)
-        self.delete_button.set_sensitive(self.delete_item.state != gtk.STATE_INSENSITIVE)
+        self.connect_button.set_sensitive(
+                        self.connect_item.state != Gtk.StateType.INSENSITIVE)
+        self.disconnect_button.set_sensitive(
+                     self.disconnect_item.state != Gtk.StateType.INSENSITIVE)
+        self.new_key_button.set_sensitive(
+                        self.new_key_item.state != Gtk.StateType.INSENSITIVE)
+        self.new_string_button.set_sensitive(
+                     self.new_string_item.state != Gtk.StateType.INSENSITIVE)
+        self.rename_button.set_sensitive(
+                         self.rename_item.state != Gtk.StateType.INSENSITIVE)
+        self.delete_button.set_sensitive(
+                         self.delete_item.state != Gtk.StateType.INSENSITIVE)
 
 
         # captions
 
-        self.delete_item.get_child().set_text("Delete " + ["Value", "Key"][key_focused])
-        self.delete_button.set_tooltip_text("Delete the selected " + ["value", "key"][key_focused])
+        self.delete_item.get_child().set_text("Delete " +
+                                              ["Value", "Key"][key_focused])
+        self.delete_button.set_tooltip_text("Delete the selected " +
+                                            ["value", "key"][key_focused])
 
-        self.rename_item.get_child().set_text("Rename " + ["Value", "Key"][key_focused])
-        self.rename_button.set_tooltip_text("Rename the selected " + ["value", "key"][key_focused])
+        self.rename_item.get_child().set_text("Rename " +
+                                              ["Value", "Key"][key_focused])
+        self.rename_button.set_tooltip_text("Rename the selected " +
+                                            ["value", "key"][key_focused])
 
     def run_message_dialog(self, type, buttons, message, parent = None):
         if (parent is None):
             parent = self
 
-        message_box = gtk.MessageDialog(parent, gtk.DIALOG_MODAL, type, buttons, message)
+        message_box = Gtk.MessageDialog(parent, Gtk.DialogFlags.MODAL,
+                                        type, buttons, message)
         response = message_box.run()
         message_box.hide()
 
@@ -1316,19 +1447,20 @@ class RegEditWindow(gtk.Window):
         while True:
             response_id = dialog.run()
 
-            if (response_id in [gtk.RESPONSE_OK, gtk.RESPONSE_APPLY]):
+            if (response_id in [Gtk.ResponseType.OK, Gtk.ResponseType.APPLY]):
                 problem_msg = dialog.check_for_problems()
 
                 if (problem_msg is not None):
-                    self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, problem_msg)
+                    self.run_message_dialog(Gtk.MessageType.ERROR,
+                                           Gtk.ButtonsType.OK, problem_msg)
                 else:
                     dialog.values_to_reg_value()
                     if (apply_callback is not None):
                         dialog.reg_value.type = original_type
                         if (not apply_callback(dialog.reg_value)):
-                            response_id = gtk.RESPONSE_NONE
+                            response_id = Gtk.ResponseType.NONE
                         dialog.reg_value.type = type
-                    if (response_id == gtk.RESPONSE_OK):
+                    if (response_id == Gtk.ResponseType.OK):
                         dialog.hide()
                         break
 
@@ -1348,17 +1480,18 @@ class RegEditWindow(gtk.Window):
         while True:
             response_id = dialog.run()
 
-            if (response_id in [gtk.RESPONSE_OK, gtk.RESPONSE_APPLY]):
+            if (response_id in [Gtk.ResponseType.OK, Gtk.ResponseType.APPLY]):
                 problem_msg = dialog.check_for_problems()
 
                 if (problem_msg is not None):
-                    self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, problem_msg)
+                    self.run_message_dialog(Gtk.MessageType.ERROR,
+                                           Gtk.ButtonsType.OK, problem_msg)
                 else:
                     dialog.values_to_reg_key()
                     if (apply_callback is not None):
                         if (not apply_callback(dialog.reg_key)):
-                            response_id = gtk.RESPONSE_NONE
-                    if (response_id == gtk.RESPONSE_OK):
+                            response_id = Gtk.ResponseType.NONE
+                    if (response_id == Gtk.ResponseType.OK):
                         dialog.hide()
                         break
 
@@ -1376,17 +1509,19 @@ class RegEditWindow(gtk.Window):
         while True:
             response_id = dialog.run()
 
-            if (response_id in [gtk.RESPONSE_OK, gtk.RESPONSE_APPLY]):
+            if (response_id in [Gtk.ResponseType.OK, Gtk.ResponseType.APPLY]):
                 problem_msg = dialog.check_for_problems()
 
                 if (problem_msg is not None):
-                    self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, problem_msg)
+                    self.run_message_dialog(Gtk.MessageType.ERROR,
+                                           Gtk.ButtonsType.OK, problem_msg)
                 else:
                     dialog.values_to_reg()
                     if (apply_callback is not None):
-                        if (not apply_callback([dialog.reg_value, dialog.reg_key][dialog.reg_key is not None])):
-                            response_id = gtk.RESPONSE_NONE
-                    if (response_id == gtk.RESPONSE_OK):
+                        if (not apply_callback([dialog.reg_value,
+                        dialog.reg_key][dialog.reg_key is not None])):
+                            response_id = Gtk.ResponseType.NONE
+                    if (response_id == Gtk.ResponseType.OK):
                         dialog.hide()
                         break
 
@@ -1399,19 +1534,22 @@ class RegEditWindow(gtk.Window):
         else:
             return dialog.reg_key
 
-    def run_connect_dialog(self, pipe_manager, server_address, transport_type, username, password = "", connect_now = False):
-        dialog = WinRegConnectDialog(server_address, transport_type, username, password)
+    def run_connect_dialog(self, pipe_manager, server_address, transport_type,
+                          username, password = "", connect_now = False):
+
+        dialog = WinRegConnectDialog(server_address, transport_type,
+                                    username, password)
         dialog.show_all()
 
         # loop to handle the failures
         while True:
             if (connect_now):
                 connect_now = False
-                response_id = gtk.RESPONSE_OK
+                response_id = Gtk.ResponseType.OK
             else:
                 response_id = dialog.run()
 
-            if (response_id != gtk.RESPONSE_OK):
+            if (response_id != Gtk.ResponseType.OK):
                 dialog.hide()
                 return None
             else:
@@ -1424,40 +1562,61 @@ class RegEditWindow(gtk.Window):
                     self.username = username
                     password = dialog.get_password()
 
-                    pipe_manager = WinRegPipeManager(server_address, transport_type, username, password)
+                    pipe_manager = WinRegPipeManager(server_address,
+                                            transport_type, username, password)
 
                     break
 
                 except RuntimeError, re:
                     if re.args[1] == 'Logon failure': #user got the password wrong
-                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Failed to connect: Invalid username or password.", dialog)
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                               Gtk.ButtonsType.OK,
+                                               "Failed to connect: Invalid username or password.",
+                                               dialog)
                         dialog.password_entry.grab_focus()
                         dialog.password_entry.select_region(0, -1) #select all the text in the password box
                     elif re.args[0] == 5 or re.args[1] == 'Access denied':
-                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Failed to connect: Access Denied.", dialog)
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                               Gtk.ButtonsType.OK,
+                                               "Failed to connect: Access Denied.",
+                                               dialog)
                         dialog.username_entry.grab_focus()
                         dialog.username_entry.select_region(0, -1)
                     elif re.args[1] == 'NT_STATUS_HOST_UNREACHABLE':
-                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Failed to connect: Could not contact the server.", dialog)
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                               Gtk.ButtonsType.OK,
+                                               "Failed to connect: Could not contact the server.",
+                                               dialog)
                         dialog.server_address_entry.grab_focus()
                         dialog.server_address_entry.select_region(0, -1)
                     elif re.args[1] == 'NT_STATUS_NETWORK_UNREACHABLE':
-                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Failed to connect: The network is unreachable.\n\nPlease check your network connection.", dialog)
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                               Gtk.ButtonsType.OK,
+                                               "Failed to connect: The network is unreachable.\n\nPlease check your network connection.",
+                                               dialog)
                     elif re.args[1] == 'NT_STATUS_CONNECTION_REFUSED':
-                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Failed to connect: The connection was refused.", dialog)
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                               Gtk.ButtonsType.OK,
+                                               "Failed to connect: The connection was refused.",
+                                               dialog)
                     elif re.args[1] == 'NT_STATUS_OBJECT_NAME_NOT_FOUND':
-                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Failed to connect: NT_STATUS_OBJECT_NAME_NOT_FOUND.\n\nIs the remote registry service running?", dialog)
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                               Gtk.ButtonsType.OK,
+                                               "Failed to connect: NT_STATUS_OBJECT_NAME_NOT_FOUND.\n\nIs the remote registry service running?",
+                                               dialog)
                     else:
                         msg = "Failed to connect: %s." % (re.args[1])
                         print msg
                         traceback.print_exc()
-                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg, dialog)
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                               Gtk.ButtonsType.OK, msg, dialog)
 
                 except Exception as ex:
                     msg = "Failed to connect: %s." % (str(ex))
                     print msg
                     traceback.print_exc()
-                    self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg, dialog)
+                    self.run_message_dialog(Gtk.MessageType.ERROR,
+                                           Gtk.ButtonsType.OK, msg, dialog)
 
         dialog.hide()
         return pipe_manager
@@ -1470,10 +1629,11 @@ class RegEditWindow(gtk.Window):
         while True:
             response_id = dialog.run()
 
-            if (response_id == gtk.RESPONSE_OK): #the search button returns RESPONSE_OK
+            if (response_id == Gtk.ResponseType.OK): #the search button returns RESPONSE_OK
                 problem_msg = dialog.check_for_problems()
                 if (problem_msg is not None):
-                    self.run_message_dialog(problem_msg[1], gtk.BUTTONS_OK, problem_msg[0])
+                    self.run_message_dialog(problem_msg[1],
+                                           Gtk.ButtonsType.OK, problem_msg[0])
                 else:
                     dialog.hide()
                     break
@@ -1501,20 +1661,23 @@ class RegEditWindow(gtk.Window):
             value_list = self.pipe_manager.get_values_for_key(selected_key)
 
             self.refresh_values_tree_view(value_list)
-            self.set_status("Value \'%s\' updated." % (value.get_absolute_path()))
+            self.set_status("Value \'%s\' updated." %
+                                               (value.get_absolute_path()))
             return True
         except RuntimeError, re:
             msg = "Failed to update value: %s." % (re.args[1])
             print msg
             self.set_status(msg)
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
         except Exception, ex:
             msg = "Failed to update value: %s." % (str(ex))
             print msg
             self.set_status(msg)
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
         finally:
             self.pipe_manager.lock.release()
 
@@ -1531,15 +1694,20 @@ class RegEditWindow(gtk.Window):
         #performance would be better if we released the lock between pipe manager calls, but that would make for very complex code - not worth it
         self.pipe_manager.lock.acquire()
         try:
-            key_list = self.pipe_manager.get_subkeys_for_key(selected_key.parent)
+            key_list = self.pipe_manager.get_subkeys_for_key(
+                                                        selected_key.parent)
 
             #check if a key with that name already exists
             if (len([k for k in key_list if k.name == key.name]) > 0):
-                self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "This key already exists. Please choose another name.", self)
+                self.run_message_dialog(Gtk.MessageType.ERROR,
+                                       Gtk.ButtonsType.OK,
+                                       "This key already exists. Please choose another name.",
+                                       self)
                 return False
 
             self.pipe_manager.move_key(key, key.old_name)
-            key_list = self.pipe_manager.get_subkeys_for_key(selected_key.parent)
+            key_list = self.pipe_manager.get_subkeys_for_key(
+                                                        selected_key.parent)
 
             key.old_name = key.name
             parent_iter = self.keys_store.iter_parent(iter)
@@ -1553,13 +1721,15 @@ class RegEditWindow(gtk.Window):
             print msg
             self.set_status(msg)
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
         except Exception, ex:
             msg = "Failed to rename key: %s." % (str(ex))
             print msg
             self.set_status(msg)
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
         finally:
             self.pipe_manager.lock.release()
 
@@ -1582,7 +1752,10 @@ class RegEditWindow(gtk.Window):
             value_list = self.pipe_manager.get_values_for_key(selected_key)
 
             if (len([v for v in value_list if v.name == value.name]) > 0):
-                self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "This value already exists. Please choose another name.", self)
+                self.run_message_dialog(Gtk.MessageType.ERROR,
+                                       Gtk.ButtonsType.OK,
+                                       "This value already exists. Please choose another name.",
+                                       self)
                 return False
 
             self.pipe_manager.move_value(value, value.old_name)
@@ -1590,7 +1763,8 @@ class RegEditWindow(gtk.Window):
 
             value.old_name = value.name
             self.refresh_values_tree_view(value_list)
-            self.set_status("Value \'%s\' renamed." % (value.get_absolute_path()))
+            self.set_status("Value \'%s\' renamed." % (
+                                                   value.get_absolute_path()))
             return True
 
         except RuntimeError, re:
@@ -1598,13 +1772,15 @@ class RegEditWindow(gtk.Window):
             print msg
             self.set_status(msg)
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
         except Exception, ex:
             msg = "Failed to rename value: %s." % (str(ex))
             print msg
             self.set_status(msg)
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
         finally:
             self.pipe_manager.lock.release()
 
@@ -1627,26 +1803,32 @@ class RegEditWindow(gtk.Window):
             value_list = self.pipe_manager.get_values_for_key(selected_key)
 
             if (len([v for v in value_list if v.name == new_value.name]) > 0):
-                self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "This value already exists.", self)
+                self.run_message_dialog(Gtk.MessageType.ERROR,
+                                       Gtk.ButtonsType.OK,
+                                       "This value already exists.",
+                                       self)
                 return False
 
             self.pipe_manager.set_value(new_value)
             value_list = self.pipe_manager.get_values_for_key(selected_key)
             self.refresh_values_tree_view(value_list)
-            self.set_status("Value \'%s\' successfully added." % (new_value.get_absolute_path()))
+            self.set_status("Value \'%s\' successfully added." % (
+                                            new_value.get_absolute_path()))
 
         except RuntimeError, re:
             msg = "Failed to create value: %s." % (re.args[1])
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
         except Exception, ex:
             msg = "Failed to create value: %s."  % (str(ex))
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
         finally:
             self.pipe_manager.lock.release()
 
@@ -1685,16 +1867,16 @@ class RegEditWindow(gtk.Window):
         return result
 
     def on_key_press(self, widget, event):
-        if event.keyval == gtk.keysyms.F5:
+        if event.keyval == Gdk.KEY_F5:
             self.on_refresh_item_activate(None)
-        elif event.keyval == gtk.keysyms.F3:
+        elif event.keyval == Gdk.KEY_F3:
             self.on_find_next_item_activate(None)
-        elif event.keyval == gtk.keysyms.F2:
+        elif event.keyval == Gdk.KEY_F2:
             self.on_rename_item_activate(None)
-        elif event.keyval == gtk.keysyms.Delete:
+        elif event.keyval == Gdk.KEY_Delete:
             self.on_delete_item_activate(None)
-        elif event.keyval == gtk.keysyms.Return:
-            myev = gtk.gdk.Event(gtk.gdk._2BUTTON_PRESS) #emulate a double-click
+        elif event.keyval == Gdk.KEY_Return:
+            myev = Gdk.Event(Gdk.EventType._2BUTTON_PRESS) #emulate a double-click
             self.on_values_tree_view_button_press(None, myev)
 #        else:
 #            print "Key pressed:", event.keyval
@@ -1703,15 +1885,20 @@ class RegEditWindow(gtk.Window):
         if (self.pipe_manager is not None):
             self.on_disconnect_item_activate(self.disconnect_item)
 
-        gtk.main_quit()
+        Gtk.main_quit()
         return False
 
-    def on_connect_item_activate(self, widget, server = "", transport_type = 0, username = "", password = "", connect_now = False):
+    def on_connect_item_activate(self, widget, server = "",
+                                transport_type = 0,
+                                username = "",
+                                password = "",
+                                connect_now = False):
         server = server or self.server_address
         transport_type = transport_type or self.transport_type
         username = username or self.username
 
-        self.pipe_manager = self.run_connect_dialog(None, server, transport_type, username, password, connect_now)
+        self.pipe_manager = self.run_connect_dialog(None, server,
+                               transport_type, username, password, connect_now)
         self.set_status("Connected to %s." % (self.server_address))
 
         self.refresh_keys_tree_view(None, None)
@@ -1744,15 +1931,17 @@ class RegEditWindow(gtk.Window):
         if not self.connected():
             return
         (iter, edit_value) = self.get_selected_registry_value()
-        self.run_value_edit_dialog(edit_value, None, self.update_value_callback)
+        self.run_value_edit_dialog(edit_value, None,self.update_value_callback)
 
     def on_modify_binary_item_activate(self, widget):
         if not self.connected():
             return
         (iter, edit_value) = self.get_selected_registry_value()
-        self.run_value_edit_dialog(edit_value, misc.REG_BINARY, self.update_value_callback)
+        self.run_value_edit_dialog(edit_value, misc.REG_BINARY,
+                                  self.update_value_callback)
 
-        self.set_status("Value \'%s\' updated." % (edit_value.get_absolute_path()))
+        self.set_status("Value \'%s\' updated." % (
+                                              edit_value.get_absolute_path()))
 
     def on_new_key_item_activate(self, widget):
         (iter, selected_key) = self.get_selected_registry_key()
@@ -1770,26 +1959,32 @@ class RegEditWindow(gtk.Window):
             key_list = self.pipe_manager.get_subkeys_for_key(selected_key)
 
             if (len([k for k in key_list if k.name == new_key.name]) > 0):
-                self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "This key already exists.", self)
+                self.run_message_dialog(Gtk.MessageType.ERROR,
+                                       Gtk.ButtonsType.OK,
+                                       "This key already exists.",
+                                       self)
                 return False
 
             self.pipe_manager.create_key(new_key)
             key_list = self.pipe_manager.get_subkeys_for_key(selected_key)
             self.refresh_keys_tree_view(iter, key_list, new_key)
-            self.set_status("Key \'%s\' successfully added." % (new_key.get_absolute_path()))
+            self.set_status("Key \'%s\' successfully added." % (
+                                                new_key.get_absolute_path()))
 
         except RuntimeError, re:
             msg = "Failed to create key: %s." % (re.args[1])
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
         except Exception, ex:
             msg = "Failed to create key: %s." % (str(ex))
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
         finally:
             self.pipe_manager.lock.release()
 
@@ -1838,14 +2033,20 @@ class RegEditWindow(gtk.Window):
             if (selected_key is None):
                 return
 
-            if (self.run_message_dialog(gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO, "Do you want to delete key '%s'?" % selected_key.name) != gtk.RESPONSE_YES):
+            if (self.run_message_dialog(Gtk.MessageType.QUESTION,
+                                       Gtk.ButtonsType.YES_NO,
+                                       "Do you want to delete key '%s'?" % selected_key.name
+                                        )!= Gtk.ResponseType.YES):
                 return
         else:
             (iter, selected_value) = self.get_selected_registry_value()
             if (selected_value is None):
                 return
 
-            if (self.run_message_dialog(gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO, "Do you want to delete value '%s'?" % selected_value.name) != gtk.RESPONSE_YES):
+            if (self.run_message_dialog(Gtk.MessageType.QUESTION,
+                                       Gtk.ButtonsType.YES_NO,
+                                       "Do you want to delete value '%s'?" % selected_value.name
+                                       ) != Gtk.ResponseType.YES):
                 return
 
         self.pipe_manager.lock.acquire()
@@ -1853,18 +2054,22 @@ class RegEditWindow(gtk.Window):
             if (key_focused):
 
                 self.pipe_manager.remove_key(selected_key)
-                key_list = self.pipe_manager.get_subkeys_for_key(selected_key.parent)
+                key_list = self.pipe_manager.get_subkeys_for_key(
+                                                           selected_key.parent)
 
                 parent_iter = self.keys_store.iter_parent(iter)
                 self.refresh_keys_tree_view(parent_iter, key_list)
 
-                self.set_status("Key \'%s\' successfully deleted." % (selected_key.get_absolute_path()))
+                self.set_status("Key \'%s\' successfully deleted." % (
+                                            selected_key.get_absolute_path()))
             else:
                 self.pipe_manager.unset_value(selected_value)
-                value_list = self.pipe_manager.get_values_for_key(selected_value.parent)
+                value_list = self.pipe_manager.get_values_for_key(
+                                                        selected_value.parent)
 
                 self.refresh_values_tree_view(value_list)
-                self.set_status("Value \'%s\' successfully deleted." % (selected_value.get_absolute_path()))
+                self.set_status("Value \'%s\' successfully deleted." % (
+                                          selected_value.get_absolute_path()))
 
         except RuntimeError, re:
             if re.args[1] == 'WERR_BADFILE':
@@ -1875,13 +2080,15 @@ class RegEditWindow(gtk.Window):
                 self.set_status(msg)
                 print msg
                 traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
         except Exception, ex:
             msg = "Failed to delete value: %s." % (str(ex))
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
         finally:
             self.pipe_manager.lock.release()
 
@@ -1898,7 +2105,8 @@ class RegEditWindow(gtk.Window):
         else:
             (iter, rename_value) = self.get_selected_registry_value()
             rename_value.old_name = rename_value.name
-            self.run_rename_dialog(None, rename_value, self.rename_value_callback)
+            self.run_rename_dialog(None, rename_value,
+                                  self.rename_value_callback)
 
     def on_copy_item_activate(self, widget):
         if not self.connected():
@@ -1919,7 +2127,8 @@ class RegEditWindow(gtk.Window):
 
             path = selected_value.get_absolute_path()
 
-        clipboard = gtk.clipboard_get(gtk.gdk.SELECTION_CLIPBOARD)
+        clipboard = Gtk.Clipboard()
+        clipboard.get(Gdk.SELECTION_CLIPBOARD)
         clipboard.set_text(path)
 
     def on_find_item_activate(self, widget):
@@ -1937,8 +2146,9 @@ class RegEditWindow(gtk.Window):
         else:
             #this means the search thread is already running!
             msg = "A search is already under way. We can only have one search at a time.\n\nCancel the current search?"
-            response = self.run_message_dialog(gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO, msg)
-            if response == gtk.RESPONSE_YES:
+            response = self.run_message_dialog(Gtk.MessageType.QUESTION,
+                                              Gtk.ButtonsType.YES_NO, msg)
+            if response == Gtk.ResponseType.YES:
                 #we have to clean up after the thread because self_destruct() only kills the thread without any cleanup
                 self.search_thread.self_destruct()
                 self.search_thread = None
@@ -1949,10 +2159,14 @@ class RegEditWindow(gtk.Window):
         if not self.connected():
             return
         if self.search_thread is not None:
-            self.run_message_dialog(gtk.MESSAGE_INFO, gtk.BUTTONS_OK, "Calm down, we're still searching!")
+            self.run_message_dialog(Gtk.MessageType.INFO,
+                                   Gtk.ButtonsType.OK,
+                                   "Calm down, we're still searching!")
             return
         if self.search_last_options is None:
-            self.run_message_dialog(gtk.MESSAGE_INFO, gtk.BUTTONS_OK, "There is no previous search to continue from.")
+            self.run_message_dialog(Gtk.MessageType.INFO,
+                                   Gtk.ButtonsType.OK,
+                                   "There is no previous search to continue from.")
             self.on_find_item_activate(None)
             return
 
@@ -1983,7 +2197,8 @@ class RegEditWindow(gtk.Window):
                 for text in search_items:
                     if (current_value.name.find(text) >= 0): #check if it's in the value's name
                         self.highlight_search_result(sel_key_iter, value_iter)
-                        msg = "Found value at: %s." % (current_value.get_absolute_path())
+                        msg = "Found value at: %s." % (
+                                            current_value.get_absolute_path())
                         self.set_status(msg)
                         return
                 value_iter = value_model.iter_next(value_iter)
@@ -1999,13 +2214,15 @@ class RegEditWindow(gtk.Window):
                 for text in search_items: #and check those values for each search string
                     if (current_value.get_data_string().find(text) >= 0): #check if it's in the value's data
                         self.highlight_search_result(sel_key_iter, value_iter)
-                        msg = "Found data at: %s." % (current_value.get_absolute_path())
+                        msg = "Found data at: %s." % (
+                                            current_value.get_absolute_path())
                         self.set_status(msg)
                         return
                 value_iter = value_model.iter_next(value_iter)
 
         #so it's not in this key's values. Lets continue searching the rest of the registry
-        self.search_thread = SearchThread(self.pipe_manager, self, self.search_last_options, sel_key_iter)
+        self.search_thread = SearchThread(self.pipe_manager, self,
+                                self.search_last_options, sel_key_iter)
         self.search_thread.start()
 
     def on_refresh_item_activate(self, widget):
@@ -2038,7 +2255,8 @@ class RegEditWindow(gtk.Window):
         if (selected_key is None):
             return
 
-        self.set_status("Selected path \'%s\'." % (selected_key.get_absolute_path()))
+        self.set_status("Selected path \'%s\'." % (
+                                            selected_key.get_absolute_path()))
 
         #deselect any selected values
         (val_iter, value) = self.get_selected_registry_value()
@@ -2059,7 +2277,8 @@ class RegEditWindow(gtk.Window):
                 value_list = self.pipe_manager.get_values_for_key(selected_key)
                 self.refresh_values_tree_view(value_list)
             except Exception, ex:
-                msg = "Failed to get values for %s: %s." % (selected_key.get_absolute_path(), str(ex))
+                msg = "Failed to get values for %s: %s." % (
+                                    selected_key.get_absolute_path(), str(ex))
                 print msg
                 self.set_status(msg)
             finally:
@@ -2069,20 +2288,23 @@ class RegEditWindow(gtk.Window):
         self.keys_tree_view.columns_autosize()
 
     def on_keys_tree_view_button_press(self, widget, event):
-        if (event.type == gtk.gdk._2BUTTON_PRESS): #double click
+        if (event.type == Gdk.EventType._2BUTTON_PRESS): #double click
             (iter, selected_key) = self.get_selected_registry_key()
             if (selected_key is None):
                 return
 
-            expanded = self.keys_tree_view.row_expanded(self.keys_store.get_path(iter))
+            expanded = self.keys_tree_view.row_expanded(
+                                               self.keys_store.get_path(iter))
 
             if (expanded):
-                self.keys_tree_view.collapse_row(self.keys_store.get_path(iter))
+                self.keys_tree_view.collapse_row(
+                                               self.keys_store.get_path(iter))
             else:
-                self.keys_tree_view.expand_row(self.keys_store.get_path(iter), False)
+                self.keys_tree_view.expand_row(
+                                        self.keys_store.get_path(iter), False)
         elif (event.button == 3): #right click
             self.values_tree_view.grab_focus()
-            self.edit_menu.popup(None, None, None, event.button, int(event.time))
+            self.edit_menu.popup(None,None,None, event.button, int(event.time))
 
     def on_values_tree_view_selection_changed(self, widget):
         if self.ignore_selection_change:
@@ -2090,12 +2312,13 @@ class RegEditWindow(gtk.Window):
         (iter, selected_value) = self.get_selected_registry_value()
 
         if (selected_value is not None):
-            self.set_status("Selected path \'%s\\%s\'." % (selected_value.get_absolute_path(), selected_value.name))
+            self.set_status("Selected path \'%s\\%s\'." % (
+                      selected_value.get_absolute_path(), selected_value.name))
 
         self.update_sensitivity()
 
     def on_values_tree_view_button_press(self, widget, event):
-        if (event.type == gtk.gdk._2BUTTON_PRESS): #double click
+        if (event.type == Gdk.EventType._2BUTTON_PRESS): #double click
             (iter, selected_value) = self.get_selected_registry_value()
             if (selected_value is None):
                 return
@@ -2103,7 +2326,7 @@ class RegEditWindow(gtk.Window):
             self.on_modify_item_activate(self.modify_item)
         elif (event.button == 3): #right click
             self.values_tree_view.grab_focus()
-            self.edit_menu.popup(None, None, None, event.button, int(event.time))
+            self.edit_menu.popup(None,None,None, event.button, int(event.time))
 
     def on_tree_views_focus_in(self, widget, event):
         self.update_sensitivity()
@@ -2156,7 +2379,8 @@ If you have to, you may acquire both locks at the same time as long as you get t
 if __name__ == "__main__":
     arguments = ParseArgs(sys.argv[1:]) #the [1:] ignores the first argument, which is the path to our utility
 
-    gtk.gdk.threads_init()
+    GLib.threads_init()
+    Gdk.threads_init()
     window = RegEditWindow(**arguments)
     window.show_all()
-    gtk.main()
+    Gtk.main()

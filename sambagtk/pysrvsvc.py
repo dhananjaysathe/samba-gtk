@@ -37,14 +37,14 @@ from samba.dcerpc import srvsvc
 
 
 class srvsvcConnectDialog(ConnectDialog):
-    
+
     def __init__(self, server, transport_type, username, password=''):
 
         super(srvsvcConnectDialog, self).__init__(
                     server, transport_type, username, password='')
         self.set_title('Connect to Samba Share Server')
 
-        
+
 
 
 class ShareAddEditDialog(Gtk.Dialog):
@@ -434,7 +434,7 @@ class ShareAddEditDialog(Gtk.Dialog):
 
         self.cancel_button = Gtk.Button('Cancel', Gtk.STOCK_CANCEL)
         self.cancel_button.set_property("can-default",True)
-        self.add_action_widget(self.cancel_button, 
+        self.add_action_widget(self.cancel_button,
                                             Gtk.ResponseType.CANCEL)
 
         self.apply_button = Gtk.Button('Apply', Gtk.STOCK_APPLY)
@@ -495,7 +495,7 @@ class DeleteDialog(Gtk.Dialog):
         self.set_border_width(5)
         self.set_resizable(False)
         self.set_decorated(True)
-        
+
 
         #artwork
         self.desc_box = Gtk.HBox()

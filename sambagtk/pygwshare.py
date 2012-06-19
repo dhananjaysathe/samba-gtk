@@ -743,7 +743,7 @@ Please check your network connection.''',
             grid.set_row_spacing(4)
             grid.set_row_homogeneous(True)
             grid.set_column_homogeneous(True)
-            
+
             label = Gtk.Label('Not connected to share server.',
                                                 xalign=1,yalign=0.5)
             grid.add(label)
@@ -836,7 +836,7 @@ Please check your network connection.''',
             grid.set_row_spacing(4)
             grid.set_row_homogeneous(True)
             grid.set_column_homogeneous(True)
-            
+
             label = Gtk.Label('<b> Disks </b>',xalign=0.1,yalign=0.5)
             label.set_property("use-markup",True)
 
@@ -1208,7 +1208,7 @@ Please check your network connection.''',
             grid.set_border_width(5)
             grid.set_row_spacing(2)
             grid.set_column_spacing(6)
-           
+
             row_index = 0
 
             self.active_pane_frame_label.set_markup(
@@ -1425,12 +1425,13 @@ Please check your network connection.''',
         self.toolbar = Gtk.Toolbar()
         toplevel_vbox.pack_start(self.toolbar, False, False, 0)
 
-        self.connect_button = Gtk.ToolButton(Gtk.STOCK_CONNECT)
+        self.connect_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_CONNECT)
         self.connect_button.set_is_important(True)
         self.connect_button.set_tooltip_text('Connect to a server')
         self.toolbar.insert(self.connect_button, 0)
 
-        self.disconnect_button = Gtk.ToolButton(Gtk.STOCK_DISCONNECT)
+        self.disconnect_button = Gtk.ToolButton.new_from_stock(
+                                                         Gtk.STOCK_DISCONNECT)
         self.disconnect_button.set_is_important(True)
         self.disconnect_button.set_tooltip_text('Disconnect from the server')
         self.toolbar.insert(self.disconnect_button, 1)
@@ -1438,17 +1439,17 @@ Please check your network connection.''',
         sep = Gtk.SeparatorToolItem()
         self.toolbar.insert(sep, 2)
 
-        self.new_button = Gtk.ToolButton(Gtk.STOCK_NEW)
+        self.new_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_NEW)
         self.new_button.set_is_important(True)
         self.new_button.set_tooltip_text('Add a new Share')
         self.toolbar.insert(self.new_button, 3)
 
-        self.edit_button = Gtk.ToolButton(Gtk.STOCK_EDIT)
+        self.edit_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_EDIT)
         self.edit_button.set_is_important(True)
         self.edit_button.set_tooltip_text('Edit a Share')
         self.toolbar.insert(self.edit_button, 4)
 
-        self.delete_button = Gtk.ToolButton(Gtk.STOCK_DELETE)
+        self.delete_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_DELETE)
         self.delete_button.set_is_important(True)
         self.delete_button.set_tooltip_text('Delete a Share')
         self.toolbar.insert(self.delete_button, 5)
@@ -1456,7 +1457,8 @@ Please check your network connection.''',
         sep = Gtk.SeparatorToolItem()
         self.toolbar.insert(sep, 6)
 
-        self.new_share_wizard_button = Gtk.ToolButton(Gtk.STOCK_EXECUTE)
+        self.new_share_wizard_button = Gtk.ToolButton.new_from_stock(
+                                                            Gtk.STOCK_EXECUTE)
         self.new_share_wizard_button.set_is_important(True)
         self.new_share_wizard_button.set_tooltip_text('New Share Wizard')
         self.toolbar.insert(self.new_share_wizard_button, 7)
@@ -1602,7 +1604,7 @@ Please check your network connection.''',
                                                 'Delete Current Share')
         grid.attach(self.active_frame_delete_button, 3, 1, 1, 1)
         grid.attach(Gtk.Label(""),4,1,1,1)
-        
+
         grid.attach(Gtk.Label(""),0,2,1,1)
 
         # Server Info Page
@@ -1624,7 +1626,7 @@ Please check your network connection.''',
         grid.set_border_width(5)
         grid.set_row_spacing(3)
         grid.set_column_spacing(6)
-                
+
         self.srvinfo_frame.add(grid)
 
         label = Gtk.Label(' Target Platform OS  : ',xalign=1,yalign=0.5)

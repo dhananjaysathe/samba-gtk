@@ -1163,7 +1163,7 @@ class RegSearchDialog(Gtk.Dialog):
     def check_for_problems(self):
         if self.search_entry.get_text() == "":
             return ("You must enter text to search for!",Gtk.MessageType.ERROR)
-        elif not ( self.check_match_data.get_active() and 
+        elif not ( self.check_match_data.get_active() and
                    not self.check_match_keys.get_active() and
                    not self.check_match_values.get_active()):
             errmsg = "You much select at least one of: keys, values, or data to search"

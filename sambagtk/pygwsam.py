@@ -16,8 +16,8 @@ from samba.dcerpc import (
     lsa,
     )
 
-from sam import (   #using local versions for the time being , 
-                    #change to global as required to avoid gtk2 and gtk3 clashes 
+from sam import (   #using local versions for the time being ,
+                    #change to global as required to avoid gtk2 and gtk3 clashes
     User,
     Group,
     UserEditDialog,
@@ -34,7 +34,7 @@ class SAMPipeManager(object):
     def __init__(self, server_address, transport_type, username, password):
         self.user_list = []
         self.group_list = []
-        
+
 
         creds = credentials.Credentials()
         if (username.count("\\") > 0):
@@ -256,7 +256,7 @@ class SAMPipeManager(object):
                     if str(item.trustee) == sid:
                         ace = item
                         break
-                    
+
         if ace is None:
             print "unable to fetch security info for", user.username, "because none exists."
             return user
@@ -497,7 +497,7 @@ class SAMWindow(Gtk.Window):
         self.connect_item = Gtk.ImageMenuItem(Gtk.STOCK_CONNECT)
         self.connect_item.set_property("accel-group",accel_group)
         file_menu.add(self.connect_item)
-        
+
 
         self.disconnect_item = Gtk.ImageMenuItem(Gtk.STOCK_DISCONNECT)
         self.disconnect_item.set_properties("accel-group",accel_group,
@@ -576,7 +576,7 @@ class SAMWindow(Gtk.Window):
 
         self.help_item = Gtk.MenuItem.new_with_mnemonic('_Help')
         self.menubar.add(self.help_item)
-        
+
         help_menu = Gtk.Menu()
         self.help_item.set_property("submenu",help_menu)
 
@@ -588,12 +588,13 @@ class SAMWindow(Gtk.Window):
         self.toolbar = Gtk.Toolbar()
         vbox.pack_start(self.toolbar, False, False, 0)
 
-        self.connect_button = Gtk.ToolButton(Gtk.STOCK_CONNECT)
+        self.connect_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_CONNECT)
         self.connect_button.set_is_important(True)
         self.connect_button.set_tooltip_text('Connect to a server')
         self.toolbar.insert(self.connect_button, 0)
 
-        self.disconnect_button = Gtk.ToolButton(Gtk.STOCK_DISCONNECT)
+        self.disconnect_button = Gtk.ToolButton.new_from_stock(
+                                                         Gtk.STOCK_DISCONNECT)
         self.disconnect_button.set_is_important(True)
         self.disconnect_button.set_tooltip_text('Disconnect from the server')
         self.toolbar.insert(self.disconnect_button, 1)
@@ -601,17 +602,17 @@ class SAMWindow(Gtk.Window):
         sep = Gtk.SeparatorToolItem()
         self.toolbar.insert(sep, 2)
 
-        self.new_button = Gtk.ToolButton(Gtk.STOCK_NEW)
+        self.new_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_NEW)
         self.new_button.set_is_important(True)
         self.new_button.set_tooltip_text('Add a new Share')
         self.toolbar.insert(self.new_button, 3)
 
-        self.edit_button = Gtk.ToolButton(Gtk.STOCK_EDIT)
+        self.edit_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_EDIT)
         self.edit_button.set_is_important(True)
         self.edit_button.set_tooltip_text('Edit a Share')
         self.toolbar.insert(self.edit_button, 4)
 
-        self.delete_button = Gtk.ToolButton(Gtk.STOCK_DELETE)
+        self.delete_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_DELETE)
         self.delete_button.set_is_important(True)
         self.delete_button.set_tooltip_text('Delete a Share')
         self.toolbar.insert(self.delete_button, 5)
