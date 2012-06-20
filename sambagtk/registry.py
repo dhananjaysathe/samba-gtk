@@ -284,14 +284,14 @@ class RegValueEditDialog(Gtk.Dialog):
         # string type page
         self.string_data_entry = Gtk.Entry()
         self.string_data_entry.set_activates_default(True)
-        self.type_notebook.append_page(self.string_data_entry)
+        self.type_notebook.append_page(self.string_data_entry,Gtk.Label("String"))
 
 
         # binary type page
         scrolledwindow = Gtk.ScrolledWindow(None, None)
         scrolledwindow.set_policy(Gtk.PolicyType.AUTOMATIC,Gtk.PolicyType.ALWAYS)
         scrolledwindow.set_shadow_type(Gtk.ShadowType.NONE)
-        self.type_notebook.append_page(scrolledwindow)
+        self.type_notebook.append_page(scrolledwindow,Gtk.Label("Binary"))
 
         hbox = Gtk.HBox()
         scrolledwindow.add_with_viewport(hbox)
@@ -324,7 +324,7 @@ class RegValueEditDialog(Gtk.Dialog):
 
         # number type page
         hbox = Gtk.HBox()
-        self.type_notebook.append_page(hbox)
+        self.type_notebook.append_page(hbox,Gtk.Label("Number"))
 
         self.number_data_entry = Gtk.Entry()
         self.number_data_entry.set_activates_default(True)
@@ -344,7 +344,7 @@ class RegValueEditDialog(Gtk.Dialog):
         # multi-string type page
         scrolledwindow = Gtk.ScrolledWindow(None, None)
         scrolledwindow.set_shadow_type(Gtk.ShadowType.IN)
-        self.type_notebook.append_page(scrolledwindow)
+        self.type_notebook.append_page(scrolledwindow,Gtk.Label("Multi-String"))
 
         self.multi_string_data_text_view = Gtk.TextView()
         self.multi_string_data_text_view.set_wrap_mode(Gtk.WrapMode.NONE)
@@ -398,8 +398,10 @@ class RegValueEditDialog(Gtk.Dialog):
         if len(self.name_entry.get_text().strip()) == 0:
             return "Please specify a name."
 
-        regtypes = [misc.REG_DWORD, misc.REG_DWORD_BIG_ENDIAN, misc.REG_QWORD]
-        elif self.reg_value.type in regtypes:
+        
+        elif self.reg_value.type in [misc.REG_DWORD, 
+                                     misc.REG_DWORD_BIG_ENDIAN, 
+                                     misc.REG_QWORD]:
             number_str = self.number_data_entry.get_text()
             if len(number_str) == 0:
                 return "Please enter a number."
@@ -412,8 +414,8 @@ class RegValueEditDialog(Gtk.Dialog):
                 else:
                     number_str_hex = "%X" % number
 
-                    if self.reg_value.type in [
-                                    misc.REG_DWORD, misc.REG_DWORD_BIG_ENDIAN]:
+                    if self.reg_value.type in [misc.REG_DWORD,
+                                            misc.REG_DWORD_BIG_ENDIAN]:
                         max_hex_len = 8
                     else:
                         max_hex_len = 16
@@ -443,8 +445,10 @@ class RegValueEditDialog(Gtk.Dialog):
                                     self.reg_value.get_interpreted_data(), 8))
             #self.on_binary_data_hex_text_view_buffer_changed(None) #this is already called with the statement above
 
-        regtypes = [misc.REG_DWORD, misc.REG_DWORD_BIG_ENDIAN, misc.REG_QWORD]
-        elif self.reg_value.type in regtypes:
+        
+        elif self.reg_value.type in [misc.REG_DWORD,
+                                     misc.REG_DWORD_BIG_ENDIAN,
+                                     misc.REG_QWORD]:
             self.set_icon_from_file(self.icon_registry_number_filename)
             self.set_size_request(430, 200)
 
@@ -482,8 +486,9 @@ class RegValueEditDialog(Gtk.Dialog):
             self.reg_value.set_interpreted_data(
                                     RegValueEditDialog.hex_to_byte_array(text))
 
-        regtypes = [misc.REG_DWORD, misc.REG_DWORD_BIG_ENDIAN, misc.REG_QWORD]
-        elif self.reg_value.type in regtypes:
+        elif self.reg_value.type in [misc.REG_DWORD,
+                                     misc.REG_DWORD_BIG_ENDIAN, 
+                                     misc.REG_QWORD]:
             if self.number_data_dec_radio.get_active():
                 self.reg_value.set_interpreted_data(string.atoi(
                                         self.number_data_entry.get_text(), 10))
@@ -1362,7 +1367,7 @@ class RegPermissionsDialog(Gtk.Dialog):
 
         if (iter is not None):
             self.permissions_label.set_text('',join(["Permissions for ",
-                                                    user.username,":"])
+                                                    user.username,":"]))
             #TODO: update permissions view on selection changed
         else:
             self.permissions_label.set_text("")

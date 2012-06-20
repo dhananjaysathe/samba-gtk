@@ -136,6 +136,7 @@ class WinRegPipeManager(object):
         while True: #get a list of values for the key
             try:
                 self.lock.acquire()
+                value_length = 8 #dummy value
                 (value_name, value_type, value_data, value_length) = \
                                     self.pipe.EnumValue(key_handle,index,
                                     WinRegPipeManager.winreg_val_name_buf(""),
@@ -227,6 +228,7 @@ class WinRegPipeManager(object):
 
         while True: #get a list of values for the key
             try:
+                value_length = 8 #dummy value
                 (value_name,
                  value_type,
                  value_data,
@@ -390,7 +392,7 @@ class WinRegPipeManager(object):
         key.handle = key_handle
         self.well_known_keys.append(key)
 
-        key_handle = self.pipe.OpenHKCC(None, calculated_winreg_key_enum_val)
+        #key_handle = self.pipe.OpenHKCC(None, calculated_winreg_key_enum_val)
         key = RegistryKey("HKEY_CURRENT_CONFIG", None)
         key.handle = key_handle
         self.well_known_keys.append(key)
@@ -839,13 +841,14 @@ class RegEditWindow(Gtk.Window):
 
         self.edit_menu = Gtk.Menu()
         self.edit_item.set_submenu(self.edit_menu)
+        self.edit_menu.set_property("accel-group",accel_group)
 
         self.modify_item = Gtk.ImageMenuItem.new_with_mnemonic("_Modify")
         self.modify_item.set_property("accel-group",accel_group)
         self.edit_menu.add(self.modify_item)
 
         self.modify_binary_item = Gtk.MenuItem.new_with_mnemonic("Modify _Binary")
-        self.modify_binary_item.set_property("accel-group",accel_group)
+        #self.modify_binary_item.set_property("accel-group",accel_group)
         self.edit_menu.add(self.modify_binary_item)
 
         menu_separator_item = Gtk.SeparatorMenuItem()
@@ -858,9 +861,10 @@ class RegEditWindow(Gtk.Window):
 
         new_menu = Gtk.Menu()
         self.new_item.set_submenu(new_menu)
+        self.new_item.set_property("accel-group",accel_group)
 
         self.new_key_item = Gtk.MenuItem.new_with_mnemonic("_Key")
-        self.new_key_item.set_property("accel-group",accel_group)
+        #self.new_key_item.set_property("accel-group",accel_group)
         new_menu.add(self.new_key_item)
 
         menu_separator_item = Gtk.SeparatorMenuItem()
@@ -868,25 +872,25 @@ class RegEditWindow(Gtk.Window):
         new_menu.add(menu_separator_item)
 
         self.new_string_item = Gtk.MenuItem.new_with_mnemonic("_String Value")
-        self.new_string_item.set_property("accel-group",accel_group)
+        #self.new_string_item.set_property("accel-group",accel_group)
         new_menu.add(self.new_string_item)
 
         self.new_binary_item = Gtk.MenuItem.new_with_mnemonic("_Binary Value")
-        self.new_binary_item.set_property("accel-group",accel_group)
+        #self.new_binary_item.set_property("accel-group",accel_group)
         new_menu.add(self.new_binary_item)
 
         self.new_dword_item = Gtk.MenuItem.new_with_mnemonic("_DWORD Value")
-        self.new_dword_item.set_property("accel-group",accel_group)
+        #self.new_dword_item.set_property("accel-group",accel_group)
         new_menu.add(self.new_dword_item)
 
         self.new_multi_string_item = Gtk.MenuItem.new_with_mnemonic(
                                                         "_Multi-String Value")
-        self.new_multi_string_item.set_property("accel-group",accel_group)
+        #self.new_multi_string_item.set_property("accel-group",accel_group)
         new_menu.add(self.new_multi_string_item)
 
         self.new_expandable_item = Gtk.MenuItem.new_with_mnemonic(
                                                     "_Expandable String Value")
-        self.new_expandable_item.set_property("accel-group",accel_group)
+        #self.new_expandable_item.set_property("accel-group",accel_group)
         new_menu.add(self.new_expandable_item)
 
         menu_separator_item = Gtk.SeparatorMenuItem()
@@ -915,7 +919,7 @@ class RegEditWindow(Gtk.Window):
         self.edit_menu.add(menu_separator_item)
 
         self.copy_item = Gtk.MenuItem.new_with_mnemonic("_Copy Registry Path")
-        self.copy_item.set_property("accel-group",accel_group)
+        #self.copy_item.set_property("accel-group",accel_group)
         self.edit_menu.add(self.copy_item)
 
         menu_separator_item = Gtk.SeparatorMenuItem()
@@ -928,7 +932,7 @@ class RegEditWindow(Gtk.Window):
         self.edit_menu.add(self.find_item)
 
         self.find_next_item = Gtk.MenuItem.new_with_mnemonic("Find _Next")
-        self.find_next_item.set_property("accel-group",accel_group)
+        #self.find_next_item.set_property("accel-group",accel_group)
         self.edit_menu.add(self.find_next_item)
 
         self.view_item = Gtk.MenuItem.new_with_mnemonic("_View")
@@ -1391,18 +1395,12 @@ class RegEditWindow(Gtk.Window):
         self.find_next_item.set_sensitive(connected)
         self.refresh_item.set_sensitive(connected)
 
-        self.connect_button.set_sensitive(
-                        self.connect_item.state != Gtk.StateType.INSENSITIVE)
-        self.disconnect_button.set_sensitive(
-                     self.disconnect_item.state != Gtk.StateType.INSENSITIVE)
-        self.new_key_button.set_sensitive(
-                        self.new_key_item.state != Gtk.StateType.INSENSITIVE)
-        self.new_string_button.set_sensitive(
-                     self.new_string_item.state != Gtk.StateType.INSENSITIVE)
-        self.rename_button.set_sensitive(
-                         self.rename_item.state != Gtk.StateType.INSENSITIVE)
-        self.delete_button.set_sensitive(
-                         self.delete_item.state != Gtk.StateType.INSENSITIVE)
+        self.connect_button.set_sensitive(self.connect_item.get_sensitive())
+        self.disconnect_button.set_sensitive(self.disconnect_item.get_sensitive())
+        self.new_key_button.set_sensitive(self.new_key_item.get_sensitive())
+        self.new_string_button.set_sensitive(self.new_string_item.get_sensitive())
+        self.rename_button.set_sensitive(self.rename_item.get_sensitive())
+        self.delete_button.set_sensitive(self.delete_item.get_sensitive())
 
 
         # captions
