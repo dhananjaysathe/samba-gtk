@@ -5,17 +5,20 @@ import os.path
 import traceback
 import getopt
 
-import gobject
-import gtk
+from gi.repository import GObject
+from gi.repository import Gtk
+from gi.repository import Gdk
+from gi.repository import GdkPixbuf
+
 
 from samba import credentials
 from samba.dcerpc import atsvc
 
-from sambagtk.dialogs import (
+from dialogs import ( # TODO : usding local switch once complete 
     AboutDialog,
     )
 
-from sambagtk.atsvc import (
+from atsvc import (  # TODO : usding local switch once complete 
     ATSvcConnectDialog,
     Task,
     TaskEditDialog,
@@ -40,9 +43,10 @@ class ATSvcPipeManager:
         creds.set_workstation("")
         creds.set_password(password)
 
-        binding = ["ncacn_np:%s", "ncacn_ip_tcp:%s", "ncalrpc:%s"][transport_type]
+        binding = ["ncacn_np:%s", "ncacn_ip_tcp:%s", "ncalrpc:%s"][
+                  transport_type]
 
-        self.pipe = atsvc.atsvc(binding % (server_address), credentials = creds)
+        self.pipe = atsvc.atsvc(binding % (server_address),credentials = creds)
 
     def close(self):
         pass # apparently there's no .Close() method for this pipe
@@ -50,14 +54,18 @@ class ATSvcPipeManager:
     def fetch_tasks(self):
         del self.task_list[:]
 
-        (ctr, total, resume) = self.pipe.JobEnum(unicode(self.pipe.server_name), atsvc.enum_ctr(), 1000000, 0)
+        (ctr, total, resume) = self.pipe.JobEnum(unicode(self.pipe.server_name)
+                                                ,atsvc.enum_ctr(),
+                                                1000000,
+                                                0)
         if (total > 0):
             for info in ctr.first_entry:
                 task = self.job_info_to_task(info)
                 self.task_list.append(task)
 
     def add_task(self, task):
-        job_id = self.pipe.JobAdd(unicode(self.pipe.server_name), self.task_to_job_info(task))
+        job_id = self.pipe.JobAdd(unicode(self.pipe.server_name)
+                                  ,self.task_to_job_info(task))
         if (job_id == 0):
             raise RuntimeError(-1, "Invalid task information.")
 
@@ -65,7 +73,8 @@ class ATSvcPipeManager:
         self.task_list.append(task)
 
     def update_task(self, task):
-        job_id = self.pipe.JobAdd(unicode(self.pipe.server_name), self.task_to_job_info(task))
+        job_id = self.pipe.JobAdd(unicode(self.pipe.server_name)
+                                 ,self.task_to_job_info(task))
         if (job_id == 0):
             raise Exception("invalid task information")
 
@@ -104,9 +113,14 @@ class ATSvcPipeManager:
         return job_info
 
 
-class CronTabWindow(gtk.Window):
+class CronTabWindow(Gtk.Window):
 
-    def __init__(self, info_callback=None, server="", username="", password="", transport_type=0, connect_now=False):
+    def __init__(self,info_callback=None,
+                     server="",
+                     username="",
+                     password="",
+                     transport_type=0,
+                     connect_now=False):
         super(CronTabWindow, self).__init__()
         # Note: Any change to these arguments should probably also be changed
         # in on_connect_item_activate()
@@ -121,172 +135,191 @@ class CronTabWindow(gtk.Window):
         self.username = username
         self.transport_type = transport_type
 
-        self.on_connect_item_activate(None, server, transport_type, username, password, connect_now)
+        self.on_connect_item_activate(None, server, transport_type,
+                                     username, password, connect_now)
 
         # This is used so the parent program can grab the server info after we've connected.
         if info_callback is not None:
-            info_callback(server = self.server_address, username = self.username, transport_type = self.transport_type)
+            info_callback(server = self.server_address,
+                         username = self.username,
+                         transport_type = self.transport_type)
 
     def create(self):
         # main window
 
-        accel_group = gtk.AccelGroup()
+        accel_group = Gtk.AccelGroup()
 
         self.set_title("Scheduled Tasks")
         self.set_default_size(800, 600)
         self.icon_filename = os.path.join(sys.path[0], "images", "crontab.png")
-        self.icon_pixbuf = gtk.gdk.pixbuf_new_from_file(self.icon_filename)
+        self.icon_pixbuf = GdkPixbuf.Pixbuf.new_from_file(self.icon_filename)
         self.set_icon(self.icon_pixbuf)
 
-        vbox = gtk.VBox(False, 0)
+        vbox = Gtk.VBox(False, 0)
         self.add(vbox)
 
         # menu
 
-        self.menubar = gtk.MenuBar()
+        self.menubar = Gtk.MenuBar()
         vbox.pack_start(self.menubar, False, False, 0)
 
-        self.file_item = gtk.MenuItem("_File")
+        self.file_item = Gtk.MenuItem.new_with_mnemonic('_File')
         self.menubar.add(self.file_item)
 
-        file_menu = gtk.Menu()
-        self.file_item.set_submenu(file_menu)
+        file_menu = Gtk.Menu()
+        self.file_item.set_property("submenu",file_menu)
 
-        self.connect_item = gtk.ImageMenuItem(gtk.STOCK_CONNECT, accel_group)
+        self.connect_item = Gtk.ImageMenuItem(Gtk.STOCK_CONNECT)
+        self.connect_item.set_property("accel-group",accel_group)
         file_menu.add(self.connect_item)
 
-        self.disconnect_item = gtk.ImageMenuItem(gtk.STOCK_DISCONNECT, accel_group)
-        self.disconnect_item.set_sensitive(False)
+        self.disconnect_item = Gtk.ImageMenuItem(Gtk.STOCK_DISCONNECT)
+        self.disconnect_item.set_properties("accel-group",accel_group,
+                                            "sensitive",False)
         file_menu.add(self.disconnect_item)
 
-        menu_separator_item = gtk.SeparatorMenuItem()
-        menu_separator_item.set_sensitive(False)
+        menu_separator_item = Gtk.SeparatorMenuItem()
+        menu_separator_item.set_property("sensitive",False)
         file_menu.add(menu_separator_item)
 
-        self.quit_item = gtk.ImageMenuItem(gtk.STOCK_QUIT, accel_group)
+        self.quit_item = Gtk.ImageMenuItem(Gtk.STOCK_QUIT)
+        self.quit_item.set_property("accel-group",accel_group)
         file_menu.add(self.quit_item)
 
-
-        self.view_item = gtk.MenuItem("_View")
+        self.view_item = Gtk.MenuItem.new_with_mnemonic('_View')
         self.menubar.add(self.view_item)
 
-        view_menu = gtk.Menu()
-        self.view_item.set_submenu(view_menu)
+        view_menu = Gtk.Menu()
+        self.view_item.set_property("submenu",view_menu)
 
-        self.refresh_item = gtk.ImageMenuItem(gtk.STOCK_REFRESH, accel_group)
+        self.refresh_item = Gtk.ImageMenuItem(Gtk.STOCK_REFRESH)
+        self.refresh_item.set_properties("accel-group",accel_group,
+                                            "sensitive",False)
         view_menu.add(self.refresh_item)
 
-
-        self.task_item = gtk.MenuItem("_Task")
+        self.task_item = Gtk.MenuItem.new_with_mnemonic('_Task')
         self.menubar.add(self.task_item)
 
-        task_menu = gtk.Menu()
+        task_menu = Gtk.Menu()
         self.task_item.set_submenu(task_menu)
 
-        self.new_item = gtk.ImageMenuItem(gtk.STOCK_NEW, accel_group)
+        self.new_item = Gtk.ImageMenuItem(Gtk.STOCK_NEW)
+        self.new_item.set_property("accel-group",accel_group)
         task_menu.add(self.new_item)
 
-        self.delete_item = gtk.ImageMenuItem(gtk.STOCK_DELETE, accel_group)
+        self.delete_item = Gtk.ImageMenuItem(Gtk.STOCK_DELETE)
+        self.delete_item.set_property("accel-group",accel_group)
         task_menu.add(self.delete_item)
 
-        self.edit_item = gtk.ImageMenuItem(gtk.STOCK_EDIT, accel_group)
+        self.edit_item = Gtk.ImageMenuItem(Gtk.STOCK_EDIT)
+        self.edit_item.set_properties("accel-group",accel_group)
         task_menu.add(self.edit_item)
 
 
-        self.help_item = gtk.MenuItem("_Help")
+        self.help_item = Gtk.MenuItem.new_with_mnemonic('_Help')
         self.menubar.add(self.help_item)
 
-        help_menu = gtk.Menu()
-        self.help_item.set_submenu(help_menu)
+        help_menu = Gtk.Menu()
+        self.help_item.set_property("submenu",help_menu)
 
-        self.about_item = gtk.ImageMenuItem(gtk.STOCK_ABOUT, accel_group)
+        self.about_item = Gtk.ImageMenuItem(Gtk.STOCK_ABOUT)
+        self.about_item.set_property("accel-group",accel_group)
         help_menu.add(self.about_item)
+
 
 
         # toolbar
 
-        self.toolbar = gtk.Toolbar()
+        self.toolbar = Gtk.Toolbar()
         vbox.pack_start(self.toolbar, False, False, 0)
 
-        self.connect_button = gtk.ToolButton(gtk.STOCK_CONNECT)
+        self.connect_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_CONNECT)
         self.connect_button.set_is_important(True)
-        self.connect_button.set_tooltip_text("Connect to a server")
+        self.connect_button.set_tooltip_text('Connect to a server')
         self.toolbar.insert(self.connect_button, 0)
 
-        self.disconnect_button = gtk.ToolButton(gtk.STOCK_DISCONNECT)
+        self.disconnect_button = Gtk.ToolButton.new_from_stock(
+                                                         Gtk.STOCK_DISCONNECT)
         self.disconnect_button.set_is_important(True)
-        self.disconnect_button.set_tooltip_text("Disconnect from the server")
+        self.disconnect_button.set_tooltip_text('Disconnect from the server')
         self.toolbar.insert(self.disconnect_button, 1)
 
-        self.toolbar.insert(gtk.SeparatorToolItem(), 2)
+        sep = Gtk.SeparatorToolItem()
+        self.toolbar.insert(sep, 2)
 
-        self.new_button = gtk.ToolButton(gtk.STOCK_NEW)
+        self.new_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_NEW)
         self.new_button.set_is_important(True)
+        self.new_button.set_tooltip_text('Add a new Share')
         self.toolbar.insert(self.new_button, 3)
 
-        self.edit_button = gtk.ToolButton(gtk.STOCK_EDIT)
+        self.edit_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_EDIT)
         self.edit_button.set_is_important(True)
+        self.edit_button.set_tooltip_text('Edit a Share')
         self.toolbar.insert(self.edit_button, 4)
 
-        self.delete_button = gtk.ToolButton(gtk.STOCK_DELETE)
+        self.delete_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_DELETE)
         self.delete_button.set_is_important(True)
+        self.delete_button.set_tooltip_text('Delete a Share')
         self.toolbar.insert(self.delete_button, 5)
 
 
         # task list
 
 
-        self.scrolledwindow = gtk.ScrolledWindow(None, None)
-        self.scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        self.scrolledwindow.set_shadow_type(gtk.SHADOW_IN)
+        self.scrolledwindow = Gtk.ScrolledWindow(None, None)
+        self.scrolledwindow.set_shadow_type(Gtk.ShadowType.IN)
         vbox.pack_start(self.scrolledwindow, True, True, 0)
 
-        self.tasks_tree_view = gtk.TreeView()
+        self.tasks_tree_view = Gtk.TreeView()
         self.scrolledwindow.add(self.tasks_tree_view)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("")
-        renderer = gtk.CellRendererPixbuf()
-        renderer.set_property("pixbuf", gtk.gdk.pixbuf_new_from_file_at_size(self.icon_filename, 22, 22))
+        renderer = Gtk.CellRendererPixbuf()
+        renderer.set_property("pixbuf"
+                             ,GdkPixbuf.Pixbuf.new_from_file_at_size(
+                                                   self.icon_filename, 22, 22)
+                             )
         column.pack_start(renderer, True)
         self.tasks_tree_view.append_column(column)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Id")
         column.set_resizable(True)
         column.set_sort_column_id(0)
-        renderer = gtk.CellRendererText()
+        renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.tasks_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 0)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Command")
         column.set_resizable(True)
         column.set_sort_column_id(1)
-        renderer = gtk.CellRendererText()
+        renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.tasks_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 1)
 
-        column = gtk.TreeViewColumn()
+        column = Gtk.TreeViewColumn()
         column.set_title("Schedule")
         column.set_resizable(True)
         column.set_sort_column_id(2)
-        renderer = gtk.CellRendererText()
+        renderer = Gtk.CellRendererText()
         column.pack_start(renderer, True)
         self.tasks_tree_view.append_column(column)
         column.add_attribute(renderer, "text", 2)
 
-        self.tasks_store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING)
-        self.tasks_store.set_sort_column_id(1, gtk.SORT_ASCENDING)
+        self.tasks_store = Gtk.ListStore(GObject.TYPE_STRING
+                                        ,GObject.TYPE_STRING
+                                        ,GObject.TYPE_STRING)
+        self.tasks_store.set_sort_column_id(1, Gtk.SortType.ASCENDING)
         self.tasks_tree_view.set_model(self.tasks_store)
 
 
         # status bar
 
-        self.statusbar = gtk.Statusbar()
-        self.statusbar.set_has_resize_grip(True)
+        self.statusbar = Gtk.Statusbar()
         vbox.pack_start(self.statusbar, False, False, 0)
 
 
@@ -296,7 +329,8 @@ class CronTabWindow(gtk.Window):
         self.connect("key-press-event", self.on_key_press)
 
         self.connect_item.connect("activate", self.on_connect_item_activate)
-        self.disconnect_item.connect("activate", self.on_disconnect_item_activate)
+        self.disconnect_item.connect("activate"
+                                    ,self.on_disconnect_item_activate)
         self.quit_item.connect("activate", self.on_quit_item_activate)
         self.refresh_item.connect("activate", self.on_refresh_item_activate)
         self.new_item.connect("activate", self.on_new_item_activate)
@@ -305,13 +339,16 @@ class CronTabWindow(gtk.Window):
         self.about_item.connect("activate", self.on_about_item_activate)
 
         self.connect_button.connect("clicked", self.on_connect_item_activate)
-        self.disconnect_button.connect("clicked", self.on_disconnect_item_activate)
+        self.disconnect_button.connect("clicked",
+                                            self.on_disconnect_item_activate)
         self.new_button.connect("clicked", self.on_new_item_activate)
         self.delete_button.connect("clicked", self.on_delete_item_activate)
         self.edit_button.connect("clicked", self.on_edit_item_activate)
 
-        self.tasks_tree_view.get_selection().connect("changed", self.on_update_sensitivity)
-        self.tasks_tree_view.connect("button_press_event", self.on_tasks_tree_view_button_press)
+        self.tasks_tree_view.get_selection().connect("changed",
+                                                    self.on_update_sensitivity)
+        self.tasks_tree_view.connect("button_press_event",
+                                    self.on_tasks_tree_view_button_press)
 
         self.add_accel_group(accel_group)
 
@@ -319,7 +356,8 @@ class CronTabWindow(gtk.Window):
         if not self.connected():
             return None
 
-        (model, paths) = self.tasks_tree_view.get_selection().get_selected_rows()
+        (model, paths) = \
+                      self.tasks_tree_view.get_selection().get_selected_rows()
 
         self.tasks_store.clear()
         for task in self.pipe_manager.task_list:
@@ -337,7 +375,9 @@ class CronTabWindow(gtk.Window):
             return None
         else:
             id = int(model.get_value(iter, 0))
-            task_list = [task for task in self.pipe_manager.task_list if task.id == id]
+            task_list = [task for task in
+                        self.pipe_manager.task_list if
+                        task.id == id]
             if (len(task_list) > 0):
                 return task_list[0]
             else:
@@ -368,7 +408,8 @@ class CronTabWindow(gtk.Window):
         if (parent == None):
             parent = self
 
-        message_box = gtk.MessageDialog(parent, gtk.DIALOG_MODAL, type, buttons, message)
+        message_box = Gtk.MessageDialog(parent, Gtk.DialogFlags.MODAL, type,
+                                       buttons, message)
         response = message_box.run()
         message_box.hide()
 
@@ -382,16 +423,16 @@ class CronTabWindow(gtk.Window):
         while True:
             response_id = dialog.run()
 
-            if (response_id in [gtk.RESPONSE_OK, gtk.RESPONSE_APPLY]):
+            if (response_id in [Gtk.ResponseType.OK, Gtk.ResponseType.APPLY]):
                 problem_msg = dialog.check_for_problems()
 
                 if (problem_msg is not None):
-                    self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, problem_msg, dialog)
+                    self.run_message_dialog(Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, problem_msg, dialog)
                 else:
                     dialog.values_to_task()
                     if (apply_callback is not None):
                         apply_callback(dialog.task)
-                    if (response_id == gtk.RESPONSE_OK):
+                    if (response_id == Gtk.ResponseType.OK):
                         dialog.hide()
                         break
 
@@ -401,19 +442,25 @@ class CronTabWindow(gtk.Window):
 
         return dialog.task
 
-    def run_connect_dialog(self, pipe_manager, server_address, transport_type, username, password = "", connect_now = False):
-        dialog = ATSvcConnectDialog(server_address, transport_type, username, password)
+    def run_connect_dialog(self, pipe_manager,
+                                 server_address,
+                                 transport_type,
+                                 username,
+                                 password = "",
+                                 connect_now = False):
+        dialog = ATSvcConnectDialog(server_address, transport_type,
+                                    username, password)
         dialog.show_all()
 
         # loop to handle the failures
         while True:
             if (connect_now):
                 connect_now = False
-                response_id = gtk.RESPONSE_OK
+                response_id = Gtk.ResponseType.OK
             else:
                 response_id = dialog.run()
 
-            if (response_id != gtk.RESPONSE_OK):
+            if (response_id != Gtk.ResponseType.OK):
                 dialog.hide()
                 return None
             else:
@@ -426,37 +473,57 @@ class CronTabWindow(gtk.Window):
                     self.username = username
                     password = dialog.get_password()
 
-                    pipe_manager = ATSvcPipeManager(server_address, transport_type, username, password)
+                    pipe_manager = ATSvcPipeManager(server_address,
+                                                   transport_type,
+                                                   username,
+                                                   password)
                     break
 
                 except RuntimeError, re:
                     if re.args[1] == 'Logon failure': #user got the password wrong
-                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Failed to connect: Invalid username or password.", dialog)
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                                Gtk.ButtonsType.OK,
+                                                "Failed to connect: Invalid username or password.",
+                                                dialog)
                         dialog.password_entry.grab_focus()
                         dialog.password_entry.select_region(0, -1) #select all the text in the password box
                     elif re.args[0] == 5 or re.args[1] == 'Access denied':
-                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Failed to connect: Access Denied.", dialog)
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                               Gtk.ButtonsType.OK,
+                                               "Failed to connect: Access Denied.",
+                                               dialog)
                         dialog.username_entry.grab_focus()
                         dialog.username_entry.select_region(0, -1)
                     elif re.args[1] == 'NT_STATUS_HOST_UNREACHABLE':
-                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Failed to connect: Could not contact the server.", dialog)
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                                Gtk.ButtonsType.OK,
+                                                "Failed to connect: Could not contact the server.",
+                                                dialog)
                         dialog.server_address_entry.grab_focus()
                         dialog.server_address_entry.select_region(0, -1)
                     elif re.args[1] == 'NT_STATUS_NETWORK_UNREACHABLE':
-                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Failed to connect: The network is unreachable.\n\nPlease check your network connection.", dialog)
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                               Gtk.ButtonsType.OK,
+                                               "Failed to connect: The network is unreachable.\n\nPlease check your network connection.",
+                                               dialog)
                     elif re.args[1] == 'NT_STATUS_CONNECTION_REFUSED':
-                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "Failed to connect: The connection was refused.", dialog)
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                               Gtk.ButtonsType.OK,
+                                               "Failed to connect: The connection was refused.",
+                                               dialog)
                     else:
                         msg = "Failed to connect: %s." % (re.args[1])
                         print msg
                         traceback.print_exc()
-                        self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg, dialog)
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                               Gtk.ButtonsType.OK, msg, dialog)
 
                 except Exception, ex:
                     msg = "Failed to connect: %s." % (str(ex))
                     print msg
                     traceback.print_exc()
-                    self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg, dialog)
+                    self.run_message_dialog(Gtk.MessageType.ERROR,
+                                           Gtk.ButtonsType.OK, msg, dialog)
 
         dialog.hide()
         return pipe_manager
@@ -476,14 +543,16 @@ class CronTabWindow(gtk.Window):
             print msg
             self.set_status(msg)
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
 
         except Exception, ex:
             msg = "Failed to update task: %s." % (str(ex))
             print msg
             self.set_status(msg)
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                    Gtk.ButtonsType.OK, msg)
 
         self.refresh_tasks_tree_view()
 
@@ -491,24 +560,31 @@ class CronTabWindow(gtk.Window):
         if (self.pipe_manager is not None):
             self.on_disconnect_item_activate(self.disconnect_item)
 
-        gtk.main_quit()
+        Gtk.main_quit()
         return False
 
     def on_key_press(self, widget, event):
-        if event.keyval == gtk.keysyms.F5:
+        if event.keyval == Gdk.KEY_F5:
             #refresh when F5 is pressed
             self.on_refresh_item_activate(None)
-        elif event.keyval == gtk.keysyms.Return:
-            myev = gtk.gdk.Event(gtk.gdk._2BUTTON_PRESS) #emulate a double-click
+        elif event.keyval == Gdk.KEY_Return:
+            myev = Gdk.Event(Gdk.EventType._2BUTTON_PRESS) #emulate a double-click
             self.on_tasks_tree_view_button_press(None, myev)
 
-    def on_connect_item_activate(self, widget, server = "", transport_type = 0, username = "", password = "", connect_now = False):
+    def on_connect_item_activate(self, widget, server = "",
+                                               transport_type = 0,
+                                               username = "",
+                                               password = "",
+                                               connect_now = False):
         server = server or self.server_address
         transport_type = transport_type or self.transport_type
         username = username or self.username
 
         try:
-            self.pipe_manager = self.run_connect_dialog(None, server, transport_type, username, password, connect_now)
+            self.pipe_manager = self.run_connect_dialog(None, server,
+                                                        transport_type,
+                                                        username, password,
+                                                        connect_now)
             if (self.pipe_manager is not None):
                 self.pipe_manager.fetch_tasks()
 
@@ -519,14 +595,16 @@ class CronTabWindow(gtk.Window):
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
 
         except Exception, ex:
             msg = "Failed to retrieve the scheduled tasks: %s." % (str(ex))
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
 
         self.refresh_tasks_tree_view()
         self.update_sensitivity()
@@ -555,14 +633,16 @@ class CronTabWindow(gtk.Window):
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
 
         except Exception, ex:
             msg = "Failed to retrieve the scheduled tasks: %s." % (str(ex))
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
 
         self.refresh_tasks_tree_view()
 
@@ -582,21 +662,26 @@ class CronTabWindow(gtk.Window):
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
 
         except Exception, ex:
             msg = "Failed to create task: %s."  % (str(ex))
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
 
         self.refresh_tasks_tree_view()
 
     def on_delete_item_activate(self, widget):
         del_task = self.get_selected_task()
 
-        if (self.run_message_dialog(gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO, "Do you want to delete task with ID '%d'?" % del_task.id) != gtk.RESPONSE_YES):
+        if (self.run_message_dialog(Gtk.MessageType.QUESTION,
+                                    Gtk.ButtonsType.YES_NO,
+                                   "Do you want to delete task with ID '%d'?" % del_task.id)
+                                        != Gtk.ResponseType.YES):
             return
 
         try:
@@ -610,14 +695,16 @@ class CronTabWindow(gtk.Window):
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
 
         except Exception, ex:
             msg = "Failed to delete task: %s." % (str(ex))
             self.set_status(msg)
             print msg
             traceback.print_exc()
-            self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, msg)
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                   Gtk.ButtonsType.OK, msg)
 
         self.refresh_tasks_tree_view()
 
@@ -638,7 +725,7 @@ class CronTabWindow(gtk.Window):
         if (self.get_selected_task() == None):
             return
 
-        if (event.type == gtk.gdk._2BUTTON_PRESS):
+        if (event.type == Gdk.EventType._2BUTTON_PRESS):
             self.on_edit_item_activate(self.edit_item)
 
     def on_update_sensitivity(self, widget):
@@ -684,4 +771,4 @@ if __name__ == "__main__":
 
     main_window = CronTabWindow(**arguments)
     main_window.show_all()
-    gtk.main()
+    Gtk.main()
