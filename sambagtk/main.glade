@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
+<!--*- mode: xml -*-->
 <interface>
-  <requires lib="gtk+" version="2.16"/>
   <object class="GtkImage" id="image1">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -16,8 +16,8 @@
     <property name="window_position">center</property>
     <property name="default_width">800</property>
     <property name="default_height">600</property>
-    <signal name="destroy" handler="on_main_window_destroy" swapped="no"/>
-    <signal name="key-press-event" handler="on_main_window_key_press_event" swapped="no"/>
+    <signal handler="on_main_window_destroy" name="destroy" swapped="no"/>
+    <signal handler="on_main_window_key_press_event" name="key-press-event" swapped="no"/>
     <child>
       <object class="GtkVBox" id="vbox">
         <property name="visible">True</property>
@@ -51,7 +51,7 @@
                             <property name="use_action_appearance">False</property>
                             <property name="use_underline">True</property>
                             <property name="use_stock">True</property>
-                            <signal name="activate" handler="on_connect_all_item_activate" swapped="no"/>
+                            <signal handler="on_connect_all_item_activate" name="activate" swapped="no"/>
                           </object>
                         </child>
                         <child>
@@ -62,7 +62,7 @@
                             <property name="use_action_appearance">False</property>
                             <property name="use_underline">True</property>
                             <property name="use_stock">True</property>
-                            <signal name="activate" handler="on_disconnect_all_item_activate" swapped="no"/>
+                            <signal handler="on_disconnect_all_item_activate" name="activate" swapped="no"/>
                           </object>
                         </child>
                         <child>
@@ -79,7 +79,7 @@
                             <property name="use_action_appearance">False</property>
                             <property name="use_underline">True</property>
                             <property name="use_stock">True</property>
-                            <signal name="activate" handler="on_quit_item_activate" swapped="no"/>
+                            <signal handler="on_quit_item_activate" name="activate" swapped="no"/>
                           </object>
                         </child>
                       </object>
@@ -105,7 +105,7 @@
                             <property name="use_action_appearance">False</property>
                             <property name="image">image2</property>
                             <property name="use_stock">False</property>
-                            <signal name="activate" handler="on_clear_log_activate" swapped="no"/>
+                            <signal handler="on_clear_log_activate" name="activate" swapped="no"/>
                           </object>
                         </child>
                       </object>
@@ -131,7 +131,7 @@
                             <property name="use_action_appearance">False</property>
                             <property name="image">image1</property>
                             <property name="use_stock">False</property>
-                            <signal name="activate" handler="on_connection_info_item_activate" swapped="no"/>
+                            <signal handler="on_connection_info_item_activate" name="activate" swapped="no"/>
                           </object>
                         </child>
                       </object>
@@ -157,7 +157,7 @@
                             <property name="use_action_appearance">False</property>
                             <property name="use_underline">True</property>
                             <property name="use_stock">True</property>
-                            <signal name="activate" handler="on_about_item_activate" swapped="no"/>
+                            <signal handler="on_about_item_activate" name="activate" swapped="no"/>
                           </object>
                         </child>
                       </object>
@@ -192,7 +192,7 @@
                     <property name="label" translatable="yes">Connect All</property>
                     <property name="use_underline">True</property>
                     <property name="stock_id">gtk-connect</property>
-                    <signal name="clicked" handler="on_connect_all_button_clicked" swapped="no"/>
+                    <signal handler="on_connect_all_button_clicked" name="clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -208,7 +208,7 @@
                     <property name="label" translatable="yes">Disconnect All</property>
                     <property name="use_underline">True</property>
                     <property name="stock_id">gtk-disconnect</property>
-                    <signal name="clicked" handler="on_disconnect_all_button_clicked" swapped="no"/>
+                    <signal handler="on_disconnect_all_button_clicked" name="clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -234,7 +234,7 @@
                     <property name="label" translatable="yes">Clear Log</property>
                     <property name="use_underline">True</property>
                     <property name="stock_id">gtk-clear</property>
-                    <signal name="clicked" handler="on_clear_log_button_clicked" swapped="no"/>
+                    <signal handler="on_clear_log_button_clicked" name="clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -255,7 +255,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="tab_pos">left</property>
-            <signal name="switch-page" handler="on_utility_notebook_switch_page" swapped="no"/>
+            <signal handler="on_utility_notebook_switch_page" name="switch-page" swapped="no"/>
             <child>
               <object class="GtkViewport" id="launcher_viewport">
                 <property name="visible">True</property>
