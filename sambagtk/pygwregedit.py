@@ -809,13 +809,15 @@ class RegEditWindow(Gtk.Window):
         file_menu = Gtk.Menu()
         self.file_item.set_property("submenu",file_menu)
 
-        self.connect_item = Gtk.ImageMenuItem(Gtk.STOCK_CONNECT)
-        self.connect_item.set_property("accel-group",accel_group)
+        self.connect_item = Gtk.ImageMenuItem.new_from_stock(
+                                                Gtk.STOCK_CONNECT, accel_group)
+        self.connect_item.set_always_show_image(True)
         file_menu.add(self.connect_item)
 
-        self.disconnect_item = Gtk.ImageMenuItem(Gtk.STOCK_DISCONNECT)
-        self.disconnect_item.set_properties("accel-group",accel_group,
-                                            "sensitive",False)
+        self.disconnect_item = Gtk.ImageMenuItem.new_from_stock(
+                                             Gtk.STOCK_DISCONNECT, accel_group)
+        self.disconnect_item.set_sensitive(False)
+        self.disconnect_item.set_always_show_image(True)
         file_menu.add(self.disconnect_item)
 
         menu_separator_item = Gtk.SeparatorMenuItem()
@@ -832,8 +834,9 @@ class RegEditWindow(Gtk.Window):
 #        menu_separator_item = Gtk.SeparatorMenuItem()
 #        file_menu.add(menu_separator_item)
 
-        self.quit_item = Gtk.ImageMenuItem(Gtk.STOCK_QUIT)
-        self.quit_item.set_property("accel-group",accel_group)
+        self.quit_item = Gtk.ImageMenuItem.new_from_stock(
+                                                   Gtk.STOCK_QUIT, accel_group)
+        self.quit_item.set_always_show_image(True)
         file_menu.add(self.quit_item)
 
         self.edit_item = Gtk.MenuItem.new_with_mnemonic("_Edit")
@@ -847,16 +850,17 @@ class RegEditWindow(Gtk.Window):
         self.modify_item.set_property("accel-group",accel_group)
         self.edit_menu.add(self.modify_item)
 
-        self.modify_binary_item = Gtk.MenuItem.new_with_mnemonic("Modify _Binary")
-        #self.modify_binary_item.set_property("accel-group",accel_group)
+        self.modify_binary_item = Gtk.MenuItem.new_with_mnemonic(
+                                                        "Modify _Binary")
         self.edit_menu.add(self.modify_binary_item)
 
         menu_separator_item = Gtk.SeparatorMenuItem()
         menu_separator_item.set_property("sensitive",False)
         self.edit_menu.add(menu_separator_item)
 
-        self.new_item = Gtk.ImageMenuItem(Gtk.STOCK_NEW)
-        self.new_item.set_property("accel-group",accel_group)
+        self.new_item = Gtk.ImageMenuItem.new_from_stock(
+                                                    Gtk.STOCK_NEW, accel_group)
+        self.new_item.set_always_show_image(True)
         self.edit_menu.add(self.new_item)
 
         new_menu = Gtk.Menu()
@@ -906,12 +910,14 @@ class RegEditWindow(Gtk.Window):
         #menu_separator_item.set_property("sensitive",False)
         #self.edit_menu.add(menu_separator_item)
 
-        self.delete_item = Gtk.ImageMenuItem(Gtk.STOCK_DELETE)
-        self.delete_item.set_property("accel-group",accel_group)
+        self.delete_item = Gtk.ImageMenuItem.new_from_stock(
+                                                 Gtk.STOCK_DELETE, accel_group)
+        self.delete_item.set_always_show_image(True)
         self.edit_menu.add(self.delete_item)
 
-        self.rename_item = Gtk.ImageMenuItem(Gtk.STOCK_EDIT)
-        self.rename_item.set_property("accel-group",accel_group)
+        self.rename_item = Gtk.ImageMenuItem.new_from_stock(
+                                                   Gtk.STOCK_EDIT, accel_group)
+        self.rename_item.set_always_show_image(True)
         self.edit_menu.add(self.rename_item)
 
         menu_separator_item = Gtk.SeparatorMenuItem()
@@ -926,8 +932,9 @@ class RegEditWindow(Gtk.Window):
         menu_separator_item.set_property("sensitive",False)
         self.edit_menu.add(menu_separator_item)
 
-        self.find_item = Gtk.ImageMenuItem(Gtk.STOCK_FIND)
-        self.find_item.set_property("accel-group",accel_group)
+        self.find_item = Gtk.ImageMenuItem.new_from_stock(
+                                                   Gtk.STOCK_FIND, accel_group)
+        self.find_item.set_always_show_image(True)
         self.find_item.get_child().set_text("Find...")
         self.edit_menu.add(self.find_item)
 
@@ -941,8 +948,9 @@ class RegEditWindow(Gtk.Window):
         view_menu = Gtk.Menu()
         self.view_item.set_submenu(view_menu)
 
-        self.refresh_item = Gtk.ImageMenuItem(Gtk.STOCK_REFRESH)
-        self.refresh_item.set_property("accel-group",accel_group)
+        self.refresh_item = Gtk.ImageMenuItem.new_from_stock(
+                                                Gtk.STOCK_REFRESH, accel_group)
+        self.refresh_item.set_always_show_image(True)
         view_menu.add(self.refresh_item)
 
         self.help_item = Gtk.MenuItem.new_with_mnemonic("_Help")
@@ -951,8 +959,9 @@ class RegEditWindow(Gtk.Window):
         help_menu = Gtk.Menu()
         self.help_item.set_submenu(help_menu)
 
-        self.about_item = Gtk.ImageMenuItem(Gtk.STOCK_ABOUT)
-        self.about_item.set_property("accel-group",accel_group)
+        self.about_item = Gtk.ImageMenuItem.new_from_stock(
+                                                  Gtk.STOCK_ABOUT, accel_group)
+        self.about_item.set_always_show_image(True)
         help_menu.add(self.about_item)
 
 

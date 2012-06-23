@@ -1352,21 +1352,24 @@ Please check your network connection.''',
         file_menu = Gtk.Menu()
         self.file_item.set_property("submenu",file_menu)
 
-        self.connect_item = Gtk.ImageMenuItem(Gtk.STOCK_CONNECT)
-        self.connect_item.set_property("accel-group",accel_group)
+        self.connect_item = Gtk.ImageMenuItem.new_from_stock(
+                                                Gtk.STOCK_CONNECT, accel_group)
+        self.connect_item.set_always_show_image(True)
         file_menu.add(self.connect_item)
 
-        self.disconnect_item = Gtk.ImageMenuItem(Gtk.STOCK_DISCONNECT)
-        self.disconnect_item.set_properties("accel-group",accel_group,
-                                            "sensitive",False)
+        self.disconnect_item = Gtk.ImageMenuItem.new_from_stock(
+                                             Gtk.STOCK_DISCONNECT, accel_group)
+        self.disconnect_item.set_sensitive(False)
+        self.disconnect_item.set_always_show_image(True)
         file_menu.add(self.disconnect_item)
 
         menu_separator_item = Gtk.SeparatorMenuItem()
         menu_separator_item.set_property("sensitive",False)
         file_menu.add(menu_separator_item)
 
-        self.quit_item = Gtk.ImageMenuItem(Gtk.STOCK_QUIT)
-        self.quit_item.set_property("accel-group",accel_group)
+        self.quit_item = Gtk.ImageMenuItem.new_from_stock(
+                                                   Gtk.STOCK_QUIT, accel_group)
+        self.quit_item.set_always_show_image(True)
         file_menu.add(self.quit_item)
 
         self.view_item = Gtk.MenuItem.new_with_mnemonic('_View')
@@ -1375,9 +1378,10 @@ Please check your network connection.''',
         view_menu = Gtk.Menu()
         self.view_item.set_property("submenu",view_menu)
 
-        self.refresh_item = Gtk.ImageMenuItem(Gtk.STOCK_REFRESH)
-        self.refresh_item.set_properties("accel-group",accel_group,
-                                            "sensitive",False)
+        self.refresh_item = Gtk.ImageMenuItem.new_from_stock(
+                                                Gtk.STOCK_REFRESH, accel_group)
+        self.refresh_item.set_sensitive(False)
+        self.refresh_item.set_always_show_image(True)
         view_menu.add(self.refresh_item)
 
         self.share_item = Gtk.MenuItem.new_with_mnemonic('_Share')
@@ -1386,19 +1390,22 @@ Please check your network connection.''',
         share_menu = Gtk.Menu()
         self.share_item.set_submenu(share_menu)
 
-        self.new_item = Gtk.ImageMenuItem(Gtk.STOCK_NEW)
-        self.new_item.set_properties("accel-group",accel_group,
-                                            "sensitive",False)
+        self.new_item = Gtk.ImageMenuItem.new_from_stock(
+                                                    Gtk.STOCK_NEW, accel_group)
+        self.new_item.set_sensitive(False)
+        self.new_item.set_always_show_image(True)
         share_menu.add(self.new_item)
 
-        self.delete_item = Gtk.ImageMenuItem(Gtk.STOCK_DELETE)
-        self.delete_item.set_properties("accel-group",accel_group,
-                                            "sensitive",False)
+        self.delete_item = Gtk.ImageMenuItem.new_from_stock(
+                                                 Gtk.STOCK_DELETE, accel_group)
+        self.delete_item.set_sensitive(False)
+        self.delete_item.set_always_show_image(True)
         share_menu.add(self.delete_item)
 
-        self.edit_item = Gtk.ImageMenuItem(Gtk.STOCK_EDIT)
-        self.edit_item.set_properties("accel-group",accel_group,
-                                            "sensitive",False)
+        self.edit_item = Gtk.ImageMenuItem.new_from_stock(
+                                                   Gtk.STOCK_EDIT, accel_group)
+        self.edit_item.set_sensitive(False)
+        self.edit_item.set_always_show_image(True)
         share_menu.add(self.edit_item)
 
         self.wizard_item = Gtk.MenuItem.new_with_mnemonic('_Wizard')
@@ -1417,8 +1424,9 @@ Please check your network connection.''',
         help_menu = Gtk.Menu()
         self.help_item.set_property("submenu",help_menu)
 
-        self.about_item = Gtk.ImageMenuItem(Gtk.STOCK_ABOUT)
-        self.about_item.set_property("accel-group",accel_group)
+        self.about_item = Gtk.ImageMenuItem.new_from_stock(
+                                                  Gtk.STOCK_ABOUT, accel_group)
+        self.about_item.set_always_show_image(True)
         help_menu.add(self.about_item)
 
         # Toolbar

@@ -398,9 +398,9 @@ class RegValueEditDialog(Gtk.Dialog):
         if len(self.name_entry.get_text().strip()) == 0:
             return "Please specify a name."
 
-        
-        elif self.reg_value.type in [misc.REG_DWORD, 
-                                     misc.REG_DWORD_BIG_ENDIAN, 
+
+        elif self.reg_value.type in [misc.REG_DWORD,
+                                     misc.REG_DWORD_BIG_ENDIAN,
                                      misc.REG_QWORD]:
             number_str = self.number_data_entry.get_text()
             if len(number_str) == 0:
@@ -445,7 +445,7 @@ class RegValueEditDialog(Gtk.Dialog):
                                     self.reg_value.get_interpreted_data(), 8))
             #self.on_binary_data_hex_text_view_buffer_changed(None) #this is already called with the statement above
 
-        
+
         elif self.reg_value.type in [misc.REG_DWORD,
                                      misc.REG_DWORD_BIG_ENDIAN,
                                      misc.REG_QWORD]:
@@ -487,7 +487,7 @@ class RegValueEditDialog(Gtk.Dialog):
                                     RegValueEditDialog.hex_to_byte_array(text))
 
         elif self.reg_value.type in [misc.REG_DWORD,
-                                     misc.REG_DWORD_BIG_ENDIAN, 
+                                     misc.REG_DWORD_BIG_ENDIAN,
                                      misc.REG_QWORD]:
             if self.number_data_dec_radio.get_active():
                 self.reg_value.set_interpreted_data(string.atoi(
