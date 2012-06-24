@@ -127,7 +127,6 @@ class SambaUtilities(object):
             args.update({"info_callback":
                     self.additional_connection_args["info_callback"]})
 
-        print args
         self.sam_window = pygwsam.SAMWindow(**args) #start up the utility
         self.sam_window.users_groups_notebook.reparent(self.sam_viewport) #reparent the main widget into a notebook tab
         self.sam_viewport.show_all() #unhide all widgets

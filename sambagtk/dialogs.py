@@ -124,7 +124,7 @@ class ConnectDialog(Gtk.Dialog):
         grid.attach(label, 0, 0, 1, 1)
 
         self.server_address_entry = Gtk.Entry()
-        self.server_address_entry.set_text(self.password)
+        self.server_address_entry.get_buffer().set_text(self.password,-1)
         self.server_address_entry.set_property("activates-default",True)
         self.server_address_entry.set_property("tooltip-text",
                                         'Enter the Server Address')

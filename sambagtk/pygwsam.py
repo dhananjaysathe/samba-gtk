@@ -1002,7 +1002,6 @@ class SAMWindow(Gtk.Window):
                         domain_index = 0
                         self.domain_index = domain_index
                         password = dialog.get_password()
-                        print '$'.join([server_address,str(transport_type),username,password])
 
                         pipe_manager = SAMPipeManager(server_address,
                                             transport_type, username, password)
