@@ -124,7 +124,7 @@ class ConnectDialog(Gtk.Dialog):
         grid.attach(label, 0, 0, 1, 1)
 
         self.server_address_entry = Gtk.Entry()
-        self.server_address_entry.set_property("text",self.password)
+        self.server_address_entry.set_text(self.password)
         self.server_address_entry.set_property("activates-default",True)
         self.server_address_entry.set_property("tooltip-text",
                                         'Enter the Server Address')
@@ -134,7 +134,7 @@ class ConnectDialog(Gtk.Dialog):
         grid.attach(label, 0, 1, 1, 1)
 
         self.username_entry = Gtk.Entry()
-        self.username_entry.set_property("text",self.password)
+        self.username_entry.set_text(self.password)
         self.username_entry.set_property("activates-default",True)
         self.username_entry.set_property("tooltip-text",
                                             'Enter your Username')
@@ -144,7 +144,7 @@ class ConnectDialog(Gtk.Dialog):
         grid.attach(label, 0, 2, 1, 1)
 
         self.password_entry = Gtk.Entry()
-        self.password_entry.set_property("text",self.password)
+        self.password_entry.set_text(self.password)
         self.password_entry.set_property("activates-default",True)
         self.password_entry.set_property("tooltip-text",
                                         'Enter your Password')
@@ -216,13 +216,16 @@ class ConnectDialog(Gtk.Dialog):
     def get_server_address(self):
         if self.get_transport_type() is 2:
             return '127.0.0.1'
-        return self.server_address_entry.get_text().strip()
+        return (self.server_address_entry.get_text().strip() or
+                self.server_address )
 
     def get_username(self):
-        return self.username_entry.get_text().strip()
+        return (self.username_entry.get_text().strip() or
+                self.username)
 
     def get_password(self):
-        return self.password_entry.get_text()
+        return (self.password_entry.get_text() or
+                self.password)
 
     def update_sensitivity(self):
         server_required = not self.localhost_radio_button.get_active()

@@ -35,7 +35,6 @@ class SAMPipeManager(object):
         self.user_list = []
         self.group_list = []
 
-
         creds = credentials.Credentials()
         if (username.count("\\") > 0):
             creds.set_domain(username.split("\\")[0])
@@ -1003,6 +1002,7 @@ class SAMWindow(Gtk.Window):
                         domain_index = 0
                         self.domain_index = domain_index
                         password = dialog.get_password()
+                        print '$'.join([server_address,str(transport_type),username,password])
 
                         pipe_manager = SAMPipeManager(server_address,
                                             transport_type, username, password)

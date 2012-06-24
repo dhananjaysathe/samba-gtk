@@ -127,6 +127,7 @@ class SambaUtilities(object):
             args.update({"info_callback":
                     self.additional_connection_args["info_callback"]})
 
+        print args
         self.sam_window = pygwsam.SAMWindow(**args) #start up the utility
         self.sam_window.users_groups_notebook.reparent(self.sam_viewport) #reparent the main widget into a notebook tab
         self.sam_viewport.show_all() #unhide all widgets
@@ -328,7 +329,6 @@ class SambaUtilities(object):
                     self.connection_args.update({"password":
                                                dialog.get_password()})
                     self.connection_args.update({"connect_now":True})
-                    print self.connection_args
                     self.additional_connection_args.update({"domain_index":0}) #TODO: get domain index
                     break
                 else:
