@@ -482,7 +482,7 @@ class RegValueEditDialog(Gtk.Dialog):
         elif self.reg_value.type == misc.REG_BINARY:
             buffer = self.binary_data_hex_text_view.get_buffer()
             text = buffer.get_text(buffer.get_start_iter(),
-                                  buffer.get_end_iter())
+                                  buffer.get_end_iter(),True)
             self.reg_value.set_interpreted_data(
                                     RegValueEditDialog.hex_to_byte_array(text))
 
@@ -502,7 +502,7 @@ class RegValueEditDialog(Gtk.Dialog):
 
             buffer = self.multi_string_data_text_view.get_buffer()
             for ch in buffer.get_text(buffer.get_start_iter(),
-                                     buffer.get_end_iter()):
+                                     buffer.get_end_iter(),True):
                 if ch != "\n":
                     line += ch
                 else:
@@ -553,7 +553,7 @@ class RegValueEditDialog(Gtk.Dialog):
         #print "cursor at:", insert_char_offs
 
         text = hex_buffer.get_text(hex_buffer.get_start_iter(),
-                                   hex_buffer.get_end_iter())
+                                   hex_buffer.get_end_iter(),True)
         before_len = len(text)
         text = RegValueEditDialog.check_hex_string(text).strip()
         after_len = len(text)
@@ -577,7 +577,7 @@ class RegValueEditDialog(Gtk.Dialog):
 
         offset = iter.get_offset()
         whole_text = widget.get_text(widget.get_start_iter(),
-                                    widget.get_end_iter())
+                                    widget.get_end_iter(),True)
 
         #construct the final text
         final_text = ""
@@ -628,7 +628,8 @@ class RegValueEditDialog(Gtk.Dialog):
         cursor_iter = widget.get_iter_at_mark(widget.get_insert()) #insert means cursor, or "the insertion point" as gtk calls it
         cursor_offset = cursor_iter.get_offset()
 
-        text = widget.get_text(widget.get_start_iter(), widget.get_end_iter())
+        text = widget.get_text(widget.get_start_iter(),
+                              widget.get_end_iter(),True)
         text = self.check_ascii_string(text)
         widget.set_text(text)
 
@@ -654,13 +655,13 @@ class RegValueEditDialog(Gtk.Dialog):
 
         #get stuff that we need
         offset = iter.get_offset()
-        inclusive_text = widget.get_text(widget.get_start_iter(), iter)
+        inclusive_text = widget.get_text(widget.get_start_iter(), iter, True)
         hex_pos = int(iter.get_offset() * 3) #because each ascii character is 2 hex characters, plus a space
         hex_pos -= inclusive_text.count('\n') * 2 #because '\n' counts as a character, but it doesn't take up 3 spaces in the hex string.
         hex_buffer = self.binary_data_hex_text_view.get_buffer()
         addr_buffer = self.binary_data_addr_text_view.get_buffer()
         hex_text = hex_buffer.get_text(hex_buffer.get_start_iter(),
-                                       hex_buffer.get_end_iter())
+                                       hex_buffer.get_end_iter(), True)
 
         #insert into hex_text up to the point where the new character was inserted
         new_hex = ""
@@ -696,13 +697,13 @@ class RegValueEditDialog(Gtk.Dialog):
         self.disable_signals = True
 
         #get stuff that we need
-        text = widget.get_text(start, end)
-        beginning_text = widget.get_text(widget.get_start_iter(), start)
-        inclusive_text = widget.get_text(widget.get_start_iter(), end)
+        text = widget.get_text(start, end, True)
+        beginning_text = widget.get_text(widget.get_start_iter(), start, True)
+        inclusive_text = widget.get_text(widget.get_start_iter(), end, True)
         hex_buffer = self.binary_data_hex_text_view.get_buffer()
         addr_buffer = self.binary_data_addr_text_view.get_buffer()
         hex_text = hex_buffer.get_text(hex_buffer.get_start_iter(),
-                                       hex_buffer.get_end_iter())
+                                       hex_buffer.get_end_iter(),True)
         new_end_iter = None #this will tell us if any extra characters need to be deleted later
 
         if text == '\n': #we assume that the user pressed backspace and NOT delete. We don't get any indicator of which key was pressed so without adding another complex function, this is the best we can do

@@ -4,26 +4,22 @@ Created on May 17, 2010
 @author: Sergio Martins
 '''
 import sys
-import pygtk
-pygtk.require20() #require pygtk version 2.0
-import gtk
-import gtk.glade
 import os.path
 import getopt
 
-sys.path.append('/usr/local/samba/lib/python2.7/site-packages/')
-# for use against the default binaries from default .configure.developer for use on python 2.7
-# Uncomment the above line if it is yor your config , else edit it as required
+from gi.repository import Gtk
+from gi.repository import Gdk
+from gi.repository import GLib
 
 
-import pygwsam
+import pygwsam                     #################  TODO : Local###
 import pygwregedit
 import pygwcrontab
 import pygwsvcctl
 import pygwshare
 
-from sambagtk.dialogs import AboutDialog
-from sambagtk.sam import SAMConnectDialog
+from dialogs import AboutDialog
+from sam import SAMConnectDialog   #################################
 
 
 class SambaUtilities(object):
@@ -44,7 +40,8 @@ class SambaUtilities(object):
 
         self.connection_args = connection_args
         self.additional_connection_args = {} #arguments not supported by all utilities, such as domain_index
-        self.additional_connection_args.update({"info_callback":self.server_info_callback}) #to save info or get updated info
+        self.additional_connection_args.update(
+                                  {"info_callback":self.server_info_callback}) #to save info or get updated info
         self.print_redirect_sring = ""
 
         self.update_sensitivity()
@@ -52,31 +49,40 @@ class SambaUtilities(object):
         self.push_status_message("Utility started successfully.")
         self.utilites_notebook.grab_focus() #So switching to the regedit tab doesn't automatically focus the keys tree view
 
-        if (connection_args.has_key("connect_now") and connection_args["connect_now"]):
+        if (connection_args.has_key("connect_now") and
+        connection_args["connect_now"]):
             self.on_connect_all_button_clicked(None)
 
 
     def create(self):
-        # get a builder and put it to work
-        builder = gtk.Builder()
-        builder.add_from_file("main.glade")
+        builder = Gtk.Builder()
+        builder.add_from_file("main.ui")
 
         # dictionary for connections
-        connections = {"on_main_window_destroy": gtk.main_quit,
-                       "on_main_window_key_press_event": self.on_main_window_key_press_event,
-
-                       "on_connect_all_item_activate": self.on_connect_all_button_clicked,
-                       "on_disconnect_all_item_activate": self.on_disconnect_all_button_clicked,
-                       "on_quit_item_activate": self.on_quit_item_activate,
-                       "on_clear_log_activate": self.on_clear_log_activate,
-                       "on_connection_info_item_activate": self.on_connection_info_item_activate,
-                       "on_about_item_activate": self.on_about_item_activate,
-
-                       "on_connect_all_button_clicked": self.on_connect_all_button_clicked,
-                       "on_disconnect_all_button_clicked": self.on_disconnect_all_button_clicked,
-                       "on_clear_log_button_clicked": self.on_clear_log_activate,
-
-                       "on_utility_notebook_switch_page": self.on_utility_notebook_switch_page,
+        connections = {"on_main_window_destroy":
+                            Gtk.main_quit,
+                       "on_main_window_key_press_event":
+                            self.on_main_window_key_press_event,
+                       "on_connect_all_item_activate":
+                            self.on_connect_all_button_clicked,
+                       "on_disconnect_all_item_activate":
+                            self.on_disconnect_all_button_clicked,
+                       "on_quit_item_activate":
+                            self.on_quit_item_activate,
+                       "on_clear_log_activate":
+                            self.on_clear_log_activate,
+                       "on_connection_info_item_activate":
+                            self.on_connection_info_item_activate,
+                       "on_about_item_activate":
+                            self.on_about_item_activate,
+                       "on_connect_all_button_clicked":
+                            self.on_connect_all_button_clicked,
+                       "on_disconnect_all_button_clicked":
+                            self.on_disconnect_all_button_clicked,
+                       "on_clear_log_button_clicked":
+                            self.on_clear_log_activate,
+                       "on_utility_notebook_switch_page":
+                            self.on_utility_notebook_switch_page,
 
                        }
         #Make the connections
@@ -92,7 +98,7 @@ class SambaUtilities(object):
         self.toolbar_viewport = builder.get_object("toolbar_viewport")
         self.toolbar = builder.get_object("toolbar")
         self.connect_all_button = builder.get_object("connect_all_button")
-        self.disconnect_all_button = builder.get_object("disconnect_all_button")
+        self.disconnect_all_button= builder.get_object("disconnect_all_button")
 
         self.utilites_notebook = builder.get_object("utility_notebook")
 
@@ -115,9 +121,11 @@ class SambaUtilities(object):
 
         args = self.connection_args.copy()
         if self.additional_connection_args.has_key("domain_index"):
-            args.update({"domain_index":self.additional_connection_args["domain_index"]})
+            args.update({"domain_index":
+                        self.additional_connection_args["domain_index"]})
         if self.additional_connection_args.has_key("info_callback"):
-            args.update({"info_callback":self.additional_connection_args["info_callback"]})
+            args.update({"info_callback":
+                    self.additional_connection_args["info_callback"]})
 
         self.sam_window = pygwsam.SAMWindow(**args) #start up the utility
         self.sam_window.users_groups_notebook.reparent(self.sam_viewport) #reparent the main widget into a notebook tab
@@ -135,7 +143,8 @@ class SambaUtilities(object):
 
         args = self.connection_args.copy()
         if self.additional_connection_args.has_key("info_callback"):
-            args.update({"info_callback":self.additional_connection_args["info_callback"]})
+            args.update({"info_callback":
+                        self.additional_connection_args["info_callback"]})
 
         self.srvsvc_window = pygwshare.ShareWindow(**args) #start up the utility
         self.srvsvc_window.share_notebook.reparent(self.srvsvc_viewport) #reparent the main widget into a notebook tab
@@ -153,7 +162,8 @@ class SambaUtilities(object):
     def init_regedit_page(self):
         args = self.connection_args.copy()
         if self.additional_connection_args.has_key("info_callback"):
-            args.update({"info_callback":self.additional_connection_args["info_callback"]})
+            args.update({"info_callback":
+                        self.additional_connection_args["info_callback"]})
         self.regedit_window = pygwregedit.RegEditWindow(**args) #start up the utility
         self.regedit_window.hpaned.reparent(self.regedit_viewport) #reparent the main widget into a notebook tab
         self.regedit_viewport.show_all() #unhide all widgets
@@ -169,7 +179,8 @@ class SambaUtilities(object):
     def init_svcctl_page(self):
         args = self.connection_args.copy()
         if self.additional_connection_args.has_key("info_callback"):
-            args.update({"info_callback":self.additional_connection_args["info_callback"]})
+            args.update({"info_callback":
+                        self.additional_connection_args["info_callback"]})
         self.svcctl_window = pygwsvcctl.SvcCtlWindow(**args) #start up the utility
         self.svcctl_window.scrolledwindow.reparent(self.svcctl_viewport) #reparent the main widget into a notebook tab
         self.svcctl_viewport.show_all() #unhide all widgets
@@ -185,7 +196,8 @@ class SambaUtilities(object):
     def init_crontab_page(self):
         args = self.connection_args.copy()
         if self.additional_connection_args.has_key("info_callback"):
-            args.update({"info_callback":self.additional_connection_args["info_callback"]})
+            args.update({"info_callback":
+                        self.additional_connection_args["info_callback"]})
         self.crontab_window = pygwcrontab.CronTabWindow(**args) #start up the utility
         self.crontab_window.scrolledwindow.reparent(self.crontab_viewport) #reparent the main widget into a notebook tab
         self.crontab_viewport.show_all() #unhide all widgets
@@ -213,21 +225,34 @@ class SambaUtilities(object):
         return self.crontab_window is not None
 
     def update_sensitivity(self):
-        sam_connected = self.sam_initialized() and self.sam_window.connected()
-        srvsvc_connected = self.srvsvc_initialized() and self.srvsvc_window.connected()
-        regedit_connected = self.regedit_initialized() and self.regedit_window.connected()
-        svcctl_connected = self.svcctl_initialized() and self.svcctl_window.connected()
-        crontab_connected = self.crontab_initialized() and self.crontab_window.connected()
-        all_connected = sam_connected and regedit_connected and svcctl_connected and crontab_connected and srvsvc_connected
-        all_disconnected = (not sam_connected) and (not regedit_connected) and (not svcctl_connected) and (not crontab_connected) and (not srvsvc_connected)
+        sam_connected = (self.sam_initialized() and
+                        self.sam_window.connected())
+        srvsvc_connected = (self.srvsvc_initialized() and
+                           self.srvsvc_window.connected())
+        regedit_connected = (self.regedit_initialized() and
+                            self.regedit_window.connected())
+        svcctl_connected = (self.svcctl_initialized() and
+                           self.svcctl_window.connected())
+        crontab_connected = (self.crontab_initialized() and
+                            self.crontab_window.connected())
+        all_connected = (sam_connected and regedit_connected and
+                         svcctl_connected and crontab_connected and
+                         srvsvc_connected )
+        all_disconnected = ((not sam_connected) and
+                            (not regedit_connected) and
+                            (not svcctl_connected) and
+                            (not crontab_connected) and
+                            (not srvsvc_connected) )
 
         self.connect_all_button.set_sensitive(not all_connected)
         self.disconnect_all_button.set_sensitive(not all_disconnected)
         self.connect_all_item.set_sensitive(not all_connected)
         self.disconnect_all_item.set_sensitive(not all_disconnected)
 
-        self.server_label.set_text(self.connection_args.has_key("server") and self.connection_args["server"] or "Unknown")
-        self.username_label.set_text(self.connection_args.has_key("username") and self.connection_args["username"] or "Unknwon")
+        self.server_label.set_text(self.connection_args.has_key("server") and
+                                  self.connection_args["server"] or "Unknown")
+        self.username_label.set_text(self.connection_args.has_key("username")
+                            and self.connection_args["username"] or "Unknwon")
         if (all_connected):
             self.status_label.set_text("All connected")
         elif (all_disconnected):
@@ -246,9 +271,11 @@ class SambaUtilities(object):
                 connected_utilities.append("Task Scheduler")
             if len(connected_utilities) > 1:
                 connected_utilities[-1] = "and %s" % connected_utilities[-1]
-            self.status_label.set_text("%s %s" % (", ".join(connected_utilities), "connected."))
+            self.status_label.set_text("%s %s" % (", ".join(
+                                        connected_utilities), "connected."))
 
-    def server_info_callback(self, server = "", username = "", transport_type = None):
+    def server_info_callback(self, server = "", username = "",
+                            transport_type = None):
         if server:
             self.connection_args.update({"server":server})
         if username:
@@ -260,7 +287,8 @@ class SambaUtilities(object):
         if (parent == None):
             parent = self.window
 
-        message_box = gtk.MessageDialog(parent, gtk.DIALOG_MODAL, type, buttons, message)
+        message_box = Gtk.MessageDialog(parent, Gtk.DialogFlags.MODAL,
+                                       type, buttons, message)
         response = message_box.run()
         message_box.hide()
 
@@ -275,7 +303,9 @@ class SambaUtilities(object):
         #args and their default values
         important_args = {"server":"", "username":"", "transport_type":0, }
         for item in important_args.keys():
-                args.update(self.connection_args.has_key(item) and {item:self.connection_args[item]} or {item:important_args[item]})
+                args.update(self.connection_args.has_key(item) and
+                            {item:self.connection_args[item]} or
+                            {item:important_args[item]})
 
         dialog = SAMConnectDialog(**args)
         dialog.show_all()
@@ -284,7 +314,7 @@ class SambaUtilities(object):
         while True:
             response_id = dialog.run()
 
-            if (response_id != gtk.RESPONSE_OK):
+            if (response_id != Gtk.ResponseType.OK):
                 dialog.hide()
                 return False
             else:
@@ -293,13 +323,18 @@ class SambaUtilities(object):
                 if server != "" and username != "":
                     self.connection_args.update({"server":server})
                     self.connection_args.update({"username":username})
-                    self.connection_args.update({"transport_type":dialog.get_transport_type()})
-                    self.connection_args.update({"password":dialog.get_password()})
+                    self.connection_args.update({"transport_type":
+                                                dialog.get_transport_type()})
+                    self.connection_args.update({"password":
+                                               dialog.get_password()})
                     self.connection_args.update({"connect_now":True})
+                    print self.connection_args
                     self.additional_connection_args.update({"domain_index":0}) #TODO: get domain index
                     break
                 else:
-                    self.run_message_dialog(gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, "You must enter a server address and username.")
+                    self.run_message_dialog(Gtk.MessageType.ERROR,
+                                           Gtk.ButtonsType.OK,
+                                           "You must enter a server address and username.")
 
 
         dialog.hide()
@@ -316,12 +351,14 @@ class SambaUtilities(object):
     def push_status_message(self, message):
         """Pushes a message to the status textview in the main tab. This function inserts a \"\\n\" for you."""
         buffer = self.messages_textview.get_buffer()
-        text = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter())
+        text = buffer.get_text(buffer.get_start_iter(),
+                              buffer.get_end_iter(), True)
         text += message + "\n"
         buffer.set_text(text)
 
         #scroll to the bottom
-        self.messages_textview.scroll_to_iter(buffer.get_end_iter(), 0.0)
+        self.messages_textview.scroll_to_iter(buffer.get_end_iter(),
+                                            0.0, False, 0.5, 0.5 )      #set as per previous gtk2 standards
 
     def set_status(self, message):
         self.statusbar.pop(0)
@@ -359,7 +396,7 @@ class SambaUtilities(object):
             self.update_sensitivity()
 
         elif page_num == 1: #Sam page
-            if self.sam_viewport.child == None:
+            if self.sam_viewport.get_child() == None:
                 self.init_sam_page()
 
             #Menubar
@@ -376,7 +413,7 @@ class SambaUtilities(object):
 
 
         elif page_num == 2: #Share page
-            if self.srvsvc_viewport.child == None:
+            if self.srvsvc_viewport.get_child() == None:
                 self.init_srvsvc_page()
 
             #Menubar
@@ -394,7 +431,7 @@ class SambaUtilities(object):
             self.srvsvc_window.hide()
 
         elif page_num == 3: #Regedit page
-            if self.regedit_viewport.child == None:
+            if self.regedit_viewport.get_child() == None:
                 self.init_regedit_page()
 
             #Menubar
@@ -410,7 +447,7 @@ class SambaUtilities(object):
             self.toolbar_viewport.show_all()
 
         elif page_num == 4: #Services page
-            if self.svcctl_viewport.child == None:
+            if self.svcctl_viewport.get_child() == None:
                 self.init_svcctl_page()
 
             #Menubar
@@ -426,7 +463,7 @@ class SambaUtilities(object):
             self.toolbar_viewport.show_all()
 
         elif page_num == 5: #Crontab page
-            if self.crontab_viewport.child == None:
+            if self.crontab_viewport.get_child() == None:
                 self.init_crontab_page()
 
             #Menubar
@@ -443,36 +480,42 @@ class SambaUtilities(object):
 
     def on_connect_all_button_clicked(self, widget):
 
-        if self.connection_args.has_key("connect_now") and self.connection_args["connect_now"]:
+        if (self.connection_args.has_key("connect_now") and
+        self.connection_args["connect_now"]):
             #if the user specified --connect-now then we probably have enough arguments to connect
 
             if self.sam_initialized():
                 if not self.sam_window.connected():
-                    self.sam_window.on_connect_item_activate(None, **self.connection_args)
+                    self.sam_window.on_connect_item_activate(None,
+                                                       **self.connection_args)
             else:
                 self.init_sam_page()
 
             if self.srvsvc_initialized():
                 if not self.srvsvc_window.connected():
-                    self.srvsvc_window.on_connect_item_activate(None, **self.connection_args)
+                    self.srvsvc_window.on_connect_item_activate(None,
+                                                       **self.connection_args)
             else:
                 self.init_srvsvc_page()
 
             if self.regedit_initialized():
                 if not self.regedit_window.connected():
-                    self.regedit_window.on_connect_item_activate(None, **self.connection_args)
+                    self.regedit_window.on_connect_item_activate(None,
+                                                       **self.connection_args)
             else:
                 self.init_regedit_page()
 
             if self.svcctl_initialized():
                 if not self.svcctl_window.connected():
-                    self.svcctl_window.on_connect_item_activate(None, **self.connection_args)
+                    self.svcctl_window.on_connect_item_activate(None,
+                                                       **self.connection_args)
             else:
                 self.init_svcctl_page()
 
             if self.crontab_initialized():
                 if not self.crontab_window.connected():
-                    self.crontab_window.on_connect_item_activate(None, **self.connection_args)
+                    self.crontab_window.on_connect_item_activate(None,
+                                                       **self.connection_args)
             else:
                 self.init_crontab_page()
 
@@ -513,7 +556,7 @@ class SambaUtilities(object):
 
 
     def on_quit_item_activate(self, widget):
-        gtk.main_quit()
+        Gtk.main_quit()
 
 #************ END OF CLASS ***************
 
@@ -554,8 +597,9 @@ def ParseArgs(argv):
 
 if __name__ == "__main__":
     arguments = ParseArgs(sys.argv[1:])
-    gtk.gdk.threads_init()
+    GLib.threads_init()
+    Gdk.threads_init()
     main_window = SambaUtilities(arguments)
     sys.stdout = main_window #redirect print statements to the write() function of this class
-    gtk.main()
+    Gtk.main()
 
