@@ -203,7 +203,7 @@ class RegistryKey(object):
         self.name = name
         self.parent = parent
         self.handle = None
-
+    
     def get_absolute_path(self):
         if self.parent is None:
             return self.name

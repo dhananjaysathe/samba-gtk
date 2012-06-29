@@ -370,30 +370,47 @@ class WinRegPipeManager(object):
         calculated_winreg_key_enum_val = \
                   (winreg.KEY_ENUMERATE_SUB_KEYS | winreg.KEY_CREATE_SUB_KEY |
                    winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE)
-        key_handle = self.pipe.OpenHKCR(None, calculated_winreg_key_enum_val)
-        key = RegistryKey("HKEY_CLASSES_ROOT", None)
-        key.handle = key_handle
-        self.well_known_keys.append(key)
+        
+        try:
+            key_handle = self.pipe.OpenHKCR(None, calculated_winreg_key_enum_val)
+            key = RegistryKey("HKEY_CLASSES_ROOT", None)
+            key.handle = key_handle
+            self.well_known_keys.append(key)
+        except RuntimeError:
+            print ('The hive HKEY_CLASSES_ROOT is inaccessibe')
+            
 
-        key_handle = self.pipe.OpenHKCU(None, calculated_winreg_key_enum_val)
-        key = RegistryKey("HKEY_CURRENT_USER", None)
-        key.handle = key_handle
-        self.well_known_keys.append(key)
+        try:
+            key_handle = self.pipe.OpenHKCU(None, calculated_winreg_key_enum_val)
+            key = RegistryKey("HKEY_CURRENT_USER", None)
+            key.handle = key_handle
+            self.well_known_keys.append(key)
+        except RuntimeError:
+            print ('The hive HKEY_CURRENT_USER is inaccessibe')
 
-        key_handle = self.pipe.OpenHKLM(None, calculated_winreg_key_enum_val)
-        key = RegistryKey("HKEY_LOCAL_MACHINE", None)
-        key.handle = key_handle
-        self.well_known_keys.append(key)
+        try:
+            key_handle = self.pipe.OpenHKLM(None, calculated_winreg_key_enum_val)
+            key = RegistryKey("HKEY_LOCAL_MACHINE", None)
+            key.handle = key_handle
+            self.well_known_keys.append(key)
+        except RuntimeError:
+            print ('The hive HKEY_LOCAL_MACHINE is inaccessibe')
 
-        key_handle = self.pipe.OpenHKU(None, calculated_winreg_key_enum_val)
-        key = RegistryKey("HKEY_USERS", None)
-        key.handle = key_handle
-        self.well_known_keys.append(key)
+        try:
+            key_handle = self.pipe.OpenHKU(None, calculated_winreg_key_enum_val)
+            key = RegistryKey("HKEY_USERS", None)
+            key.handle = key_handle
+            self.well_known_keys.append(key)
+        except RuntimeError:
+            print ('The hive HKEY_USERS is inaccessibe')
 
-        key_handle = self.pipe.OpenHKCC(None, calculated_winreg_key_enum_val)
-        key = RegistryKey("HKEY_CURRENT_CONFIG", None)
-        key.handle = key_handle
-        self.well_known_keys.append(key)
+        try:
+            key_handle = self.pipe.OpenHKCC(None, calculated_winreg_key_enum_val)
+            key = RegistryKey("HKEY_CURRENT_CONFIG", None)
+            key.handle = key_handle
+            self.well_known_keys.append(key)
+        except RuntimeError:
+            print ('The hive HKEY_CURRENT_CONFIG is inaccessibe')
 
     def open_path(self, key):
         if (key.parent is None):
@@ -793,8 +810,6 @@ class RegEditWindow(Gtk.Window):
 
         vbox = Gtk.VBox(False, 0)
         self.add(vbox)
-
-        # TODO: assign keyboard shortcuts
 
         # menu
 
