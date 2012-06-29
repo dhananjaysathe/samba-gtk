@@ -2309,7 +2309,8 @@ class RegEditWindow(Gtk.Window):
                                         self.keys_store.get_path(iter), False)
         elif (event.button == 3): #right click
             self.values_tree_view.grab_focus()
-            self.edit_menu.popup(None,None,None, event.button, int(event.time))
+            self.edit_menu.popup(None, None, None, None, event.button,
+                                int(event.time))
 
     def on_values_tree_view_selection_changed(self, widget):
         if self.ignore_selection_change:
@@ -2331,7 +2332,8 @@ class RegEditWindow(Gtk.Window):
             self.on_modify_item_activate(self.modify_item)
         elif (event.button == 3): #right click
             self.values_tree_view.grab_focus()
-            self.edit_menu.popup(None,None,None, event.button, int(event.time))
+            self.edit_menu.popup(None, None, None, None,event.button, 
+                                int(event.time))
 
     def on_tree_views_focus_in(self, widget, event):
         self.update_sensitivity()
