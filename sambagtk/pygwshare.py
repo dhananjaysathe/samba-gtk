@@ -1176,7 +1176,7 @@ Please check your network connection.''',
             self.shares_tree_view.get_selection().select_path(paths[0])
 
     def fill_active_pane(self):
-        """ Fills sthe active left pane """
+        """ Fills the active lower pane """
 
         share = self.get_selected_share()
 
@@ -1223,42 +1223,21 @@ Please check your network connection.''',
 
             label = Gtk.Label(' Comment  : ',xalign=1, yalign=0.5 )
             grid.attach(label, 0, row_index, 1, 1)
-
-            if len(share.comment) > 35:
-                for i in range(len(share.comment) / 35 + 1):
-                    label = Gtk.Label(share.comment[i * 35:i * 35 + 35],
-                                     xalign=0, yalign=0.5)
-                    label.set_property("wrap",True)
-                    label.set_justify(Gtk.Justification.FILL)
-                    grid.attach(label, 1, row_index, 1, 1)
-                    row_index += 1
-            else:
-                padding = (35 - len(share.comment)) * ' '
-                label = Gtk.Label(''.join([share.comment, padding]) ,
-                                xalign=0, yalign=0.5)
-                grid.attach(label, 1, row_index, 1, 1)
-                row_index += 1
+            
+            label = Gtk.Label(share.comment ,xalign=0, yalign=0.5)
+            grid.attach(label, 1, row_index, 1, 1)
+            row_index += 1
+            
 
             label = Gtk.Label(' Path  : ',xalign=1, yalign=0.5 )
             grid.attach(label, 0, row_index, 1, 1)
-
-            if len(share.path) > 35:
-                for i in range(len(share.path) / 35 + 1):
-                    label = Gtk.Label(share.path[i * 35:i * 35 + 35] ,
-                                    xalign=0, yalign=0.5)
-                    label.set_property("wrap",True)
-                    label.set_justify(Gtk.Justification.FILL)
-                    grid.attach(label, 1, row_index, 1, 1)
-                    row_index += 1
-            else:
-                if share.path == '':
-                    padding = 41 * ' '
-                else:
-                    padding = (35 - len(share.path)) * ' '
-                label = Gtk.Label(''.join([share.path, padding]) ,
-                                xalign=0, yalign=0.5)
-                grid.attach(label, 1, row_index, 1, 1)
-                row_index += 1
+            
+            label = Gtk.Label(share.path ,xalign=0, yalign=0.5)
+            grid.attach(label, 1, row_index, 1, 1)
+            row_index += 1
+            
+            
+            
 
             if share.password:
                 label = Gtk.Label(' Password  : ',xalign=1, yalign=0.5 )
@@ -1475,13 +1454,13 @@ Please check your network connection.''',
         self.share_notebook = Gtk.Notebook()
         toplevel_vbox.pack_start(self.share_notebook, True, True, 0)
 
-        main_hbox = Gtk.HBox()
-        self.share_notebook.append_page(main_hbox,
+        main_vbox = Gtk.VBox()
+        self.share_notebook.append_page(main_vbox,
                 Gtk.Label('Share Management'))
 
-        # Share listing on left side
+        # Share listing 
         rvbox = Gtk.VBox()
-        main_hbox.pack_start(rvbox, True, True, 0)
+        main_vbox.pack_start(rvbox, True, True, 0)
 
         scrolledwindow = Gtk.ScrolledWindow(None, None)
         scrolledwindow.set_property("shadow_type",Gtk.ShadowType.IN)
@@ -1556,11 +1535,11 @@ Please check your network connection.''',
         self.show_all_share_checkbox.connect('toggled',
                 self.toggle_share_view_visiblity, None)
 
-        ### Right active widget :
+        ### Lower active widget :
 
         vbox = Gtk.VBox()
         vbox.set_size_request(200,0)
-        main_hbox.pack_start(vbox, False, False, 0)
+        main_vbox.pack_start(vbox, False, False, 0)
 
         self.shareinfo_frame = Gtk.Frame()
         self.active_pane_frame_label = Gtk.Label(
@@ -1588,8 +1567,9 @@ Please check your network connection.''',
         grid.attach(label, 1, 0, 1, 1)
 
         vbox.pack_end(hbox, True, True, 0)
+        
+        vbox.pack_end(Gtk.HSeparator(), True, True, 0)
 
-        #table = gtk.Table(3, 6, True)
         grid = Gtk.Grid()
         grid.set_row_homogeneous(True)
         grid.set_column_homogeneous(True)
