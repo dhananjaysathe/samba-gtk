@@ -1436,21 +1436,21 @@ Please check your network connection.''',
         self.edit_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_EDIT)
         self.edit_button.set_is_important(True)
         self.edit_button.set_tooltip_text('Edit a Share')
-        #self.toolbar.insert(self.edit_button, 4)
+        self.toolbar.insert(self.edit_button, 4)
 
         self.delete_button = Gtk.ToolButton.new_from_stock(Gtk.STOCK_DELETE)
         self.delete_button.set_is_important(True)
         self.delete_button.set_tooltip_text('Delete a Share')
-        #self.toolbar.insert(self.delete_button, 5)
+        self.toolbar.insert(self.delete_button, 5)
 
         sep = Gtk.SeparatorToolItem()
-        #self.toolbar.insert(sep, 6)
+        self.toolbar.insert(sep, 6)
 
         self.new_share_wizard_button = Gtk.ToolButton.new_from_stock(
                                                             Gtk.STOCK_EXECUTE)
         self.new_share_wizard_button.set_is_important(True)
         self.new_share_wizard_button.set_tooltip_text('New Share Wizard')
-        #self.toolbar.insert(self.new_share_wizard_button, 7)
+        self.toolbar.insert(self.new_share_wizard_button, 7)
 
         # Share-page
         self.share_notebook = Gtk.Notebook()
