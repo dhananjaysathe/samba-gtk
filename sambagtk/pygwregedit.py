@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 import sys
 import os.path
@@ -136,11 +136,10 @@ class WinRegPipeManager(object):
         while True: #get a list of values for the key
             try:
                 self.lock.acquire()
-                value_length = 8 #dummy value
                 (value_name, value_type, value_data, value_length) = \
                                     self.pipe.EnumValue(key_handle,index,
                                     WinRegPipeManager.winreg_val_name_buf(""),
-                                    0,[],8192)
+                                    0,[],8192,0)
                 self.lock.release()
 
                 value = RegistryValue(value_name.name, value_type,
@@ -228,13 +227,12 @@ class WinRegPipeManager(object):
 
         while True: #get a list of values for the key
             try:
-                value_length = 8 #dummy value
                 (value_name,
                  value_type,
                  value_data,
                  value_length) = self.pipe.EnumValue(
                      key_handle, index,
-                     WinRegPipeManager.winreg_val_name_buf(""), 0, [], 8192)
+                     WinRegPipeManager.winreg_val_name_buf(""), 0, [], 8192,0)
 
                 value = RegistryValue(value_name.name, value_type, value_data,
                     key)
@@ -392,7 +390,7 @@ class WinRegPipeManager(object):
         key.handle = key_handle
         self.well_known_keys.append(key)
 
-        #key_handle = self.pipe.OpenHKCC(None, calculated_winreg_key_enum_val)
+        key_handle = self.pipe.OpenHKCC(None, calculated_winreg_key_enum_val)
         key = RegistryKey("HKEY_CURRENT_CONFIG", None)
         key.handle = key_handle
         self.well_known_keys.append(key)

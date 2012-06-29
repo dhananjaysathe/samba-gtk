@@ -32,6 +32,7 @@ import getopt
 from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 from gi.repository import Gdk
+from gi.repository import GLib
 from gi.repository import GObject
 
 sys.path.append('/opt/samba4/lib/python2.7/site-packages/')
@@ -1172,6 +1173,7 @@ Please check your network connection.''',
                                 share.comment, share.path]
             self.shares_store.append(view_compat_data)
 
+        
         if len(paths) > 0:
             self.shares_tree_view.get_selection().select_path(paths[0])
 
@@ -1792,6 +1794,8 @@ def ParseArgs(argv):
 if __name__ == '__main__':
     arguments = ParseArgs(sys.argv[1:])
 
+    GLib.threads_init()
+    Gdk.threads_init()
     main_window = ShareWindow(**arguments)
     main_window.show_all()
     Gtk.main()
