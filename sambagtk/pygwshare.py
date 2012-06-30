@@ -1453,8 +1453,10 @@ Please check your network connection.''',
         self.toolbar.insert(self.new_share_wizard_button, 7)
 
         # Share-page
+        self.portablity_box = Gtk.VBox()
+        toplevel_vbox.pack_start(self.portablity_box, True, True, 0)
         self.share_notebook = Gtk.Notebook()
-        toplevel_vbox.pack_start(self.share_notebook, True, True, 0)
+        self.portablity_box.pack_start(self.share_notebook, True, True, 0)
 
         main_vbox = Gtk.VBox()
         self.share_notebook.append_page(main_vbox,
@@ -1691,7 +1693,7 @@ Please check your network connection.''',
 
         self.statusbar = Gtk.Statusbar()
         #self.statusbar.set_property("has-resize-grip",True)
-        toplevel_vbox.pack_end(self.statusbar, False, False, 0)
+        toplevel_vbox.pack_start(self.statusbar, False, False, 0)
 
         # signals/events
 

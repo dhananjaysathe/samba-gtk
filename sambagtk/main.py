@@ -125,10 +125,10 @@ class SambaUtilities(object):
         self.messages_textview = builder.get_object("messages_textview")
 
         self.sam_viewport = builder.get_object("sam_viewport")
+        self.srvsvc_viewport = builder.get_object("srvsvc_viewport")
         self.svcctl_viewport = builder.get_object("svcctl_viewport")
         self.crontab_viewport = builder.get_object("crontab_viewport")
         self.regedit_viewport = builder.get_object("regedit_viewport")
-        self.srvsvc_viewport = builder.get_object("srvsvc_viewport")
 
         self.progressbar = builder.get_object("progressbar")
         self.statusbar = builder.get_object("statusbar")
@@ -164,7 +164,7 @@ class SambaUtilities(object):
                         self.additional_connection_args["info_callback"]})
 
         self.srvsvc_window = pygwshare.ShareWindow(**args) #start up the utility
-        self.srvsvc_window.share_notebook.reparent(self.srvsvc_viewport) #reparent the main widget into a notebook tab
+        self.srvsvc_window.portablity_box.reparent(self.srvsvc_viewport) #reparent the main widget into a notebook tab
         self.srvsvc_viewport.show_all() #unhide all widgets
 
         #We'll be displaying this later. We need to unparent it before attaching it to another container
@@ -513,6 +513,7 @@ class SambaUtilities(object):
                                                        **self.connection_args)
             else:
                 self.init_srvsvc_page()
+                self.srvsvc_window.hide()
 
             if self.regedit_initialized():
                 if not self.regedit_window.connected():
