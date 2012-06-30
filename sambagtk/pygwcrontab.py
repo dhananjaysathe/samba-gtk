@@ -590,7 +590,6 @@ class CronTabWindow(Gtk.Window):
         else:
             server = server or self.server_address
         username = username or self.username
-        password = password or self.password
 
         try:
             self.pipe_manager = self.run_connect_dialog(None, server,

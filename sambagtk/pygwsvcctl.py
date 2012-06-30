@@ -1025,7 +1025,6 @@ class SvcCtlWindow(Gtk.Window):
         else:
             server = server or self.server_address
         username = username or self.username
-        password = password or self.password
 
         self.pipe_manager = self.run_connect_dialog(None, server,
                 transport_type, username, password, connect_now)

@@ -293,7 +293,7 @@ class SambaUtilities(object):
                                         connected_utilities), "connected."))
 
     def server_info_callback(self, server = "", username = "",
-                            transport_type = 0, password = ""):
+                            transport_type = 0):
         if server:
             self.connection_args.update({"server":server})
         if username:
@@ -319,8 +319,7 @@ class SambaUtilities(object):
         #TODO in this function: handle domain selection
         args = {}
         #args and their default values
-        important_args = {"server":"", "username":"", "transport_type":0,
-                        "password":""}
+        important_args = {"server":"", "username":"", "transport_type":0}
         for item in important_args.keys():
                 args.update(self.connection_args.has_key(item) and
                             {item:self.connection_args[item]} or

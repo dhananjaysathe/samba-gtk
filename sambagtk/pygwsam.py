@@ -974,8 +974,6 @@ class SAMWindow(Gtk.Window):
         connect_now2 = connect_now #this other value is used later on to skip domain selection.
         #We need a second variable for this or else we would freeze if we had an error while connecting
 
-        print server_address,username ,password, str(transport_type),"run_diag"
-
         dialog = SAMConnectDialog(server_address,
                                   transport_type,
                                   username,
@@ -1144,7 +1142,6 @@ class SAMWindow(Gtk.Window):
         else:
             server = server or self.server_address
         username = username or self.username
-        password = password or self.password
 
 
         try:
