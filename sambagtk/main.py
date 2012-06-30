@@ -319,7 +319,8 @@ class SambaUtilities(object):
         #TODO in this function: handle domain selection
         args = {}
         #args and their default values
-        important_args = {"server":"", "username":"", "transport_type":0}
+        important_args = {"server":"", "username":"", "transport_type":0,
+                        "password":""}
         for item in important_args.keys():
                 args.update(self.connection_args.has_key(item) and
                             {item:self.connection_args[item]} or
