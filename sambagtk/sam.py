@@ -532,10 +532,10 @@ class GroupEditDialog(Gtk.Dialog):
 
 class SAMConnectDialog(ConnectDialog):
 
-    def __init__(self, server, transport_type, username, password=''):
+    def __init__(self, server, transport_type, username, password):
 
         super(SAMConnectDialog, self).__init__(
-                    server, transport_type, username, password='')
+                    server, transport_type, username, password)
         self.set_title('Connect to Samba SAM Server')
 
     def mod_create(self):

@@ -543,10 +543,10 @@ class TaskEditDialog(Gtk.Dialog):
 
 
 class ATSvcConnectDialog(ConnectDialog):
-    def __init__(self, server, transport_type, username, password=''):
+    def __init__(self, server, transport_type, username, password):
 
         super(ATSvcConnectDialog, self).__init__(
-                    server, transport_type, username, password='')
+                    server, transport_type, username, password)
         self.set_title('Connect to Server')
 
 

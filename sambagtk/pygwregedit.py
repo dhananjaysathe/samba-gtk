@@ -370,7 +370,7 @@ class WinRegPipeManager(object):
         calculated_winreg_key_enum_val = \
                   (winreg.KEY_ENUMERATE_SUB_KEYS | winreg.KEY_CREATE_SUB_KEY |
                    winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE)
-        
+
         try:
             key_handle = self.pipe.OpenHKCR(None, calculated_winreg_key_enum_val)
             key = RegistryKey("HKEY_CLASSES_ROOT", None)
@@ -378,7 +378,7 @@ class WinRegPipeManager(object):
             self.well_known_keys.append(key)
         except RuntimeError:
             print ('The hive HKEY_CLASSES_ROOT is inaccessibe')
-            
+
 
         try:
             key_handle = self.pipe.OpenHKCU(None, calculated_winreg_key_enum_val)
@@ -778,7 +778,9 @@ class RegEditWindow(Gtk.Window):
         # This is used so the parent program can grab the server info after
         # we've connected.
         if info_callback is not None:
-            info_callback(server = self.server_address, username = self.username, transport_type = self.transport_type)
+            info_callback(server = self.server_address,
+                         username = self.username,
+                         transport_type = self.transport_type)
 
     def create(self):
 
@@ -1555,7 +1557,7 @@ class RegEditWindow(Gtk.Window):
             return dialog.reg_key
 
     def run_connect_dialog(self, pipe_manager, server_address, transport_type,
-                          username, password = "", connect_now = False):
+                          username, password, connect_now = False):
 
         dialog = WinRegConnectDialog(server_address, transport_type,
                                     username, password)
@@ -1913,9 +1915,13 @@ class RegEditWindow(Gtk.Window):
                                 username = "",
                                 password = "",
                                 connect_now = False):
-        server = server or self.server_address
         transport_type = transport_type or self.transport_type
+        if transport_type is 2:
+            server = '127.0.0.1'
+        else:
+            server = server or self.server_address
         username = username or self.username
+        password = password or self.password
 
         self.pipe_manager = self.run_connect_dialog(None, server,
                                transport_type, username, password, connect_now)
@@ -2347,7 +2353,7 @@ class RegEditWindow(Gtk.Window):
             self.on_modify_item_activate(self.modify_item)
         elif (event.button == 3): #right click
             self.values_tree_view.grab_focus()
-            self.edit_menu.popup(None, None, None, None,event.button, 
+            self.edit_menu.popup(None, None, None, None,event.button,
                                 int(event.time))
 
     def on_tree_views_focus_in(self, widget, event):

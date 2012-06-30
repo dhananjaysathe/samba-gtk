@@ -60,7 +60,7 @@ class ConnectDialog(Gtk.Dialog):
 
     """Connect Dialog"""
 
-    def __init__(self, server, transport_type, username, password=''):
+    def __init__(self, server, transport_type, username, password):
 
         super(ConnectDialog, self).__init__()
 
@@ -124,7 +124,7 @@ class ConnectDialog(Gtk.Dialog):
         grid.attach(label, 0, 0, 1, 1)
 
         self.server_address_entry = Gtk.Entry()
-        self.server_address_entry.get_buffer().set_text(self.password,-1)
+        self.server_address_entry.set_text(self.server_address)
         self.server_address_entry.set_property("activates-default",True)
         self.server_address_entry.set_property("tooltip-text",
                                         'Enter the Server Address')
@@ -134,7 +134,7 @@ class ConnectDialog(Gtk.Dialog):
         grid.attach(label, 0, 1, 1, 1)
 
         self.username_entry = Gtk.Entry()
-        self.username_entry.set_text(self.password)
+        self.username_entry.set_text(self.username)
         self.username_entry.set_property("activates-default",True)
         self.username_entry.set_property("tooltip-text",
                                             'Enter your Username')

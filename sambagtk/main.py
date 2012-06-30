@@ -1,24 +1,24 @@
 #  main.py
-#  
+#
 # Copyright (C) 2010 Sergio Martins <sergio97@gmail.com>
 # Copyright (C) 2012 Jelmer Vernooij <jelmer@samba.org>
 # Copyright (C) 2012 Dhananjay Sathe <dhananjaysathe@gmail.com>
-#  
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
 #  (at your option) any later version.
-#  
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#  
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
-#  
+#
 
 import sys
 import os.path
@@ -163,6 +163,7 @@ class SambaUtilities(object):
             args.update({"info_callback":
                         self.additional_connection_args["info_callback"]})
 
+
         self.srvsvc_window = pygwshare.ShareWindow(**args) #start up the utility
         self.srvsvc_window.portablity_box.reparent(self.srvsvc_viewport) #reparent the main widget into a notebook tab
         self.srvsvc_viewport.show_all() #unhide all widgets
@@ -292,7 +293,7 @@ class SambaUtilities(object):
                                         connected_utilities), "connected."))
 
     def server_info_callback(self, server = "", username = "",
-                            transport_type = None):
+                            transport_type = 0, password = ""):
         if server:
             self.connection_args.update({"server":server})
         if username:
@@ -318,7 +319,8 @@ class SambaUtilities(object):
         #TODO in this function: handle domain selection
         args = {}
         #args and their default values
-        important_args = {"server":"", "username":"", "transport_type":0, }
+        important_args = {"server":"", "username":"", "transport_type":0,
+                        "password":""}
         for item in important_args.keys():
                 args.update(self.connection_args.has_key(item) and
                             {item:self.connection_args[item]} or

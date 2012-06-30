@@ -495,7 +495,8 @@ class SvcCtlWindow(Gtk.Window):
         # we've connected.
         if info_callback is not None:
             info_callback(server = self.server_address,
-                username = self.username, transport_type = self.transport_type)
+                         username = self.username,
+                         transport_type = self.transport_type)
 
     def create(self):
 
@@ -890,7 +891,7 @@ class SvcCtlWindow(Gtk.Window):
         return dialog.service
 
     def run_connect_dialog(self, pipe_manager, server_address, transport_type,
-            username, password="", connect_now=False):
+            username, password, connect_now=False):
         dialog = SvcCtlConnectDialog(server_address, transport_type, username,
             password)
         dialog.show_all()
@@ -1018,9 +1019,13 @@ class SvcCtlWindow(Gtk.Window):
 
     def on_connect_item_activate(self, widget, server="", transport_type=0,
             username="", password="", connect_now=False):
-        server = server or self.server_address
         transport_type = transport_type or self.transport_type
+        if transport_type is 2:
+            server = '127.0.0.1'
+        else:
+            server = server or self.server_address
         username = username or self.username
+        password = password or self.password
 
         self.pipe_manager = self.run_connect_dialog(None, server,
                 transport_type, username, password, connect_now)

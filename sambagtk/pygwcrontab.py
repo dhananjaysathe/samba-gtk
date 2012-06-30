@@ -454,7 +454,7 @@ class CronTabWindow(Gtk.Window):
                                  server_address,
                                  transport_type,
                                  username,
-                                 password = "",
+                                 password ,
                                  connect_now = False):
         dialog = ATSvcConnectDialog(server_address, transport_type,
                                     username, password)
@@ -584,9 +584,13 @@ class CronTabWindow(Gtk.Window):
                                                username = "",
                                                password = "",
                                                connect_now = False):
-        server = server or self.server_address
         transport_type = transport_type or self.transport_type
+        if transport_type is 2:
+            server = '127.0.0.1'
+        else:
+            server = server or self.server_address
         username = username or self.username
+        password = password or self.password
 
         try:
             self.pipe_manager = self.run_connect_dialog(None, server,

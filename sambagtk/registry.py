@@ -203,7 +203,7 @@ class RegistryKey(object):
         self.name = name
         self.parent = parent
         self.handle = None
-    
+
     def get_absolute_path(self):
         if self.parent is None:
             return self.name
@@ -1899,9 +1899,9 @@ class RegAdvancedPermissionsDialog(Gtk.Dialog):
 
 class WinRegConnectDialog(ConnectDialog):
 
-    def __init__(self, server, transport_type, username, password=''):
+    def __init__(self, server, transport_type, username, password):
 
         super(WinRegConnectDialog, self).__init__(
-                    server, transport_type, username, password='')
+                    server, transport_type, username, password)
         self.set_title('Connect to Server')
 

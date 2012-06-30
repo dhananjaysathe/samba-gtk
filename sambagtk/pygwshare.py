@@ -594,6 +594,7 @@ class ShareWindow(Gtk.Window):
         else:
             server = server or self.server_address
         username = username or self.username
+        password = password or self.password
 
         try:
             self.pipe_manager = self.run_connect_dialog(None, server,
@@ -628,7 +629,7 @@ class ShareWindow(Gtk.Window):
         self.fill_server_info()
 
     def run_connect_dialog(self, pipe_manager, server_address,
-            transport_type, username, password='', connect_now=False):
+            transport_type, username, password, connect_now=False):
 
         dialog = srvsvcConnectDialog(server_address, transport_type,
                 username, password)
@@ -1173,7 +1174,7 @@ Please check your network connection.''',
                                 share.comment, share.path]
             self.shares_store.append(view_compat_data)
 
-        
+
         if len(paths) > 0:
             self.shares_tree_view.get_selection().select_path(paths[0])
 
@@ -1225,21 +1226,21 @@ Please check your network connection.''',
 
             label = Gtk.Label(' Comment  : ',xalign=1, yalign=0.5 )
             grid.attach(label, 0, row_index, 1, 1)
-            
+
             label = Gtk.Label(share.comment ,xalign=0, yalign=0.5)
             grid.attach(label, 1, row_index, 1, 1)
             row_index += 1
-            
+
 
             label = Gtk.Label(' Path  : ',xalign=1, yalign=0.5 )
             grid.attach(label, 0, row_index, 1, 1)
-            
+
             label = Gtk.Label(share.path ,xalign=0, yalign=0.5)
             grid.attach(label, 1, row_index, 1, 1)
             row_index += 1
-            
-            
-            
+
+
+
 
             if share.password:
                 label = Gtk.Label(' Password  : ',xalign=1, yalign=0.5 )
@@ -1462,7 +1463,7 @@ Please check your network connection.''',
         self.share_notebook.append_page(main_vbox,
                 Gtk.Label('Share Management'))
 
-        # Share listing 
+        # Share listing
         rvbox = Gtk.VBox()
         main_vbox.pack_start(rvbox, True, True, 0)
 
@@ -1570,7 +1571,7 @@ Please check your network connection.''',
                         xalign=1,yalign=0.5)
         grid.attach(label, 1, 0, 1, 1)
 
-      
+
         vbox.pack_end(Gtk.HSeparator(), True, True, 0)
 
         grid = Gtk.Grid()
@@ -1745,7 +1746,7 @@ Please check your network connection.''',
         self.share_notebook.connect('switch-page',
                                     self.on_notebook_switch_page)
 
-        
+
         self.add_accel_group(accel_group)
 
 ############################################################################################################

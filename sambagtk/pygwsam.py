@@ -463,8 +463,9 @@ class SAMWindow(Gtk.Window):
         # This is used so the parent program can grab the server info after
         # we've connected.
         if info_callback is not None:
-            info_callback(server=self.server_address, username=self.username,
-                    transport_type=self.transport_type)
+            info_callback(server=self.server_address,
+                          username=self.username,
+                          transport_type=self.transport_type)
 
     def create(self):
         # main window
@@ -968,10 +969,12 @@ class SAMWindow(Gtk.Window):
         return dialog.thegroup
 
     def run_connect_dialog(self, pipe_manager, server_address, transport_type,
-            username, password="", connect_now=False, domain_index=0,
+            username, password, connect_now=False, domain_index=0,
             domains=None):
         connect_now2 = connect_now #this other value is used later on to skip domain selection.
         #We need a second variable for this or else we would freeze if we had an error while connecting
+
+        print server_address,username ,password, str(transport_type),"run_diag"
 
         dialog = SAMConnectDialog(server_address,
                                   transport_type,
@@ -1135,9 +1138,14 @@ class SAMWindow(Gtk.Window):
 
     def on_connect_item_activate(self, widget, server="", transport_type=0,
             username="", password="", connect_now=False, domain_index=0):
-        server = server or self.server_address
         transport_type = transport_type or self.transport_type
+        if transport_type is 2:
+            server = '127.0.0.1'
+        else:
+            server = server or self.server_address
         username = username or self.username
+        password = password or self.password
+
 
         try:
             self.pipe_manager = self.run_connect_dialog(None, server,

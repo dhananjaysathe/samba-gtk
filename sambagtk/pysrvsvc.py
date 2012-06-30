@@ -38,10 +38,10 @@ from samba.dcerpc import srvsvc
 
 class srvsvcConnectDialog(ConnectDialog):
 
-    def __init__(self, server, transport_type, username, password=''):
+    def __init__(self, server, transport_type, username, password):
 
         super(srvsvcConnectDialog, self).__init__(
-                    server, transport_type, username, password='')
+                    server, transport_type, username, password)
         self.set_title('Connect to Samba Share Server')
 
 
