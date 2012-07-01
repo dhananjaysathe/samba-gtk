@@ -18,6 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from gi.repository import Gtk
+from gi.repository import GdkPixbuf
 import samba
 import os
 import sys
@@ -45,7 +46,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>."""
                     "Calin Crisan <ccrisan@gmail.com>",
                     "Dhananjay Sathe <dhananajaysathe@gmail.com>",
                     "Jelmer Vernooij <jelmer@samba.org>"]
-        copyright_text = "Copyright \xc2\xa9 2010 Sergio Martins <Sergio97@gmail.com> Copyright \xc2\xa9 2011 Dhananjay Sathe <dhananjaysathe@gmail.com>"
+        copyright_text = "Copyright \xc2\xa9 2012 Dhananjay Sathe <dhananjaysathe@gmail.com>"
 
         self.set_property("program-name",name)
         self.set_property("logo",icon)
@@ -55,6 +56,12 @@ along with this program. If not, see <http://www.gnu.org/licenses/>."""
         self.set_property("license",license_text)
         self.set_property("authors",authors)
         self.set_property("copyright",copyright_text)
+        if not self.get_logo():
+            default_logo_file = os.path.join(sys.path[0], 'images',
+                                                'samba-logo-small.png')
+            icon_pixbuf = GdkPixbuf.Pixbuf.new_from_file(default_logo_file)
+            self.set_logo(icon_pixbuf)
+
 
 class ConnectDialog(Gtk.Dialog):
 

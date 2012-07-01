@@ -1,0 +1,568 @@
+#!/usr/bin/python
+
+
+#   Copyright (C) Jelmer Vernooij 2004-2011
+#   Copyright (C) Dhananjay Sathe 2012
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+
+#
+# * Show:
+# *  - RPC statistics
+# *  - Available interfaces
+# *   - Per interface: available endpoints
+# *   - Per interface auth details
+#
+
+import sys
+import os.path
+import traceback
+import getopt
+
+from gi.repository import Gtk
+from gi.repository import GObject
+from sambagtk.dialogs import AboutDialog,ConnectDialog
+from samba import credentials
+from samba.dcerpc import mgmt, epmapper
+
+
+class EndpointBrowser(Gtk.Window):
+
+
+    def __init__(self, server= '', username='',password='', 
+                transport_type=0, connect_now = False):
+        super(EndpointBrowser, self).__init__()
+        
+        self.server_address = server
+        self.username = username
+        self.transport_type = transport_type
+
+        self.create()
+        self.set_status('Disconnected.')
+        self.on_connect_item_activate(None, server, transport_type,
+                                        username, password, connect_now)
+
+    def create(self):
+        accel_group = Gtk.AccelGroup()
+
+        self.set_title("Gtk+ Endpoint Mapper Viewer")
+        self.set_default_size(800, 600)
+        self.icon_filename = os.path.join(sys.path[0], "images",
+                                            "samba-logo-small.png")
+        self.set_icon_from_file(self.icon_filename)
+        accel_group = Gtk.AccelGroup()
+
+        main_vbox = Gtk.VBox(False, 0)
+        main_vbox.show()
+
+        self.add(main_vbox)
+
+        #menu
+
+        self.menubar = Gtk.MenuBar()
+        main_vbox.pack_start(self.menubar, False, False, 0)
+
+        self.file_item = Gtk.MenuItem.new_with_mnemonic('_File')
+        self.menubar.add(self.file_item)
+
+        file_menu = Gtk.Menu()
+        self.file_item.set_property("submenu",file_menu)
+
+        self.connect_item = Gtk.ImageMenuItem.new_from_stock(
+                                                Gtk.STOCK_CONNECT, accel_group)
+        self.connect_item.set_always_show_image(True)
+        file_menu.add(self.connect_item)
+
+        menu_separator_item = Gtk.SeparatorMenuItem()
+        menu_separator_item.set_property("sensitive",False)
+        file_menu.add(menu_separator_item)
+
+        self.quit_item = Gtk.ImageMenuItem.new_from_stock(
+                                                   Gtk.STOCK_QUIT, accel_group)
+        self.quit_item.set_always_show_image(True)
+        file_menu.add(self.quit_item)
+
+        self.view_item = Gtk.MenuItem.new_with_mnemonic('_View')
+        self.menubar.add(self.view_item)
+
+        view_menu = Gtk.Menu()
+        self.view_item.set_property("submenu",view_menu)
+
+        self.refresh_item = Gtk.ImageMenuItem.new_from_stock(
+                                                Gtk.STOCK_REFRESH, accel_group)
+        self.refresh_item.set_sensitive(False)
+        self.refresh_item.set_always_show_image(True)
+        view_menu.add(self.refresh_item)
+
+        self.help_item = Gtk.MenuItem.new_with_mnemonic('_Help')
+        self.menubar.add(self.help_item)
+
+        help_menu = Gtk.Menu()
+        self.help_item.set_property("submenu",help_menu)
+
+        self.about_item = Gtk.ImageMenuItem.new_from_stock(
+                                                  Gtk.STOCK_ABOUT, accel_group)
+        self.about_item.set_always_show_image(True)
+        help_menu.add(self.about_item)
+
+        hbox = Gtk.HBox(False, 0)
+        main_vbox.pack_start(hbox, True, True, 0)
+
+        # main window
+        scrolledwindow = Gtk.ScrolledWindow(None, None)
+        scrolledwindow.set_property("shadow_type",Gtk.ShadowType.IN)
+        hbox.pack_start(scrolledwindow, True, True, 0)
+
+        self.tree_eps = Gtk.TreeView()
+
+        column = Gtk.TreeViewColumn()
+        column.set_title("Name")
+        renderer = Gtk.CellRendererText()
+        column.pack_start(renderer, True)
+        column.add_attribute(renderer, "text", 0)
+        self.tree_eps.append_column(column)
+
+
+        column = Gtk.TreeViewColumn()
+        column.set_title("Binding String")
+        renderer = Gtk.CellRendererText()
+        column.pack_start(renderer, True)
+        column.add_attribute(renderer, "text", 1)
+        self.tree_eps.append_column(column)
+
+        self.store_eps = Gtk.TreeStore(GObject.TYPE_STRING,
+                                        GObject.TYPE_STRING,
+                                        GObject.TYPE_POINTER)
+        self.tree_eps.set_model(self.store_eps)
+
+        scrolledwindow.add(self.tree_eps)
+
+        self.tree_eps.get_selection().set_select_function(self.on_eps_select,
+                                                         None)
+
+        data_box = Gtk.VBox(False, 0)
+        hbox.add(data_box)
+
+        frame = Gtk.Frame()
+        label = Gtk.Label("<b> Interface </b>")
+        label.set_property("use-markup",True)
+        frame.set_label_widget(label)
+        data_box.pack_start(frame, False, False ,6)
+
+        vbox = Gtk.VBox(False, 0)
+        frame.add(vbox)
+
+        self.iface_uuid_label = Gtk.Label()
+        vbox.pack_start(self.iface_uuid_label, False, False, 3)
+
+        self.iface_version_lebel = Gtk.Label()
+        vbox.pack_start(self.iface_version_lebel, False, False, 3)
+
+        self.iface_name_label = Gtk.Label()
+        vbox.pack_start(self.iface_name_label, False, False, 3)
+
+        frame = Gtk.Frame()
+        label = Gtk.Label("<b> Statistics </b>")
+        label.set_property("use-markup",True)
+        frame.set_label_widget(label)
+        data_box.pack_start(frame , False, False, 6)
+
+        grid = Gtk.Grid()
+        frame.add(grid)
+        grid.set_border_width (5)
+        grid.set_row_spacing(2)
+        grid.set_column_spacing(6)
+        grid.set_row_homogeneous(True)
+        grid.set_column_homogeneous(True)
+
+        label = Gtk.Label("Calls In: ", xalign= 0, yalign=0)
+        grid.attach(label, 0, 0, 1, 1)
+        self.calls_in_label = Gtk.Label()
+        grid.attach(self.calls_in_label, 1, 0, 1, 1)
+
+        label = Gtk.Label("Calls Out: ", xalign= 0, yalign=0)
+        grid.attach(label, 0, 1, 1, 1)
+        self.calls_out_label = Gtk.Label()
+        grid.attach(self.calls_out_label, 1, 1, 1, 1)
+
+        label = Gtk.Label("Packets In: ", xalign= 0, yalign=0)
+        grid.attach(label, 0, 2, 1, 1)
+        self.pkts_in_label = Gtk.Label()
+        grid.attach(self.pkts_in_label, 1, 2, 1, 1)
+
+        label = Gtk.Label("Packets Out: ", xalign= 0, yalign=0)
+        grid.attach(label, 0, 3, 1, 1)
+        self.pkts_out_label = Gtk.Label()
+        grid.attach(self.pkts_out_label, 1, 3, 1, 1)
+
+        frame = Gtk.Frame()
+        label = Gtk.Label("<b> Authentication </b>")
+        label.set_property("use-markup",True)
+        frame.set_label_widget(label)
+        data_box.pack_start(frame , True, True ,6)
+
+        self.treeview_princ_names = Gtk.TreeView()
+
+        column = Gtk.TreeViewColumn()
+        column.set_title("Protocol")
+        renderer = Gtk.CellRendererText()
+        column.pack_start(renderer, True)
+        self.treeview_princ_names.append_column(column)
+        column.add_attribute(renderer, "text", 0)
+
+        column = Gtk.TreeViewColumn()
+        column.set_title("Principal Name")
+        renderer = Gtk.CellRendererText()
+        column.pack_start(renderer, True)
+        self.treeview_princ_names.append_column(column)
+        column.add_attribute(renderer, "text", 1)
+
+        frame.add(self.treeview_princ_names)
+
+        self.store_princ_names = Gtk.ListStore(GObject.TYPE_STRING,
+                                              GObject.TYPE_STRING,
+                                              GObject.TYPE_STRING,
+                                              GObject.TYPE_POINTER)
+        self.treeview_princ_names.set_model(self.store_princ_names)
+
+        # statusbar
+        self.statusbar = Gtk.Statusbar()
+        main_vbox.pack_start (self.statusbar, False, False, 0)
+
+        # signals/events
+
+        self.connect('delete_event', self.on_self_delete)
+        self.quit_item.connect("activate", self.on_quit_item_activate)
+        self.about_item.connect("activate", self.on_about_activate)
+        self.connect_item.connect ("activate", self.on_connect_item_activate)
+        self.refresh_item.connect ("activate", self.on_refresh_clicked)
+
+        self.add_accel_group (accel_group)
+
+
+    def on_quit_item_activate(self, widget):
+        self.on_self_delete(None, None)
+        
+    def on_self_delete(self, widget, event):
+        Gtk.main_quit()
+        return False
+        
+    def on_about_activate(self, menuitem):
+        aboutwin = AboutDialog("GEpDump",
+                              "Samba Endpoint Browser Tool.\n"
+                              "Based on Jelmer Vernooij's original Samba-GTK",
+                              None)
+        aboutwin.run()
+        aboutwin.destroy()
+
+
+    def add_epm_entry(self, annotation, t):
+        # TODO : This stuff here makes no sense.
+        bd = t.as_binding_string()
+
+        self.store_eps.append((0, annotation, 1, str(bd), 2, t))
+
+        for floor in t.floors:
+            if floor.lhs.protocol == epmapper.EPM_PROTOCOL_UUID:
+                data = str(floor.get_lhs_data().uuid)
+            else:
+                data = floor.get_rhs_data()
+
+            self.store_eps.append((0, self.get_protocol_name(floor.lhs.protocol),
+                                  1, data, -1))
+
+    def refresh_eps(self):
+        self.store_eps.clear()
+
+        handle = None
+        num_ents = max_ents = 10
+
+        #TODO : the iface element here and calls here appear to be wrong
+        while num_ents == max_ents:
+            (handle, num_ents, ents) = self._epmapper_pipe.Lookup(
+                inquiry_type=0,
+                object=uuid, interface_id=iface, vers_option=0,
+                entry_handle=handle, max_ents=max_ents)
+            for ent in ents:
+                self.add_epm_entry(ent.annotation, ent.tower.tower)
+
+    def on_refresh_clicked(self, btn):
+        self.refresh_eps()
+
+
+    def on_eps_select(self, selection, model, path, path_currently_selected, data):
+        # Do an InqStats call
+        stat_object = self.mgmt_pipe.inq_stats(
+                                    max_count=mgmt.MGMT_STATS_ARRAY_MAX_SIZE,
+                                    unknown=0)
+
+        if stat_object.count != mgmt.MGMT_STATS_ARRAY_MAX_SIZE:
+            raise Exception("Unexpected array size %d" % stat_object.count)
+
+        statistics = stat_object.statistics
+        self.calls_in_label.set_text(
+                                "%6d" % statistics[mgmt.MGMT_STATS_CALLS_IN])
+        self.calls_out_label.set_text(
+                               "%6d" % statistics[mgmt.MGMT_STATS_CALLS_OUT])
+        self.pkts_in_label.set_text(
+                                 "%wd" % statistics[mgmt.MGMT_STATS_PKTS_IN])
+        self.pkts_out_label.set_text(
+                                "%6d" % statistics[mgmt.MGMT_STATS_PKTS_OUT])
+
+        self.store_princ_names.clear()
+
+        # TODO this part makes no sense to me, mgmt stats above are fixed
+        for i in range(100):
+            princ_name = self.mgmt_pipe.inq_princ_name(authn_proto=i, princ_name_size=100)
+            name = gensec_get_name_by_authtype(i) # its no in samba.gensec.Security
+            if name is not None:
+                protocol = "%u (%s)" % (i, name)
+            else:
+                protocol = "%u" % i
+
+            self.store_princ_names.append((0, protocol, 1, princ_name))
+
+        return True
+
+    def set_status(self, message):
+        self.statusbar.pop(0)
+        self.statusbar.push(0, message)
+        
+    def run_message_dialog(self, type, buttons, message, parent=None):
+        if parent is None:
+            parent = self
+
+        message_box = Gtk.MessageDialog(parent, Gtk.DialogFlags.MODAL
+                , type, buttons, message)
+        response = message_box.run()
+        message_box.hide()
+
+        return response
+
+
+    def run_connect_dialog(self, pipe_manager, server_address,
+            transport_type, username, password, connect_now=False):
+
+        dialog = ConnectDialog(server_address, transport_type,
+                              username, password)
+        dialog.show_all()
+
+        while True:
+            if connect_now:
+                connect_now = False
+                response_id = Gtk.ResponseType.OK
+            else:
+                response_id = dialog.run()
+
+            if response_id != Gtk.ResponseType.OK:
+                dialog.hide()
+                return None
+            else:
+                try:
+                    server_address = dialog.get_server_address()
+                    self.server_address = server_address
+                    transport_type = dialog.get_transport_type()
+                    self.transport_type = transport_type
+                    username = dialog.get_username()
+                    self.username = username
+                    password = dialog.get_password()
+
+                    pipe_binding, creds = self.build_pipe_params (
+                                            server_address,
+                                            transport_type,
+                                            username,
+                                            password)
+                    epmapper_pipe = epmapper.epmapper (pipe_binding,
+                                                      credentials = creds)
+                    mgmt_pipe = mgmt.mgmt (pipe_binding,
+                                                  credentials = creds)
+
+
+                    break
+                except RuntimeError, re:
+
+                    if re.args[1] == 'Logon failure':  # user got the password wrong
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                Gtk.ButtonsType.OK,
+                                'Failed to connect: Invalid username or password.'
+                                , dialog)
+                        dialog.password_entry.grab_focus()
+                        dialog.password_entry.select_region(0,
+                                -1)  # select all the text in the password box
+                    elif re.args[0] == 5 or re.args[1]\
+                         == 'Access denied':
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                Gtk.ButtonsType.OK,
+                                'Failed to connect: Access Denied.',
+                                dialog)
+                        dialog.username_entry.grab_focus()
+                        dialog.username_entry.select_region(0,
+                                -1)
+                    elif re.args[1]\
+                         == 'NT_STATUS_HOST_UNREACHABLE':
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                Gtk.ButtonsType.OK,
+                                'Failed to connect: Could not contact the server'
+                                , dialog)
+                        dialog.server_address_entry.grab_focus()
+                        dialog.server_address_entry.select_region(0,
+                                -1)
+                    elif re.args[1]\
+                         == 'NT_STATUS_NETWORK_UNREACHABLE':
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                Gtk.ButtonsType.OK,
+                                '''Failed to connect: The network is unreachable.
+
+Please check your network connection.''',
+                                dialog)
+                    else:
+                        msg = 'Failed to connect: %s.'\
+                             % re.args[1]
+                        print msg
+                        traceback.print_exc()
+                        self.run_message_dialog(Gtk.MessageType.ERROR,
+                                Gtk.ButtonsType.OK, msg, dialog)
+                except Exception, ex:
+
+                    msg = 'Failed to connect: %s.' % str(ex)
+                    print msg
+                    traceback.print_exc()
+                    self.run_message_dialog(Gtk.MessageType.ERROR,
+                                Gtk.ButtonsType.OK, msg, dialog)
+
+        response_id = Gtk.ResponseType.OK or dialog.run()
+        dialog.hide()
+
+        if response_id != Gtk.ResponseType.OK:
+            return None
+
+        return epmapper_pipe,mgmt_pipe
+
+
+    def on_connect_item_activate(self, widget, server='',transport_type=0,
+                                username='', password='',connect_now=False):
+
+        transport_type = transport_type or self.transport_type
+        if transport_type is 2:
+            server = '127.0.0.1'
+        else:
+            server = server or self.server_address
+        username = username or self.username
+
+        try:
+            pipes = self.run_connect_dialog(None, server,
+                    transport_type, username, password, connect_now)
+            if pipes is not None :
+                self.epmapper_pipe,self.mgmt_pipe = pipes
+            self.set_status('Connected to Server: IP=%s '%self.server_address)
+        except RuntimeError, re:
+
+            msg = 'Failed to connect: %s.' % re.args[1]
+            self.set_status(msg)
+            print msg
+            traceback.print_exc()
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                Gtk.ButtonsType.OK, msg)
+        except Exception, ex:
+
+            msg = 'Failed to connect: %s.' % str(ex)
+            self.set_status(msg)
+            print msg
+            traceback.print_exc()
+            self.run_message_dialog(Gtk.MessageType.ERROR,
+                                    Gtk.ButtonsType.OK, msg)
+
+        if pipes is not None :
+            self.refresh_eps()
+            self.refresh_item.set_sensitive(True)
+
+    @staticmethod
+    def get_protocol_name(protocol):
+        protocol_names = {
+            epmapper.EPM_PROTOCOL_UUID: "UUID",
+            epmapper.EPM_PROTOCOL_NCACN: "NCACN",
+            epmapper.EPM_PROTOCOL_NCALRPC: "NCALRPC",
+            epmapper.EPM_PROTOCOL_NCADG: "NCADG",
+            epmapper.EPM_PROTOCOL_IP: "IP",
+            epmapper.EPM_PROTOCOL_TCP: "TCP",
+            epmapper.EPM_PROTOCOL_NETBIOS: "NetBIOS",
+            epmapper.EPM_PROTOCOL_SMB: "SMB",
+            epmapper.EPM_PROTOCOL_NAMED_PIPE: "PIPE",
+            epmapper.EPM_PROTOCOL_UNIX_DS: "Unix",
+            }
+        return protocol_names.get(protocol, "Unknown")
+
+    @staticmethod
+    def build_pipe_params(server_address, transport_type, username, password):
+        creds = credentials.Credentials()
+        if username.count('\\') > 0x00000000:
+            creds.set_domain(username.split('\\')[0x00000000])
+            creds.set_username(username.split('\\')[1])
+        elif username.count('@') > 0x00000000:
+            creds.set_domain(username.split('@')[1])
+            creds.set_username(username.split('@')[0x00000000])
+        else:
+            creds.set_domain('')
+            creds.set_username(username)
+            creds.set_workstation('')
+            creds.set_password(password)
+
+        # binding = "ncacn_np:%s" # srvsvc allows only named pipes
+        # tcp/upd not allowed under MS-SRVS specifications
+
+
+        binding = ['ncacn_np:%s', 'ncacn_ip_tcp:%s', 'ncalrpc:%s'
+                    ][transport_type]
+        if transport_type is 2:
+            server_address = '127.0.0.1'
+        pipe_binding = binding % server_address
+
+        return pipe_binding,creds
+
+def ParseArgs(argv):
+    arguments = {}
+
+    try:  # get arguments into a nicer format
+        (opts, args) = getopt.getopt(argv, 'chu:s:p:t:', ['help',
+                        'user=', 'server=', 'password=', 'connect-now',
+                        'transport='])
+    except getopt.GetoptError:
+        PrintUsage()
+        sys.exit(2)
+
+    for (opt, arg) in opts:
+        if opt in ('-h', '--help'):
+            PrintUsage()
+            sys.exit(0)
+        elif opt in ('-s', '--server'):
+            arguments.update({'server': arg})
+        elif opt in ('-u', '--user'):
+            arguments.update({'username': arg})
+        elif opt in ('-p', '--password'):
+            arguments.update({'password': arg})
+        elif opt in ('-t', '--transport'):
+            arguments.update({'transport_type': int(arg)})
+        elif opt in ('-c', '--connect-now'):
+            arguments.update({'connect_now': True})
+    return arguments
+
+
+if __name__ == '__main__':
+    arguments = ParseArgs(sys.argv[1:])
+
+    main_window = EndpointBrowser(**arguments)
+    main_window.show_all()
+    Gtk.main()

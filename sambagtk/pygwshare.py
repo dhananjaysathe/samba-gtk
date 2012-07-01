@@ -1700,50 +1700,43 @@ Please check your network connection.''',
         self.connect('delete_event', self.on_self_delete)
         self.connect('key-press-event', self.on_key_press)
 
-        self.connect_item.connect('activate',
-                                  self.on_connect_item_activate)
+        self.connect_item.connect('activate',self.on_connect_item_activate)
         self.disconnect_item.connect('activate',
-                self.on_disconnect_item_activate)
+                                    self.on_disconnect_item_activate)
         self.quit_item.connect('activate', self.on_quit_item_activate)
-        self.refresh_item.connect('activate',
-                                  self.on_refresh_item_activate)
+        self.refresh_item.connect('activate',self.on_refresh_item_activate)
         self.about_item.connect('activate', self.on_about_item_activate)
 
         self.new_item.connect('activate', self.on_new_item_activate)
-        self.delete_item.connect('activate',
-                                 self.on_delete_item_activate)
+        self.delete_item.connect('activate',self.on_delete_item_activate)
         self.edit_item.connect('activate', self.on_edit_item_activate)
         self.new_share_wizard_item.connect('activate',
-                self.on_new_item_activate, True)
+                                          self.on_new_item_activate, True)
 
-        self.connect_button.connect('clicked',
-                                    self.on_connect_item_activate)
+        self.connect_button.connect('clicked',self.on_connect_item_activate)
         self.disconnect_button.connect('clicked',
-                self.on_disconnect_item_activate)
-
+                                      self.on_disconnect_item_activate)
         self.new_button.connect('clicked', self.on_new_item_activate)
-        self.delete_button.connect('clicked',
-                                   self.on_delete_item_activate)
+        self.delete_button.connect('clicked',self.on_delete_item_activate)
         self.edit_button.connect('clicked', self.on_edit_item_activate)
         self.new_share_wizard_button.connect('clicked',
-                self.on_new_item_activate, True)
+                                        self.on_new_item_activate, True)
 
         self.active_frame_new_button.connect('clicked',
-                self.on_new_item_activate)
+                                            self.on_new_item_activate)
         self.active_frame_delete_button.connect('clicked',
-                self.on_delete_item_activate)
+                                                self.on_delete_item_activate)
         self.active_frame_edit_button.connect('clicked',
-                self.on_edit_item_activate)
+                                             self.on_edit_item_activate)
 
         self.shares_tree_view.get_selection().connect('changed',
-                self.on_update_sensitivity)
+                                                    self.on_update_sensitivity)
         self.shares_tree_view.get_selection().connect('changed',
-                self.on_switch_fill_active_pane)
+                                               self.on_switch_fill_active_pane)
         self.shares_tree_view.connect('button_press_event',
-                self.on_shares_tree_view_button_press)
+                                         self.on_shares_tree_view_button_press)
 
-        self.share_notebook.connect('switch-page',
-                                    self.on_notebook_switch_page)
+        self.share_notebook.connect('switch-page',self.on_notebook_switch_page)
 
 
         self.add_accel_group(accel_group)
