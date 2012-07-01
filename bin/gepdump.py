@@ -292,7 +292,7 @@ class EndpointBrowser(Gtk.Window):
 
         #TODO : the iface element here and calls here appear to be wrong
         while num_ents == max_ents:
-            (handle, num_ents, ents) = self._epmapper_pipe.Lookup(
+            (handle, num_ents, ents) = self.epmapper_pipe.epm_Lookup(
                 inquiry_type=0,
                 object=uuid, interface_id=iface, vers_option=0,
                 entry_handle=handle, max_ents=max_ents)
