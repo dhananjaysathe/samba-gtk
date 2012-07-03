@@ -44,6 +44,7 @@ class LdbURLDialog(Gtk.Dialog):
         label = Gtk.Label("Enter URL:")
         self.vbox.pack_start(label, True, True, 0)
         self.url_combo_entry =  Gtk.ComboBox.new_with_model_and_entry(url_store)
+        self.url_combo_entry.set_entry_text_column(1)
         self.vbox.pack_start(self.url_combo_entry, True, True, 0)
         self.show_all()
 
@@ -51,7 +52,7 @@ class LdbURLDialog(Gtk.Dialog):
         tree_iter = self.url_combo_entry.get_active_iter()
         if tree_iter is not None:
             model = self.url_combo_entry.get_model()
-            url = model[tree_iter][0]
+            url = model[tree_iter][1]
         else:
             entry = self.url_combo_entry.get_child()
             url = entry.get_text()
@@ -65,7 +66,8 @@ class LdbBrowser(Gtk.Window):
     """
     def __init__(self):
         super(LdbBrowser, self).__init__()
-        self.url_store = Gtk.ListStore(str) #for history
+        self.url_store = Gtk.ListStore(int, str) #for history
+        self.url_store_count =0
         self.create()
 
     def create(self):
@@ -194,10 +196,10 @@ class LdbBrowser(Gtk.Window):
         dialog = LdbURLDialog(url_store = self.url_store)
         if dialog.run() == Gtk.ResponseType.OK:
             url = dialog.get_url()
-            print url
             self.set_ldb(Ldb(url))
             # since this method is called only at the end to return the value to the utility
-            self.url_store.append([url])
+            self.url_store_count += 1
+            self.url_store.append([self.url_store_count, url])
             self.disconnect_item.set_sensitive(True)
             self.hide_special.set_sensitive(True)
         dialog.destroy()
