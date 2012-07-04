@@ -53,11 +53,13 @@ class LdbURLDialog(Gtk.Dialog):
         if tree_iter is not None:
             model = self.url_combo_entry.get_model()
             url = model[tree_iter][1]
+            return (url,False)
         else:
             entry = self.url_combo_entry.get_child()
             url = entry.get_text()
+            return (url,True)
 
-        return url
+        
 
 
 
@@ -195,11 +197,11 @@ class LdbBrowser(Gtk.Window):
     def cb_connect(self, button):
         dialog = LdbURLDialog(url_store = self.url_store)
         if dialog.run() == Gtk.ResponseType.OK:
-            url = dialog.get_url()
+            url,add_url_to_store = dialog.get_url()
             self.set_ldb(Ldb(url))
-            # since this method is called only at the end to return the value to the utility
-            self.url_store_count += 1
-            self.url_store.append([self.url_store_count, url])
+            if add_url_to_store : #if it isn't already in the url store add it for further use
+                self.url_store_count += 1
+                self.url_store.append([self.url_store_count, url])
             self.disconnect_item.set_sensitive(True)
             self.hide_special.set_sensitive(True)
         dialog.destroy()
