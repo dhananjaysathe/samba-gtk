@@ -103,7 +103,7 @@ class wkssvcPipeManager()
         `Usage`:
         S.get_workstation_info() -> wksta_info
         """
-
+        # We could try 102 but that will only work for the Domain Administrator
         wksta_info = self.pipe.NetWkstaGetInfo(self.server_unc, 0x00000065)
         return wksta_info
         
@@ -148,3 +148,5 @@ class wkssvcPipeManager()
                                    self.resume_handle_users)
         if totalentries != 0:
             self.current_users_list = info_ctr.ctr.array
+            
+    def join_domain(self)

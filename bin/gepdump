@@ -36,7 +36,7 @@ from gi.repository import Gtk
 from gi.repository import GObject
 from sambagtk.dialogs import AboutDialog,ConnectDialog
 from samba import credentials
-from samba.dcerpc import mgmt, epmapper
+from samba.dcerpc import mgmt, epmapper, misc
 
 
 class EndpointBrowser(Gtk.Window):
@@ -267,7 +267,7 @@ class EndpointBrowser(Gtk.Window):
 
 
     def add_epm_entry(self, annotation, t):
-        # TODO : This stuff here makes no sense.
+        # TODO : This stuff here makes no sense to me.
         bd = t.as_binding_string()
 
         self.store_eps.append((0, annotation, 1, str(bd), 2, t))
@@ -284,15 +284,14 @@ class EndpointBrowser(Gtk.Window):
     def refresh_eps(self):
         self.store_eps.clear()
 
-        handle = None
+        handle = misc.policy_handle()
         num_ents = max_ents = 10
 
-        #TODO : the iface element here and calls here appear to be wrong
+        #TODO : Need to figure out the correct iface here , this seesm to work for now
         while num_ents == max_ents:
-            (handle, num_ents, ents) = self.epmapper_pipe.epm_Lookup(
-                inquiry_type=0,
-                object=uuid, interface_id=iface, vers_option=0,
-                entry_handle=handle, max_ents=max_ents)
+            (handle, ents, ent_result) = self.epmapper_pipe.epm_Lookup(
+                inquiry_type=0, object=None, interface_id=None, 
+                vers_option=0,entry_handle=handle, max_ents=max_ents)
             for ent in ents:
                 self.add_epm_entry(ent.annotation, ent.tower.tower)
 
