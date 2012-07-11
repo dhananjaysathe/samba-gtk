@@ -56,11 +56,10 @@ class SvcCtlPipeManager(object):
         self.pipe = svcctl.svcctl(binding % server_address,
                                   credentials=creds)
 
-
-        #self.pipe = svcctl.svcctl(binding % (server_address), credentials = creds)
-        self.scm_handle = self.pipe.OpenSCManagerA(None, None,
+        #self.scm_handle = self.pipe.OpenSCManagerA(None, None,
+        #                                        svcctl.SC_MANAGER_ALL_ACCESS)
+        self.scm_handle = self.pipe.OpenSCManagerW(None, None,
                                                 svcctl.SC_MANAGER_ALL_ACCESS)
-
     def close(self):
         pass # apparently there's no .Close() method for this pipe
 
