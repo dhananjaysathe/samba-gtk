@@ -123,7 +123,7 @@ class SvcCtlPipeManager(object):
             unicode(service.path_to_exe),               #uint16 *binary_path
             unicode(service_config.loadordergroup),     #uint16 *load_order_group
             unicode(service_config.dependencies),       #uint16 *dependencies
-            unicode(service.account),                                #uint16 *service_start_name
+            unicode(service.account),                   #uint16 *service_start_name
             unicode(service.account_password),          #uint16 *password
             unicode(service.display_name))              #uint16 *display_name
 
