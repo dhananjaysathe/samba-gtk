@@ -48,7 +48,7 @@ class DomainJoinDialog(Gtk.Dialog):
 
         mode = self.set_pw_visiblity.get_active()
         self.password_entry.set_visibility(mode)
-    
+
     def collect_fields(self):
         """ Collects fields from the GUI and saves in class variables """
 
@@ -58,7 +58,7 @@ class DomainJoinDialog(Gtk.Dialog):
         self.username = self.username_entry.get_text().strip()
         self.password = self.password_entry.get_text().strip()
 
-        
+
     def create(self):
         """ Create the window """
 
@@ -91,7 +91,7 @@ class DomainJoinDialog(Gtk.Dialog):
         grid.set_row_spacing(2)
         grid.set_column_spacing(6)
         frame.add(grid)
-        
+
         label = Gtk.Label(' Server Address : ',xalign=1, yalign=0.5)
         grid.attach(label, 0, 0, 1, 1)
 
@@ -115,13 +115,12 @@ class DomainJoinDialog(Gtk.Dialog):
         label = Gtk.Label(' Machine Name  : ',xalign=1, yalign=0.5)
         grid.attach(label, 0, 2, 1, 1)
 
-        self.domain_name_entry = Gtk.Entry()
-        self.domain_name_entry.set_property("max-length",48)
-        self.domain_name_entry.set_text(self.comment)
-        self.domain_name_entry.set_activates_default(True)
-        self.domain_name_entry.set_tooltip_text(
+        self.machine_name_entry = Gtk.Entry()
+        self.machine_name_entry.set_text(self.comment)
+        self.machine_name_entry.set_activates_default(True)
+        self.machine_name_entry.set_tooltip_text(
             'Enter the NetBIOS /Hostname of the Machine in the concerned domian .')
-        grid.attach(self.domain_name_entry,  1, 2, 1, 1)
+        grid.attach(self.machine_name_entry,  1, 2, 1, 1)
 
         # User Creds frame
         frame = Gtk.Frame()
@@ -176,3 +175,84 @@ class DomainJoinDialog(Gtk.Dialog):
 
         self.set_default_response(Gtk.ResponseType.OK)
         self.set_window_mode()
+
+class DeleteDialog(Gtk.Dialog):
+
+    """ The delete dialog """
+
+    def __init__(self, pipe_manager, domain_name=None):
+        """ Class initialiser """
+
+        super(DeleteDialog, self).__init__()
+        self.domain_name = domain_name
+        self.create()
+
+    def create(self):
+        """ Create the window """
+
+        title = ' '.join([' Unjoin Domain', self.domain_name])
+        self.icon_filename = os.path.join(sys.path[0], 'images','network.png')
+        self.set_icon_from_file(self.icon_filename)
+        self.vbox.set_spacing(3)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_modal(True)
+        self.set_title(title)
+        self.set_border_width(5)
+        self.set_resizable(False)
+        self.set_decorated(True)
+
+
+        #artwork
+        self.desc_box = Gtk.HBox()
+        self.vbox.pack_start(self.desc_box, False, True, 0)
+
+        hbox = Gtk.HBox()
+        icon = Gtk.Image()
+        icon.set_from_file(self.icon_filename)
+
+        hbox.pack_start(icon, False, True, 0)
+        self.desc_box.pack_start(hbox, False, True, 0)
+
+        # main form box
+        self.form_box = Gtk.VBox()
+        self.vbox.pack_start(self.form_box, True, True, 0)
+
+        frame = Gtk.Frame()
+        label = Gtk.Label('<b> Domain Details</b>')
+        label.set_property("use-markup",True)
+        frame.set_label_widget(label)
+        frame.set_border_width(5)
+        self.form_box.pack_start(frame, True, True, 0)
+
+        grid = Gtk.Grid()
+        grid.set_border_width(5)
+        grid.set_row_spacing(2)
+        grid.set_column_spacing(6)
+        frame.add(grid)
+
+        label = Gtk.Label(' Domain Name  : ', xalign=1, yalign=0.5)
+        grid.attach(label, 0, 0, 1, 1)
+
+        label = Gtk.Label(self.domain_name, xalign=0, yalign=0.5)
+        grid.attach(label, 1, 0, 1, 1)
+
+
+        box = Gtk.VBox(3)
+        label = Gtk.Label('Are yous sure you want to continue ?'
+                          ,xalign = 0.5, yalign = 0.5)
+        box.pack_start(label, True, True, 0)
+
+        self.vbox.pack_start(box, True, True, 0)
+
+        # action area
+        self.action_area.set_layout(Gtk.ButtonBoxStyle.END)
+
+        self.cancel_button = Gtk.Button('Cancel', Gtk.STOCK_CANCEL)
+        self.cancel_button.set_can_default(True)
+        self.add_action_widget(self.cancel_button, Gtk.ResponseType.CANCEL)
+
+        self.ok_button = Gtk.Button('Delete', Gtk.STOCK_OK)
+        self.ok_button.set_can_default(True)
+        self.add_action_widget(self.ok_button, Gtk.ResponseType.OK)
+
+        self.set_default_response(Gtk.ResponseType.OK)
