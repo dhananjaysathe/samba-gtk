@@ -29,11 +29,9 @@ __docformat__ = 'restructuredtext'
 from samba import credentials
 from samba.dcerpc import wkssvc,security
 
-from wkssvc import (wkssvcConnectDialog , DeleteDialog)
-#TODO : using local fix to toplevel before final
-# We add the other dialogs as we create them .
+from sambagtk.wkssvc import (wkssvcConnectDialog , DeleteDialog)
 
-# Eventually import all these for the Gtk dialogs.
+
 import sys
 import os.path
 import traceback

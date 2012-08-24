@@ -30,7 +30,7 @@ import string
 import sys
 
 from samba.dcerpc import misc
-from dialogs import ConnectDialog
+from sambagtk.dialogs import ConnectDialog
 
 
 class RegistryValue(object):

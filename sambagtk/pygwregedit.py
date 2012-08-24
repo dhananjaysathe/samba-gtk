@@ -18,7 +18,7 @@ from samba import credentials
 from samba.dcerpc import winreg, security
 from samba.dcerpc import misc
 
-from registry import ( #TODO make this local
+from sambagtk.registry import (
     RegistryKey,
     RegistryValue,
     RegValueEditDialog,
@@ -29,7 +29,7 @@ from registry import ( #TODO make this local
     WinRegConnectDialog,
     )
 
-from dialogs import (
+from sambagtk.dialogs import (
     AboutDialog,
     )
 

@@ -30,8 +30,7 @@ from gi.repository import Gtk
 from gi.repository import GObject
 import os
 import sys
-from dialogs import ConnectDialog
-sys.path.append('/opt/samba4/lib/python2.7/site-packages/')
+from sambagtk.dialogs import ConnectDialog
 
 from samba.dcerpc import srvsvc
 

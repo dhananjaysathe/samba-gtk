@@ -22,6 +22,7 @@
 #
 #
 
+from sambagtk.dialogs import ConnectDialog
 
 """ wkssvc related dialogues"""
 

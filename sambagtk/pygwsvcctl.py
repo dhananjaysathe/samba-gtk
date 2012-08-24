@@ -17,11 +17,11 @@ from gi.repository import Pango
 from samba import credentials
 from samba.dcerpc import svcctl
 
-from dialogs import (
+from sambagtk.dialogs import (
     AboutDialog,
     )
 
-from svcctl import (
+from sambagtk.svcctl import (
     SvcCtlConnectDialog,
     Service,
     ServiceEditDialog,

@@ -14,11 +14,11 @@ from gi.repository import GdkPixbuf
 from samba import credentials
 from samba.dcerpc import atsvc
 
-from dialogs import ( # TODO : usding local switch once complete
+from sambagtk.dialogs import (
     AboutDialog,
     )
 
-from atsvc import (  # TODO : usding local switch once complete
+from sambagtk.atsvc import (
     ATSvcConnectDialog,
     Task,
     TaskEditDialog,

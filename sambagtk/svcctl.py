@@ -26,7 +26,7 @@ from gi.repository import GdkPixbuf
 
 import sys
 import os
-from dialogs import ConnectDialog
+from sambagtk.dialogs import ConnectDialog
 
 from samba.dcerpc import svcctl
 

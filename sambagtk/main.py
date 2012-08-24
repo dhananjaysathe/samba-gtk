@@ -29,14 +29,14 @@ from gi.repository import Gdk
 from gi.repository import GLib
 
 
-import pygwsam                     #################  TODO : Local###
+import pygwsam
 import pygwregedit
 import pygwcrontab
 import pygwsvcctl
 import pygwshare
 
-from dialogs import AboutDialog
-from sam import SAMConnectDialog   #################################
+from sambagtk.dialogs import AboutDialog
+from sambagtk.sam import SAMConnectDialog
 
 
 class SambaUtilities(object):

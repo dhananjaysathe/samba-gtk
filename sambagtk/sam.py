@@ -22,7 +22,7 @@
 
 from gi.repository import Gtk
 from gi.repository import GObject
-from dialogs import ConnectDialog
+from sambagtk.dialogs import ConnectDialog
 
 import os
 import sys

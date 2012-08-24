@@ -16,8 +16,7 @@ from samba.dcerpc import (
     lsa,
     )
 
-from sam import (   #using local versions for the time being ,
-                    #change to global as required to avoid gtk2 and gtk3 clashes
+from sambagtk.sam import (
     User,
     Group,
     UserEditDialog,
@@ -25,7 +24,7 @@ from sam import (   #using local versions for the time being ,
     SAMConnectDialog,
     )
 
-from dialogs import (
+from sambagtk.dialogs import (
     AboutDialog,
     )
 

@@ -35,16 +35,15 @@ from gi.repository import Gdk
 from gi.repository import GLib
 from gi.repository import GObject
 
-sys.path.append('/opt/samba4/lib/python2.7/site-packages/')
-# default for ./configure.developer for use on python 2.7
-# Unhash the above line if it is yor your config , else edit it as req
-
 from samba import credentials
 from samba.dcerpc import srvsvc, security
 
-from dialogs import AboutDialog
-from pysrvsvc import DeleteDialog, ShareAddEditDialog, \
-    srvsvcConnectDialog, ShareWizardDialog
+from sambagtk.dialogs import AboutDialog
+from sambagtk.pysrvsvc import (
+    DeleteDialog,
+    ShareAddEditDialog,
+    srvsvcConnectDialog,
+    ShareWizardDialog )
 
 class srvsvcPipeManager(object):
 
